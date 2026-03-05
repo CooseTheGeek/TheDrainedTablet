@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>THE DRAINED TABLET | ULTIMATE EDITION v7.0.0</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3Ctext x='20' y='70' fill='%23FFB100' font-size='70' font-family='Arial'%3E⎔%3C/text%3E%3C/svg%3E">
+    <meta name="description" content="The most comprehensive Rust Console server management dashboard ever created">
+    <meta name="author" content="Casey Steward (CooseTheGeek)">
+    <meta property="og:title" content="THE DRAINED TABLET">
+    <meta property="og:description" content="Ultimate Rust Console Server Manager">
+    <meta property="og:type" content="website">
+</head>
+<body>
+    <!-- SECURITY DOOR LAYER - ALWAYS SHOWS FIRST -->
+    <div id="security-door" class="security-door active">
+        <div class="door-container">
+            <div class="door-header">
+                <h1>⎔ DRAINED TABLET ⎔</h1>
+                <p>ENTER ACCESS CODE</p>
+            </div>
+            
+            <div class="door-numpad">
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="7">7</button>
+                    <button class="numpad-btn" data-num="8">8</button>
+                    <button class="numpad-btn" data-num="9">9</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="4">4</button>
+                    <button class="numpad-btn" data-num="5">5</button>
+                    <button class="numpad-btn" data-num="6">6</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="1">1</button>
+                    <button class="numpad-btn" data-num="2">2</button>
+                    <button class="numpad-btn" data-num="3">3</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="C">C</button>
+                    <button class="numpad-btn" data-num="0">0</button>
+                    <button class="numpad-btn" data-num="E">E</button>
+                </div>
+            </div>
+            
+            <div class="door-display">
+                <div class="code-dots" id="code-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+                <div class="attempts" id="attempts">3 attempts remaining</div>
+                <div class="last-attempt" id="last-attempt">Last: --</div>
+            </div>
+            
+            <div class="door-footer">
+                <button class="door-btn" id="unlock-btn">UNLOCK</button>
+                <button class="door-btn" id="clear-btn">CLEAR</button>
+                <button class="door-btn" id="forgot-btn">FORGOT CODE?</button>
+            </div>
+            
+            <div class="master-override">
+                <p>Master Control: <span class="master-name">CooseTheGeek</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD - HIDDEN UNTIL UNLOCKED -->
+    <div id="dashboard" class="dashboard hidden">
+        <!-- HEADER -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <div class="title-container">
+                    <h1 class="tablet-title">⎔ THE DRAINED TABLET ⎔</h1>
+                    <div class="server-info" id="server-info">
+                        <span class="server-name" id="server-name-display">The Drained Land's 3X Monthly</span>
+                        <span class="server-status" id="server-status">⚫ DISCONNECTED</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info" id="user-info">
+                    <span class="username" id="current-user">Not signed in</span>
+                    <button class="sign-out-btn" id="sign-out-btn">SIGN OUT</button>
+                </div>
+                <div class="connection-info">
+                    <span id="connection-status">⚫ Offline</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- TAB NAVIGATION - ROW 1 (Core Tabs) -->
+        <nav class="tab-nav" id="tab-nav">
+            <div class="tab-scroll">
+                <button class="tab-btn active" data-tab="home">🏠 HOME</button>
+                <button class="tab-btn" data-tab="livemap">🗺️ LIVE MAP</button>
+                <button class="tab-btn" data-tab="items">📦 ITEMS</button>
+                <button class="tab-btn" data-tab="decay">⏳ DECAY</button>
+                <button class="tab-btn" data-tab="scheduler">📅 SCHEDULER</button>
+                <button class="tab-btn" data-tab="zones">🗺️ ZONES</button>
+                <button class="tab-btn" data-tab="zorp">🎮 ZORP</button>
+                <button class="tab-btn" data-tab="status">📊 STATUS</button>
+                <button class="tab-btn" data-tab="entities">🚗 ENTITIES</button>
+                <button class="tab-btn" data-tab="events">🎉 EVENTS</button>
+                <button class="tab-btn" data-tab="global">🌍 GLOBAL</button>
+                <button class="tab-btn" data-tab="inventory">🎒 INVENTORY</button>
+                <button class="tab-btn" data-tab="kits">🧰 KITS</button>
+                <button class="tab-btn" data-tab="modifiers">⚙️ MODIFIERS</button>
+                <button class="tab-btn" data-tab="players">👥 PLAYERS</button>
+                <button class="tab-btn" data-tab="spawn">🎯 SPAWN</button>
+                <button class="tab-btn" data-tab="inventoryViewer">👁️ INV VIEW</button>
+                <button class="tab-btn" data-tab="kitVending">🏪 KIT VEND</button>
+                <button class="tab-btn" data-tab="economy">💰 ECONOMY</button>
+                <button class="tab-btn" data-tab="profile">👤 PROFILE</button>
+            </div>
+        </nav>
+        
+        <!-- TAB NAVIGATION - ROW 2 (Management Tabs) -->
+        <nav class="tab-nav secondary" id="tab-nav-2">
+            <div class="tab-scroll">
+                <button class="tab-btn" data-tab="security">🔐 SECURITY</button>
+                <button class="tab-btn" data-tab="theme">🎨 THEME</button>
+                <button class="tab-btn" data-tab="serverConnect">🌐 SERVERS</button>
+                <button class="tab-btn master-tab" data-tab="master">👑 MASTER</button>
+                <button class="tab-btn" data-tab="chat">💬 CHAT</button>
+                <button class="tab-btn" data-tab="branding">🏷️ BRANDING</button>
+                <button class="tab-btn" data-tab="halloween">🎃 HALLOWEEN</button>
+                <button class="tab-btn" data-tab="monuments">🏛️ MONUMENTS</button>
+                <button class="tab-btn" data-tab="heli">🚁 HELI</button>
+                <button class="tab-btn" data-tab="animals">🐻 ANIMALS</button>
+                <button class="tab-btn" data-tab="explosives">💥 EXPLOSIVES</button>
+                <button class="tab-btn" data-tab="traps">🪤 TRAPS</button>
+                <button class="tab-btn" data-tab="underwater">🌊 UNDERWATER</button>
+                <button class="tab-btn" data-tab="kaosbot">🤖 KAOSBOT</button>
+                <button class="tab-btn" data-tab="veretech">💎 VERETECH</button>
+                <button class="tab-btn" data-tab="legacy">👥 LEGACY</button>
+                <button class="tab-btn" data-tab="playerHub">📊 PLAYER HUB</button>
+                <button class="tab-btn" data-tab="backup">💾 BACKUP</button>
+                <button class="tab-btn" data-tab="settings">⚙️ SETTINGS</button>
+            </div>
+        </nav>
+        
+        <!-- TAB NAVIGATION - ROW 3 (Advanced Exclusive Tabs) -->
+        <nav class="tab-nav advanced" id="tab-nav-3">
+            <div class="tab-scroll">
+                <button class="tab-btn exclusive" data-tab="drainedAI">🤖 DRAINED AI</button>
+                <button class="tab-btn exclusive" data-tab="predictive">📈 PREDICT</button>
+                <button class="tab-btn exclusive" data-tab="heatmap">🔥 HEATMAP</button>
+                <button class="tab-btn exclusive" data-tab="autoMod">🛡️ AUTO-MOD</button>
+                <button class="tab-btn exclusive" data-tab="performance">📊 PERFORMANCE</button>
+                <button class="tab-btn exclusive" data-tab="discord">🔗 DISCORD</button>
+                <button class="tab-btn exclusive" data-tab="voice">🎤 VOICE</button>
+                <button class="tab-btn exclusive" data-tab="profiling">🎯 PROFILING</button>
+                <button class="tab-btn exclusive" data-tab="polls">🗳️ POLLS</button>
+                <button class="tab-btn exclusive" data-tab="mobile">📱 MOBILE</button>
+                <button class="tab-btn exclusive" data-tab="raid">⚡ RAID DETECT</button>
+                <button class="tab-btn exclusive" data-tab="trading">💰 TRADING</button>
+                <button class="tab-btn exclusive" data-tab="defense">🛡️ DEFENSE</button>
+                <button class="tab-btn exclusive" data-tab="psych">🧠 PSYCH</button>
+                <button class="tab-btn exclusive" data-tab="orchestrator">🎭 ORCHESTRATOR</button>
+                <button class="tab-btn exclusive" data-tab="alliance">🤝 ALLIANCE</button>
+                <button class="tab-btn exclusive" data-tab="map3d">🏔️ 3D MAP</button>
+            </div>
+        </nav>
+
+        <!-- TAB CONTENT CONTAINERS -->
+        <div id="tab-content" class="tab-content">
+            <!-- HOME Tab -->
+            <div id="tab-home" class="tab-pane active"></div>
+            
+            <!-- LIVE MAP Tab -->
+            <div id="tab-livemap" class="tab-pane"></div>
+            
+            <!-- ITEMS Tab -->
+            <div id="tab-items" class="tab-pane"></div>
+            
+            <!-- DECAY Tab -->
+            <div id="tab-decay" class="tab-pane"></div>
+            
+            <!-- SCHEDULER Tab -->
+            <div id="tab-scheduler" class="tab-pane"></div>
+            
+            <!-- ZONES Tab -->
+            <div id="tab-zones" class="tab-pane"></div>
+            
+            <!-- ZORP Tab -->
+            <div id="tab-zorp" class="tab-pane"></div>
+            
+            <!-- STATUS Tab -->
+            <div id="tab-status" class="tab-pane"></div>
+            
+            <!-- ENTITIES Tab -->
+            <div id="tab-entities" class="tab-pane"></div>
+            
+            <!-- EVENTS Tab -->
+            <div id="tab-events" class="tab-pane"></div>
+            
+            <!-- GLOBAL Tab -->
+            <div id="tab-global" class="tab-pane"></div>
+            
+            <!-- INVENTORY Tab -->
+            <div id="tab-inventory" class="tab-pane"></div>
+            
+            <!-- KITS Tab -->
+            <div id="tab-kits" class="tab-pane"></div>
+            
+            <!-- MODIFIERS Tab -->
+            <div id="tab-modifiers" class="tab-pane"></div>
+            
+            <!-- PLAYERS Tab -->
+            <div id="tab-players" class="tab-pane"></div>
+            
+            <!-- SPAWN Tab -->
+            <div id="tab-spawn" class="tab-pane"></div>
+            
+            <!-- INVENTORY VIEWER Tab -->
+            <div id="tab-inventoryViewer" class="tab-pane"></div>
+            
+            <!-- KIT VENDING Tab -->
+            <div id="tab-kitVending" class="tab-pane"></div>
+            
+            <!-- ECONOMY Tab -->
+            <div id="tab-economy" class="tab-pane"></div>
+            
+            <!-- PROFILE Tab -->
+            <div id="tab-profile" class="tab-pane"></div>
+            
+            <!-- SECURITY Tab -->
+            <div id="tab-security" class="tab-pane"></div>
+            
+            <!-- THEME Tab -->
+            <div id="tab-theme" class="tab-pane"></div>
+            
+            <!-- SERVER CONNECTOR Tab -->
+            <div id="tab-serverConnect" class="tab-pane"></div>
+            
+            <!-- MASTER CONTROL Tab -->
+            <div id="tab-master" class="tab-pane master-only"></div>
+            
+            <!-- CHAT Tab -->
+            <div id="tab-chat" class="tab-pane"></div>
+            
+            <!-- BRANDING Tab -->
+            <div id="tab-branding" class="tab-pane"></div>
+            
+            <!-- HALLOWEEN Tab -->
+            <div id="tab-halloween" class="tab-pane"></div>
+            
+            <!-- MONUMENTS Tab -->
+            <div id="tab-monuments" class="tab-pane"></div>
+            
+            <!-- HELI Tab -->
+            <div id="tab-heli" class="tab-pane"></div>
+            
+            <!-- ANIMALS Tab -->
+            <div id="tab-animals" class="tab-pane"></div>
+            
+            <!-- EXPLOSIVES Tab -->
+            <div id="tab-explosives" class="tab-pane"></div>
+            
+            <!-- TRAPS Tab -->
+            <div id="tab-traps" class="tab-pane"></div>
+            
+            <!-- UNDERWATER Tab -->
+            <div id="tab-underwater" class="tab-pane"></div>
+            
+            <!-- KAOSBOT Tab -->
+            <div id="tab-kaosbot" class="tab-pane"></div>
+            
+            <!-- VERETECH Tab -->
+            <div id="tab-veretech" class="tab-pane"></div>
+            
+            <!-- LEGACY Tab -->
+            <div id="tab-legacy" class="tab-pane"></div>
+            
+            <!-- PLAYER HUB Tab -->
+            <div id="tab-playerHub" class="tab-pane"></div>
+            
+            <!-- BACKUP Tab -->
+            <div id="tab-backup" class="tab-pane"></div>
+            
+            <!-- SETTINGS Tab -->
+            <div id="tab-settings" class="tab-pane"></div>
+            
+            <!-- DRAINED AI Tab -->
+            <div id="tab-drainedAI" class="tab-pane"></div>
+            
+            <!-- PREDICTIVE ANALYTICS Tab -->
+            <div id="tab-predictive" class="tab-pane"></div>
+            
+            <!-- HEATMAP Tab -->
+            <div id="tab-heatmap" class="tab-pane"></div>
+            
+            <!-- AUTO-MODERATION Tab -->
+            <div id="tab-autoMod" class="tab-pane"></div>
+            
+            <!-- PERFORMANCE METRICS Tab -->
+            <div id="tab-performance" class="tab-pane"></div>
+            
+            <!-- DISCORD SYNC Tab -->
+            <div id="tab-discord" class="tab-pane"></div>
+            
+            <!-- VOICE COMMANDS Tab -->
+            <div id="tab-voice" class="tab-pane"></div>
+            
+            <!-- PLAYER PROFILING Tab -->
+            <div id="tab-profiling" class="tab-pane"></div>
+            
+            <!-- COMMUNITY POLLS Tab -->
+            <div id="tab-polls" class="tab-pane"></div>
+            
+            <!-- MOBILE SYNC Tab -->
+            <div id="tab-mobile" class="tab-pane"></div>
+            
+            <!-- RAID DETECTOR Tab -->
+            <div id="tab-raid" class="tab-pane exclusive"></div>
+            
+            <!-- TRADING FLOOR Tab -->
+            <div id="tab-trading" class="tab-pane exclusive"></div>
+            
+            <!-- BASE DEFENSE Tab -->
+            <div id="tab-defense" class="tab-pane exclusive"></div>
+            
+            <!-- PSYCHOLOGICAL PROFILES Tab -->
+            <div id="tab-psych" class="tab-pane exclusive"></div>
+            
+            <!-- EVENT ORCHESTRATOR Tab -->
+            <div id="tab-orchestrator" class="tab-pane exclusive"></div>
+            
+            <!-- ALLIANCE NETWORK Tab -->
+            <div id="tab-alliance" class="tab-pane exclusive"></div>
+            
+            <!-- 3D MAP Tab -->
+            <div id="tab-map3d" class="tab-pane exclusive"></div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            <div class="footer-left">
+                <span>© 2026 Casey Steward (CooseTheGeek)</span>
+            </div>
+            <div class="footer-right">
+                <span>v7.0.0 ULTIMATE</span>
+                <span class="discord-link">discord.gg/drained</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loading" class="loading hidden">
+        <div class="loading-spinner"></div>
+        <p>LOADING DRAINED TABLET...</p>
+    </div>
+
+    <!-- ERROR MODAL -->
+    <div id="error-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>⚠️ ERROR</h2>
+            <p id="error-message"></p>
+            <button class="modal-btn" id="error-close">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>⚠️ CONFIRM ACTION</h2>
+            <p id="confirm-message"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn" id="confirm-yes">YES</button>
+                <button class="modal-btn" id="confirm-no">NO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast hidden">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- SCRIPTS - Load all 58 JS files -->
+    <script src="js/core.js"></script>
+    <script src="js/security.js"></script>
+    <script src="js/home.js"></script>
+    <script src="js/livemap.js"></script>
+    <script src="js/items.js"></script>
+    <script src="js/decay.js"></script>
+    <script src="js/scheduler.js"></script>
+    <script src="js/zones.js"></script>
+    <script src="js/zorp.js"></script>
+    <script src="js/status.js"></script>
+    <script src="js/entities.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/global.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/kits.js"></script>
+    <script src="js/modifiers.js"></script>
+    <script src="js/players.js"></script>
+    <script src="js/spawn.js"></script>
+    <script src="js/inventoryViewer.js"></script>
+    <script src="js/kitVending.js"></script>
+    <script src="js/economy.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/securityDoor.js"></script>
+    <script src="js/themeStudio.js"></script>
+    <script src="js/serverConnector.js"></script>
+    <script src="js/masterControl.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/branding.js"></script>
+    <script src="js/halloween.js"></script>
+    <script src="js/monuments.js"></script>
+    <script src="js/heli.js"></script>
+    <script src="js/animals.js"></script>
+    <script src="js/explosives.js"></script>
+    <script src="js/traps.js"></script>
+    <script src="js/underwater.js"></script>
+    <script src="js/kaosbot.js"></script>
+    <script src="js/veretech.js"></script>
+    <script src="js/legacy.js"></script>
+    <script src="js/playerHub.js"></script>
+    <script src="js/backup.js"></script>
+    <script src="js/dashboardSettings.js"></script>
+    <script src="js/drainedAI.js"></script>
+    <script src="js/predictiveAnalytics.js"></script>
+    <script src="js/heatmap.js"></script>
+    <script src="js/autoMod.js"></script>
+    <script src="js/performance.js"></script>
+    <script src="js/discordSync.js"></script>
+    <script src="js/voiceCommands.js"></script>
+    <script src="js/playerProfiling.js"></script>
+    <script src="js/communityPolls.js"></script>
+    <script src="js/mobileSync.js"></script>
+    <script src="js/raidDetector.js"></script>
+    <script src="js/tradingFloor.js"></script>
+    <script src="js/baseDefense.js"></script>
+    <script src="js/psychological.js"></script>
+    <script src="js/eventOrchestrator.js"></script>
+    <script src="js/allianceNetwork.js"></script>
+    <script src="js/map3d.js"></script>
+
+    <!-- Initialize the tablet -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            window.drainedTablet = new DrainedTablet();
+        });
+        
+        // Close modal buttons
+        document.getElementById('error-close').addEventListener('click', () => {
+            document.getElementById('error-modal').classList.add('hidden');
+        });
+        
+        document.getElementById('confirm-no').addEventListener('click', () => {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
