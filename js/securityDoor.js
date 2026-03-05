@@ -104,7 +104,7 @@ class SecurityDoor {
         let user = null;
 
         // Primary masters
-        if (this.currentCode === '10325') {
+        if (this.currentCode === '1215') {
             valid = true;
             user = 'CooseTheGeek';
         } else if (this.currentCode === '2026') {
@@ -247,4 +247,5 @@ class SecurityDoor {
 // Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.securityDoor = new SecurityDoor(window.drainedTablet);
+
 });
