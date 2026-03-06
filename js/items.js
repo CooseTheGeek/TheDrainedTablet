@@ -100,9 +100,7 @@ class ItemsDatabase {
             { shortname: 'spear.stone', name: 'Stone Spear', category: 'Weapons', stack: 1, blueprint: true },
             { shortname: 'smg.thompson', name: 'Thompson', category: 'Weapons', stack: 1, blueprint: true },
             { shortname: 'shotgun.waterpipe', name: 'Waterpipe Shotgun', category: 'Weapons', stack: 1, blueprint: true },
-            { shortname: 'spear.wooden', name: 'Wooden Spear', category: 'Weapons', stack: 1, blueprint: true },
-
-            // ===== CONSTRUCTION =====
+            { shortname: 'spear.wooden', name: 'Wooden Spear', category: 'Weapons', stack: 1, blueprint: true },            // ===== CONSTRUCTION =====
             { shortname: 'door.hinged.toptier', name: 'Armored Door', category: 'Construction', stack: 1, blueprint: true },
             { shortname: 'door.double.hinged.toptier', name: 'Armored Double Door', category: 'Construction', stack: 1, blueprint: true },
             { shortname: 'barricade.woodwire', name: 'Barbed Wooden Barricade', category: 'Construction', stack: 1, blueprint: true },
@@ -148,11 +146,8 @@ class ItemsDatabase {
             { shortname: 'door.double.hinged.bardoors', name: 'Wooden Frontier Bar Doors', category: 'Construction', stack: 1, blueprint: true },
             { shortname: 'ladder.wooden.wall', name: 'Wooden Ladder', category: 'Construction', stack: 1, blueprint: true },
             { shortname: 'wall.window.bars.wood', name: 'Wooden Window Bars', category: 'Construction', stack: 1, blueprint: true },
-        ];
-    }
-}            // ===== ITEMS (Deployables, Resources, Attire, Tools, Food, etc.) =====
-            
-            // Items (continued)
+
+            // ===== ITEMS (Deployables, Resources, Attire, Tools, Food, etc.) =====
             { shortname: 'bbq', name: 'Barbeque', category: 'Items', stack: 1, blueprint: true },
             { shortname: 'bathtub.planter', name: 'Bath Tub Planter', category: 'Items', stack: 1, blueprint: true },
             { shortname: 'bed', name: 'Bed', category: 'Items', stack: 1, blueprint: true },
@@ -210,9 +205,7 @@ class ItemsDatabase {
             { shortname: 'box.wooden', name: 'Wood Storage Box', category: 'Items', stack: 1, blueprint: true },
             { shortname: 'workbench1', name: 'Workbench Level 1', category: 'Items', stack: 1, blueprint: true },
             { shortname: 'workbench2', name: 'Workbench Level 2', category: 'Items', stack: 1, blueprint: true },
-            { shortname: 'workbench3', name: 'Workbench Level 3', category: 'Items', stack: 1, blueprint: true },
-
-            // ===== RESOURCES =====
+            { shortname: 'workbench3', name: 'Workbench Level 3', category: 'Items', stack: 1, blueprint: true },            // ===== RESOURCES =====
             { shortname: 'fat.animal', name: 'Animal Fat', category: 'Resources', stack: 1000, blueprint: false },
             { shortname: 'bone.fragments', name: 'Bone Fragments', category: 'Resources', stack: 1000, blueprint: false },
             { shortname: 'cctv.camera', name: 'CCTV Camera', category: 'Resources', stack: 1, blueprint: false },
@@ -451,9 +444,7 @@ class ItemsDatabase {
             { shortname: 'yellow.berry', name: 'Yellow Berry', category: 'Food', stack: 10, blueprint: false },
             { shortname: 'clone.yellow.berry', name: 'Yellow Berry Clone', category: 'Food', stack: 1, blueprint: false },
             { shortname: 'seed.yellow.berry', name: 'Yellow Berry Seed', category: 'Food', stack: 1, blueprint: false },
-            { shortname: 'fish.yellowperch', name: 'Yellow Perch', category: 'Food', stack: 10, blueprint: false },
-
-            // ===== TRAPS =====
+            { shortname: 'fish.yellowperch', name: 'Yellow Perch', category: 'Food', stack: 10, blueprint: false },            // ===== TRAPS =====
             { shortname: 'flameturret', name: 'Flame Turret', category: 'Traps', stack: 1, blueprint: true },
             { shortname: 'trap.landmine', name: 'Landmine', category: 'Traps', stack: 1, blueprint: true },
             { shortname: 'samsite', name: 'SAM Site', category: 'Traps', stack: 1, blueprint: true },
@@ -544,9 +535,7 @@ class ItemsDatabase {
             { shortname: 'waterpump', name: 'Water Pump', category: 'Electrical', stack: 1, blueprint: true },
             { shortname: 'generator.wind.scrap', name: 'Wind Turbine', category: 'Electrical', stack: 1, blueprint: true },
             { shortname: 'wiretool', name: 'Wire Tool', category: 'Electrical', stack: 1, blueprint: true },
-            { shortname: 'electric.xorswitch', name: 'XOR Switch', category: 'Electrical', stack: 1, blueprint: true },
-
-            // ===== ANIMALS =====
+            { shortname: 'electric.xorswitch', name: 'XOR Switch', category: 'Electrical', stack: 1, blueprint: true },            // ===== ANIMALS =====
             { shortname: 'bear', name: 'Bear', category: 'Animals', stack: 1, blueprint: false },
             { shortname: 'boar', name: 'Boar', category: 'Animals', stack: 1, blueprint: false },
             { shortname: 'chicken', name: 'Chicken', category: 'Animals', stack: 1, blueprint: false },
@@ -598,9 +587,7 @@ class ItemsDatabase {
             { shortname: 'sparkplug3', name: 'High Quality Spark Plugs', category: 'Vehicle Parts', stack: 1, blueprint: true },
             { shortname: 'valve1', name: 'Low Quality Valves', category: 'Vehicle Parts', stack: 1, blueprint: true },
             { shortname: 'valve2', name: 'Medium Quality Valves', category: 'Vehicle Parts', stack: 1, blueprint: true },
-            { shortname: 'valve3', name: 'High Quality Valves', category: 'Vehicle Parts', stack: 1, blueprint: true },
-
-            // ===== SEASONAL - EASTER =====
+            { shortname: 'valve3', name: 'High Quality Valves', category: 'Vehicle Parts', stack: 1, blueprint: true },            // ===== SEASONAL - EASTER =====
             { shortname: 'easter.bronzeegg', name: 'Bronze Egg', category: 'Seasonal', stack: 1, blueprint: false },
             { shortname: 'attire.bunnyears', name: 'Bunny Ears', category: 'Seasonal', stack: 1, blueprint: false },
             { shortname: 'attire.bunny.onesie', name: 'Bunny Onesie', category: 'Seasonal', stack: 1, blueprint: false },
