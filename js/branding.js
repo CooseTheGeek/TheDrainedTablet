@@ -35,6 +35,9 @@ class BrandingManager {
     }
 
     init() {
+        console.log('BrandingManager initializing...');
+        // Ensure the server-name-display element exists
+        this.ensureServerNameElement();
         this.createBrandingHTML();
         this.setupEventListeners();
         this.applyBranding();
@@ -44,6 +47,17 @@ class BrandingManager {
                 this.refresh();
             }
         });
+    }
+
+    ensureServerNameElement() {
+        // Create the element if it doesn't exist
+        if (!document.getElementById('server-name-display')) {
+            const el = document.createElement('span');
+            el.id = 'server-name-display';
+            el.style.display = 'none';
+            document.body.appendChild(el);
+            console.log('Created missing server-name-display element');
+        }
     }
 
     createBrandingHTML() {
