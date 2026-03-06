@@ -2,8 +2,7 @@
 // Copyright 2026 Casey Steward (CooseTheGeek)
 // All Rights Reserved - Proprietary Software
 // 
-// This is the main engine that powers the entire dashboard.
-// Handles: RCON connections (via HTTP bridge), user sessions, real-time updates,
+// Handles: RCON (HTTP bridge), user sessions, real-time updates,
 // player tracking, server communication, and global state.
 // 
 // ⚠️ NO MOCK DATA - ALL DATA COMES FROM REAL RCON CONNECTIONS
@@ -13,15 +12,16 @@ class DrainedTablet {
     constructor() {
         // Version and Ownership
         this.version = '7.0.0';
+        this.storageVersion = '1'; // increment when localStorage format changes
         this.master = 'CooseTheGeek';
         this.build = '2026.03.04';
         
-        // User State - Always starts null (no auto-login)
+        // User State
         this.currentUser = null;
         this.userLevel = null;
         this.authenticated = false;
         
-        // Connection State - Always starts disconnected
+        // Connection State
         this.connected = false;
         this.connecting = false;
         this.reconnectAttempts = 0;
@@ -29,7 +29,7 @@ class DrainedTablet {
         this.reconnectDelay = 5000;
         this.connectionTimeout = null;
         
-        // Server Configuration - YOUR ACTUAL SERVER CREDENTIALS
+        // Server Configuration - YOUR ACTUAL CREDENTIALS
         this.serverConfig = {
             name: 'The Drained Land\'s 3X Monthly',
             ip: '144.126.137.59',
@@ -40,7 +40,7 @@ class DrainedTablet {
             maxPlayers: 100
         };
         
-        // Data Storage - Always empty until connected
+        // Data Storage
         this.realPlayers = [];
         this.serverStats = {
             fps: 0,
@@ -52,27 +52,58 @@ class DrainedTablet {
         };
         this.eventListeners = new Map();
         this.refreshIntervals = new Map();
-        this.pendingCommands = new Map();      // For RCON command responses (HTTP still needs tracking)
-        this.commandTimeout = 10000;            // 10 seconds
+        this.pendingCommands = new Map();
+        this.commandTimeout = 10000;
         
-        // Security - Default master code (CHANGE AFTER FIRST LOGIN)
+        // Security
         this.accessCode = '0325';
         this.backupCode = '2026';
         this.sessionToken = null;
         this.sessionExpiry = null;
         
-        // Bridge configuration (public ngrok URL)
+        // Bridge URL (ngrok – replace if needed)
         this.bridgeUrl = 'https://unconvulsed-unperpendicularly-lenard.ngrok-free.dev';
         
-        // Initialize
-        this.init();
+        // Initialize with full error recovery
+        try {
+            this.checkStorageVersion(); // clear old data if needed
+            this.init();
+        } catch (error) {
+            console.error('❌ Fatal core init error:', error);
+            this.purgeAllData(); // nuclear option – clear everything
+            this.showSecurityDoor(); // force door
+        }
+    }
+
+    checkStorageVersion() {
+        const storedVersion = localStorage.getItem('drained_storage_version');
+        if (storedVersion !== this.storageVersion) {
+            console.log('🔄 Storage version mismatch – clearing old data');
+            this.purgeAllData();
+            localStorage.setItem('drained_storage_version', this.storageVersion);
+        }
+    }
+
+    purgeAllData() {
+        const keysToKeep = ['drained_storage_version']; // keep only version marker
+        Object.keys(localStorage).forEach(key => {
+            if (!keysToKeep.includes(key)) {
+                localStorage.removeItem(key);
+            }
+        });
+        console.log('🧹 Old storage data cleared');
     }
 
     init() {
         console.log(`🚀 DRAINED TABLET v${this.version} initializing...`);
         
-        // Load saved session (if exists)
-        this.loadSession();
+        // Load saved session (if exists) – wrapped in try-catch
+        try {
+            this.loadSession();
+        } catch (e) {
+            console.warn('Session load failed, clearing corrupted data');
+            localStorage.removeItem('drained_session');
+        }
         
         // Setup event listeners
         this.setupGlobalListeners();
@@ -87,7 +118,7 @@ class DrainedTablet {
             this.showSecurityDoor();
         }
         
-        console.log('✅ Core engine initialized - waiting for user action');
+        console.log('✅ Core engine initialized');
     }
 
     loadSession() {
@@ -1111,9 +1142,34 @@ class DrainedTablet {
     }
 }
 
+// ===== GLOBAL SAFETY NET =====
+window.addEventListener('error', (event) => {
+    console.error('💥 Uncaught global error:', event.error);
+    // Try to show security door
+    const door = document.getElementById('security-door');
+    const dashboard = document.getElementById('dashboard');
+    if (door && dashboard) {
+        door.style.display = 'flex';
+        dashboard.classList.remove('visible');
+    }
+    // Show error toast
+    const toast = document.getElementById('toast');
+    if (toast) {
+        toast.innerText = 'A temporary error occurred. Please refresh.';
+        toast.className = 'toast show error';
+        setTimeout(() => toast.className = 'toast hidden', 5000);
+    }
+});
+
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
-    window.drainedTablet = new DrainedTablet();
+    try {
+        window.drainedTablet = new DrainedTablet();
+    } catch (error) {
+        console.error('❌ Failed to create DrainedTablet:', error);
+        const door = document.getElementById('security-door');
+        if (door) door.style.display = 'flex';
+    }
     
     const errorClose = document.getElementById('error-close');
     if (errorClose) {
