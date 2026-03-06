@@ -4,7 +4,6 @@
 class DecaySystem {
     constructor(tablet) {
         this.tablet = tablet;
-        this.settings = this.loadSettings();
         this.presets = {
             vanilla: {
                 upkeep: true,
@@ -76,12 +75,44 @@ class DecaySystem {
                 durationToptier: 24
             }
         };
+        this.settings = this.loadSettings();
         this.init();
     }
 
     loadSettings() {
         const saved = localStorage.getItem('drained_decay_settings');
-        return saved ? JSON.parse(saved) : this.presets.vanilla;
+        
+        // Create a local fallback object in case this.presets is not ready
+        const fallback = {
+            vanilla: {
+                upkeep: true,
+                scale: 1.0,
+                tick: 600,
+                bracket0: 15,
+                bracket0cost: 0.1,
+                bracket1: 50,
+                bracket1cost: 0.15,
+                bracket2: 125,
+                bracket2cost: 0.2,
+                bracket3: 200,
+                bracket3cost: 0.333,
+                delayTwig: 0,
+                delayWood: 0,
+                delayStone: 0,
+                delayMetal: 0,
+                delayToptier: 0,
+                durationTwig: 1,
+                durationWood: 3,
+                durationStone: 5,
+                durationMetal: 8,
+                durationToptier: 12
+            }
+        };
+        
+        // If presets exists, use it; otherwise use the fallback
+        const presets = this.presets || fallback;
+        
+        return saved ? JSON.parse(saved) : presets.vanilla;
     }
 
     saveSettings() {
