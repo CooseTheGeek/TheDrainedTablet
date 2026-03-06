@@ -28,7 +28,7 @@ class Map3D {
         this.create3DHTML();
         this.setupEventListeners();
         this.initThreeJS();
-        this.startAnimation();
+        this.startAnimation();   // now defined below
         
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'map3d') {
@@ -40,6 +40,13 @@ class Map3D {
             this.players = e.detail;
             this.updatePlayers();
         });
+    }
+
+    startAnimation() {
+        // Placeholder – can be used for future animation logic
+        console.log('3D map animation started');
+        // If you want continuous updates, you could call this.draw3DView() periodically
+        // For now, it's just a stub.
     }
 
     create3DHTML() {
