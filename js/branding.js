@@ -6,6 +6,7 @@ class BrandingManager {
         this.tablet = tablet;
         this.branding = this.loadBranding();
         this.avatars = new Map();
+        this.previewActive = false;
         this.init();
     }
 
@@ -183,6 +184,7 @@ class BrandingManager {
 
     updateImageDisplay() {
         const preview = document.getElementById('image-preview');
+        if (!preview) return;
         if (this.branding.serverImage) {
             preview.innerHTML = `<img src="${this.branding.serverImage}" style="max-width: 100%; max-height: 200px;">`;
         } else {
@@ -191,40 +193,61 @@ class BrandingManager {
     }
 
     updatePreview() {
-        const name = document.getElementById('server-name').value;
-        const discord = document.getElementById('discord-link').value;
-        const logo = document.getElementById('logo-symbol').value;
-        const primary = document.getElementById('primary-color').value;
-        const secondary = document.getElementById('secondary-color').value;
+        const name = document.getElementById('server-name')?.value;
+        const discord = document.getElementById('discord-link')?.value;
+        const logo = document.getElementById('logo-symbol')?.value;
+        const primary = document.getElementById('primary-color')?.value;
+        const secondary = document.getElementById('secondary-color')?.value;
 
         const preview = document.getElementById('branding-preview');
-        preview.querySelector('.preview-header').style.background = primary + '20';
-        preview.querySelector('.preview-logo').innerText = logo;
-        preview.querySelector('.preview-name').innerText = name;
-        preview.querySelector('.preview-footer').style.color = secondary;
-        preview.querySelector('.preview-footer').innerText = discord;
+        if (!preview) return;
 
-        // Update server name in header if preview applied
-        if (this.previewActive) {
-            document.getElementById('server-name-display').innerText = name;
-        }
+        const header = preview.querySelector('.preview-header');
+        const logoEl = preview.querySelector('.preview-logo');
+        const nameEl = preview.querySelector('.preview-name');
+        const footer = preview.querySelector('.preview-footer');
+
+        if (header && primary) header.style.background = primary + '20';
+        if (logoEl && logo) logoEl.innerText = logo;
+        if (nameEl && name) nameEl.innerText = name;
+        if (footer && secondary) footer.style.color = secondary;
+        if (footer && discord) footer.innerText = discord;
     }
 
     applyPreview() {
         this.previewActive = true;
         this.updatePreview();
-        document.getElementById('server-name-display').innerText = document.getElementById('server-name').value;
+        const displayEl = document.getElementById('server-name-display');
+        if (displayEl) {
+            displayEl.innerText = document.getElementById('server-name')?.value || this.branding.serverName;
+        }
         this.tablet.showToast('Preview applied', 'success');
+    }
+
+    applyBranding() {
+        // Update header server name if element exists
+        const displayEl = document.getElementById('server-name-display');
+        if (displayEl) {
+            displayEl.innerText = this.branding.serverName;
+        }
+        document.documentElement.style.setProperty('--amber', this.branding.colors.primary);
+        document.documentElement.style.setProperty('--text-secondary', this.branding.colors.secondary);
+        
+        // Update Discord link if element exists
+        const discordEl = document.querySelector('.discord-link');
+        if (discordEl) {
+            discordEl.innerText = this.branding.discord;
+        }
     }
 
     saveBranding() {
         this.branding = {
-            serverName: document.getElementById('server-name').value,
-            discord: document.getElementById('discord-link').value,
-            logo: document.getElementById('logo-symbol').value,
+            serverName: document.getElementById('server-name')?.value || this.branding.serverName,
+            discord: document.getElementById('discord-link')?.value || this.branding.discord,
+            logo: document.getElementById('logo-symbol')?.value || this.branding.logo,
             colors: {
-                primary: document.getElementById('primary-color').value,
-                secondary: document.getElementById('secondary-color').value
+                primary: document.getElementById('primary-color')?.value || this.branding.colors.primary,
+                secondary: document.getElementById('secondary-color')?.value || this.branding.colors.secondary
             },
             serverImage: this.branding.serverImage
         };
@@ -232,18 +255,6 @@ class BrandingManager {
         this.saveBranding();
         this.applyBranding();
         this.tablet.showToast('Branding saved for ' + this.tablet.currentUser, 'success');
-    }
-
-    applyBranding() {
-        document.getElementById('server-name-display').innerText = this.branding.serverName;
-        document.documentElement.style.setProperty('--amber', this.branding.colors.primary);
-        document.documentElement.style.setProperty('--text-secondary', this.branding.colors.secondary);
-        
-        // Update Discord link
-        const discordEl = document.querySelector('.discord-link');
-        if (discordEl) {
-            discordEl.innerText = this.branding.discord;
-        }
     }
 
     resetBranding() {
