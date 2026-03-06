@@ -21,6 +21,7 @@ class PredictiveAnalytics {
     }
 
     init() {
+        console.log('PredictiveAnalytics initializing...');
         this.createAnalyticsHTML();
         this.setupEventListeners();
         this.startDataCollection();
@@ -35,7 +36,10 @@ class PredictiveAnalytics {
 
     createAnalyticsHTML() {
         const predictiveTab = document.getElementById('tab-predictive');
-        if (!predictiveTab) return;
+        if (!predictiveTab) {
+            console.error('Predictive tab not found');
+            return;
+        }
 
         predictiveTab.innerHTML = `
             <div class="analytics-container">
@@ -128,7 +132,7 @@ class PredictiveAnalytics {
         this.predictPeakHours();
         this.calculateRaidRisk();
         this.calculateRetention();
-        this.renderPredictions();  // now safe because we added guards
+        this.renderPredictions();
         this.drawTrendChart();
     }
 
@@ -294,6 +298,7 @@ class PredictiveAnalytics {
 
         ctx.clearRect(0, 0, w, h);
 
+        // Draw axes
         ctx.strokeStyle = '#FFB100';
         ctx.lineWidth = 2;
         ctx.beginPath();
