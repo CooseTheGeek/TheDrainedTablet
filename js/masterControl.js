@@ -13,7 +13,31 @@ class MasterControl {
     init() {
         this.createUI();
         this.loadUsers();
+        this.setupFooterButton();  // <-- ADD THIS
         // REMOVED: this.setupEventListeners(); – not needed, listeners are set in createUI
+    }
+
+    setupFooterButton() {
+        const footerBtn = document.getElementById('master-control-footer');
+        if (footerBtn) {
+            footerBtn.addEventListener('click', () => this.showMasterPanel());
+        }
+    }
+
+    showMasterPanel() {
+        // Switch to the master tab
+        const homeTab = window.homeTab;
+        if (homeTab && typeof homeTab.switchToTab === 'function') {
+            homeTab.switchToTab('master');
+        } else {
+            // Fallback: manually activate the tab
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            const masterPane = document.getElementById('tab-master');
+            if (masterPane) {
+                masterPane.classList.add('active');
+                window.dispatchEvent(new CustomEvent('tab-changed', { detail: { tab: 'master' } }));
+            }
+        }
     }
 
     createUI() {
