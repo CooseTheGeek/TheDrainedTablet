@@ -19,14 +19,13 @@
     <meta name="theme-color" content="#FFB100">
 </head>
 <body>
-    <!-- SECURITY DOOR LAYER - ALWAYS SHOWS FIRST (unless Chronicle is enabled) -->
+    <!-- SECURITY DOOR LAYER -->
     <div id="security-door" class="security-door active">
         <div class="door-container">
             <div class="door-header">
                 <h1 class="door-title">⎔ DRAINED TABLET ⎔</h1>
                 <p class="door-subtitle">ENTER ACCESS CODE</p>
             </div>
-            <!-- LED display -->
             <div class="door-display">
                 <div class="code-dots" id="code-dots">
                     <span class="dot" data-index="0"></span>
@@ -38,7 +37,6 @@
                 <div class="last-attempt" id="last-attempt">Last attempt: --:--</div>
                 <div class="lock-timer" id="lock-timer" style="display: none;"></div>
             </div>
-            <!-- Numpad -->
             <div class="door-numpad">
                 <div class="numpad-row">
                     <button class="numpad-btn" data-num="7">7</button>
@@ -73,7 +71,7 @@
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD - HIDDEN UNTIL UNLOCKED -->
+    <!-- MAIN DASHBOARD -->
     <div id="dashboard" class="dashboard hidden">
         <!-- HEADER -->
         <header class="dashboard-header">
@@ -90,7 +88,7 @@
             </div>
         </header>
 
-        <!-- HOME LAYOUT (three columns) -->
+        <!-- HOME LAYOUT -->
         <div class="home-layout">
             <!-- LEFT COLUMN – STATUS -->
             <div class="panel left-panel">
@@ -157,9 +155,8 @@
             <div class="footer-right" id="master-control-footer">👑 MASTER CONTROL</div>
         </footer>
 
-        <!-- TAB CONTENT CONTAINERS (all pages) -->
-        <div id="tab-content" class="tab-content">
-            <!-- Livemap page -->
+        <!-- TAB CONTENT CONTAINERS -->
+        <div id="tab-content" class="tab-content">            <!-- LIVEMAP TAB -->
             <div id="tab-livemap" class="tab-pane">
                 <div class="map-container">
                     <h2>🗺️ LIVE MAP</h2>
@@ -167,21 +164,316 @@
                     <div class="map-coords">X: <span id="coord-x">0</span> Z: <span id="coord-z">0</span></div>
                 </div>
             </div>
-            <!-- Owner page (will be populated by JS) -->
-            <div id="tab-owner" class="tab-pane"></div>
-            <!-- Settings page -->
-            <div id="tab-settings" class="tab-pane"></div>
-            <!-- Kits page -->
-            <div id="tab-kits" class="tab-pane"></div>
-            <!-- Chat page -->
-            <div id="tab-chat" class="tab-pane"></div>
-            <!-- Inventory viewer page -->
-            <div id="tab-inventory" class="tab-pane"></div>
-            <!-- More page (grid of all other tools) -->
-            <div id="tab-more" class="tab-pane"></div>
-            <!-- All other tabs (clans, events, etc.) will be added dynamically -->
-        </div>
-    </div>
+
+            <!-- OWNER COMMANDS TAB -->
+            <div id="tab-owner" class="tab-pane">
+                <div class="owner-container">
+                    <div class="owner-section">
+                        <h3>👑 OWNER COMMANDS</h3>
+                        <p>Owner commands interface will load here</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SERVER SETTINGS TAB -->
+            <div id="tab-settings" class="tab-pane">
+                <div class="settings-container">
+                    <h2>⚙️ SERVER SETTINGS</h2>
+                    <div class="settings-grid">
+                        <div class="settings-card">
+                            <h3>General Settings</h3>
+                            <p>Server configuration options</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KITS TAB -->
+            <div id="tab-kits" class="tab-pane">
+                <div class="kitmaker-container">
+                    <h2>🧰 KIT MAKER</h2>
+                    <p>Kit management interface will load here</p>
+                </div>
+            </div>
+
+            <!-- CHAT TAB -->
+            <div id="tab-chat" class="tab-pane">
+                <div class="chat-container">
+                    <h2>💬 CHAT CENTER</h2>
+                    <p>Chat system will load here</p>
+                </div>
+            </div>
+
+            <!-- INVENTORY TAB -->
+            <div id="tab-inventory" class="tab-pane">
+                <div class="inventory-viewer-container">
+                    <h2>🎒 VIEW INVENTORY</h2>
+                    <p>Inventory viewer will load here</p>
+                </div>
+            </div>
+
+            <!-- MASTER TAB -->
+            <div id="tab-master" class="tab-pane">
+                <div class="master-container">
+                    <h2>👑 MASTER CONTROL</h2>
+                    <p>Master control interface will load here</p>
+                </div>
+            </div>
+
+            <!-- MORE TAB -->
+            <div id="tab-more" class="tab-pane">
+                <div class="more-container">
+                    <h2>📊 MORE TOOLS</h2>
+                    <div class="more-grid" id="more-grid"></div>
+                </div>
+            </div>            <!-- ITEMS TAB -->
+            <div id="tab-items" class="tab-pane">
+                <div class="items-container">
+                    <h2>📦 ITEMS DATABASE</h2>
+                    <p>Item banning & database will load here</p>
+                </div>
+            </div>
+
+            <!-- DECAY TAB -->
+            <div id="tab-decay" class="tab-pane">
+                <div class="decay-container">
+                    <h2>⏳ DECAY SETTINGS</h2>
+                    <p>Decay & upkeep settings will load here</p>
+                </div>
+            </div>
+
+            <!-- SCHEDULER TAB -->
+            <div id="tab-scheduler" class="tab-pane">
+                <div class="scheduler-container">
+                    <h2>📅 SCHEDULED ACTIONS</h2>
+                    <p>Scheduled actions will load here</p>
+                </div>
+            </div>
+
+            <!-- ZONES TAB -->
+            <div id="tab-zones" class="tab-pane">
+                <div class="zones-container">
+                    <h2>🗺️ ZONE MANAGEMENT</h2>
+                    <p>Zone management will load here</p>
+                </div>
+            </div>
+
+            <!-- ZORP TAB -->
+            <div id="tab-zorp" class="tab-pane">
+                <div class="zorp-container">
+                    <h2>🎮 ZORP ZONE MANAGER</h2>
+                    <p>ZORP zone ownership will load here</p>
+                </div>
+            </div>
+
+            <!-- STATUS TAB -->
+            <div id="tab-status" class="tab-pane">
+                <div class="status-container">
+                    <h2>📊 SERVER STATUS</h2>
+                    <p>Server status overview will load here</p>
+                </div>
+            </div>
+
+            <!-- ENTITIES TAB -->
+            <div id="tab-entities" class="tab-pane">
+                <div class="entities-container">
+                    <h2>🚗 ENTITY MANAGER</h2>
+                    <p>Entity spawn/management will load here</p>
+                </div>
+            </div>
+
+            <!-- EVENTS TAB -->
+            <div id="tab-events" class="tab-pane">
+                <div class="events-container">
+                    <h2>🎉 EVENT MANAGER</h2>
+                    <p>Event manager will load here</p>
+                </div>
+            </div>
+
+            <!-- GLOBAL TAB -->
+            <div id="tab-global" class="tab-pane">
+                <div class="global-container">
+                    <h2>🌍 GLOBAL COMMANDS</h2>
+                    <p>Global command executor will load here</p>
+                </div>
+            </div>
+
+            <!-- MODIFIERS TAB -->
+            <div id="tab-modifiers" class="tab-pane">
+                <div class="modifiers-container">
+                    <h2>⚙️ ITEM MODIFIERS</h2>
+                    <p>Item modifiers will load here</p>
+                </div>
+            </div>
+
+            <!-- SPAWN TAB -->
+            <div id="tab-spawn" class="tab-pane">
+                <div class="spawn-container">
+                    <h2>🎯 SPAWN MANAGER</h2>
+                    <p>Spawn items/entities will load here</p>
+                </div>
+            </div>
+
+            <!-- ECONOMY TAB -->
+            <div id="tab-economy" class="tab-pane">
+                <div class="economy-container">
+                    <h2>💰 ECONOMY SYSTEM</h2>
+                    <p>Economy system will load here</p>
+                </div>
+            </div>
+
+            <!-- CLANS TAB -->
+            <div id="tab-clans" class="tab-pane">
+                <div class="clans-container">
+                    <h2>👥 CLANS</h2>
+                    <p>Clan management will load here</p>
+                </div>
+            </div>
+
+            <!-- PLAYER HUB TAB -->
+            <div id="tab-playerHub" class="tab-pane">
+                <div class="hub-container">
+                    <h2>📊 PLAYER HUB</h2>
+                    <p>Player statistics hub will load here</p>
+                </div>
+            </div>
+
+            <!-- PROFILING TAB -->
+            <div id="tab-profiling" class="tab-pane">
+                <div class="profiling-container">
+                    <h2>🎯 PLAYER PROFILING</h2>
+                    <p>Player profiling will load here</p>
+                </div>
+            </div>
+
+            <!-- PSYCH TAB -->
+            <div id="tab-psych" class="tab-pane">
+                <div class="psych-container">
+                    <h2>🧠 PSYCHOLOGICAL PROFILING</h2>
+                    <p>Psychological profiling will load here</p>
+                </div>
+            </div>
+
+            <!-- PREDICTIVE TAB -->
+            <div id="tab-predictive" class="tab-pane">
+                <div class="analytics-container">
+                    <h2>📈 PREDICTIVE ANALYTICS</h2>
+                    <p>Predictive analytics will load here</p>
+                </div>
+            </div>
+
+            <!-- HEATMAP TAB -->
+            <div id="tab-heatmap" class="tab-pane">
+                <div class="heatmap-container">
+                    <h2>🔥 ACTIVITY HEATMAP</h2>
+                    <p>Activity heatmap will load here</p>
+                </div>
+            </div>
+
+            <!-- AUTO-MOD TAB -->
+            <div id="tab-autoMod" class="tab-pane">
+                <div class="automod-container">
+                    <h2>🛡️ AUTO-MODERATION</h2>
+                    <p>Auto-moderation will load here</p>
+                </div>
+            </div>
+
+            <!-- PERFORMANCE TAB -->
+            <div id="tab-performance" class="tab-pane">
+                <div class="performance-container">
+                    <h2>📊 PERFORMANCE MONITOR</h2>
+                    <p>Performance monitor will load here</p>
+                </div>
+            </div>
+
+            <!-- DISCORD TAB -->
+            <div id="tab-discord" class="tab-pane">
+                <div class="discord-container">
+                    <h2>🔗 DISCORD INTEGRATION</h2>
+                    <p>Discord integration will load here</p>
+                </div>
+            </div>
+
+            <!-- VOICE TAB -->
+            <div id="tab-voice" class="tab-pane">
+                <div class="voice-container">
+                    <h2>🎤 VOICE COMMANDS</h2>
+                    <p>Voice commands will load here</p>
+                </div>
+            </div>
+
+            <!-- POLLS TAB -->
+            <div id="tab-polls" class="tab-pane">
+                <div class="polls-container">
+                    <h2>🗳️ COMMUNITY POLLS</h2>
+                    <p>Community polls will load here</p>
+                </div>
+            </div>
+
+            <!-- MOBILE TAB -->
+            <div id="tab-mobile" class="tab-pane">
+                <div class="mobile-container">
+                    <h2>📱 MOBILE SYNC</h2>
+                    <p>Mobile sync will load here</p>
+                </div>
+            </div>
+
+            <!-- RAID TAB -->
+            <div id="tab-raid" class="tab-pane">
+                <div class="raid-container">
+                    <h2>⚡ RAID DETECTOR</h2>
+                    <p>Raid detection will load here</p>
+                </div>
+            </div>
+
+            <!-- TRADING TAB -->
+            <div id="tab-trading" class="tab-pane">
+                <div class="trading-container">
+                    <h2>💰 TRADING FLOOR</h2>
+                    <p>Trading floor will load here</p>
+                </div>
+            </div>
+
+            <!-- DEFENSE TAB -->
+            <div id="tab-defense" class="tab-pane">
+                <div class="defense-container">
+                    <h2>🛡️ BASE DEFENSE SIMULATOR</h2>
+                    <p>Base defense simulator will load here</p>
+                </div>
+            </div>
+
+            <!-- ALLIANCE TAB -->
+            <div id="tab-alliance" class="tab-pane">
+                <div class="alliance-container">
+                    <h2>🤝 ALLIANCE NETWORK</h2>
+                    <p>Alliance network will load here</p>
+                </div>
+            </div>
+
+            <!-- 3D MAP TAB -->
+            <div id="tab-map3d" class="tab-pane">
+                <div class="map3d-container">
+                    <h2>🏔️ 3D MAP VIEW</h2>
+                    <p>3D map view will load here</p>
+                </div>
+            </div>
+
+            <!-- DRAINED AI TAB -->
+            <div id="tab-drainedAI" class="tab-pane">
+                <div class="ai-container">
+                    <h2>🤖 DRAINED AI</h2>
+                    <p>AI assistant will load here</p>
+                </div>
+            </div>
+
+            <!-- BACKUP TAB -->
+            <div id="tab-backup" class="tab-pane">
+                <div class="backup-container">
+                    <h2>💾 BACKUP & RESTORE</h2>
+                    <p>Backup system will load here</p>
+                </div>
+            </div>        </div> <!-- Close tab-content -->
+    </div> <!-- Close dashboard -->
 
     <!-- LOADING OVERLAY -->
     <div id="loading" class="loading hidden">LOADING...</div>
@@ -210,7 +502,7 @@
     <!-- TOAST NOTIFICATION -->
     <div id="toast" class="toast hidden"></div>
 
-    <!-- SCRIPTS – all 63 JS files (will be added in order) -->
+    <!-- SCRIPTS -->
     <script src="js/core.js"></script>
     <script src="js/security.js"></script>
     <script src="js/securityDoor.js"></script>
