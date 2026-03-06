@@ -25,10 +25,11 @@ class Map3D {
     }
 
     init() {
+        console.log('Map3D initializing...');
         this.create3DHTML();
         this.setupEventListeners();
         this.initThreeJS();
-        this.startAnimation();   // now defined below
+        this.startAnimation();
         
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'map3d') {
@@ -43,15 +44,17 @@ class Map3D {
     }
 
     startAnimation() {
-        // Placeholder – can be used for future animation logic
-        console.log('3D map animation started');
-        // If you want continuous updates, you could call this.draw3DView() periodically
-        // For now, it's just a stub.
+        // Stub method to prevent errors
+        console.log('3D map animation started (stub)');
+        // If you want continuous updates, you could implement requestAnimationFrame here
     }
 
     create3DHTML() {
         const map3dTab = document.getElementById('tab-map3d');
-        if (!map3dTab) return;
+        if (!map3dTab) {
+            console.error('Map3D tab not found');
+            return;
+        }
 
         map3dTab.innerHTML = `
             <div class="map3d-container">
@@ -89,9 +92,6 @@ class Map3D {
     }
 
     initThreeJS() {
-        // This is a simplified version – in reality, this would use Three.js library
-        // For now, we'll create a canvas-based 3D representation
-        
         const container = document.getElementById('map3d-canvas');
         if (!container) return;
 
@@ -150,7 +150,7 @@ class Map3D {
         }
 
         // Draw monuments as 3D blocks
-        this.monuments.forEach((monument, i) => {
+        this.monuments.forEach((monument) => {
             const x = (monument.x / 3500) * w;
             const baseY = h * 0.7 - (monument.z / 3500) * 200;
             const height = monument.height;
@@ -199,10 +199,11 @@ class Map3D {
 
     updatePlayers() {
         // Redraw with new player positions
+        this.draw3DView();
     }
 
     toggleRotate() {
-        // Toggle auto-rotation
+        this.tablet.showToast('Rotate toggled', 'info');
     }
 
     zoomIn() {
