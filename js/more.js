@@ -8,6 +8,7 @@ class MoreTools {
     }
 
     init() {
+        console.log('MoreTools initializing...');
         this.createMoreHTML();
         this.setupEventListeners();
         
@@ -20,7 +21,10 @@ class MoreTools {
 
     createMoreHTML() {
         const moreTab = document.getElementById('tab-more');
-        if (!moreTab) return;
+        if (!moreTab) {
+            console.error('More tab element not found');
+            return;
+        }
 
         moreTab.innerHTML = `
             <div class="more-container">
@@ -28,10 +32,7 @@ class MoreTools {
                     <h2>📊 MORE TOOLS</h2>
                     <p>All additional dashboard features</p>
                 </div>
-
-                <div class="more-grid" id="more-grid">
-                    <!-- Grid will be populated dynamically -->
-                </div>
+                <div class="more-grid" id="more-grid"></div>
             </div>
         `;
 
@@ -39,14 +40,23 @@ class MoreTools {
     }
 
     setupEventListeners() {
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('more-card')) {
-                const tab = e.target.dataset.tab;
-                if (tab) {
-                    this.switchToTab(tab);
+        console.log('Setting up more tools event listeners');
+        
+        // Use event delegation on the grid itself
+        const grid = document.getElementById('more-grid');
+        if (grid) {
+            grid.addEventListener('click', (e) => {
+                // Find the closest card element
+                const card = e.target.closest('.more-card');
+                if (card) {
+                    const tab = card.dataset.tab;
+                    console.log(`More card clicked: ${tab}`);
+                    if (tab) {
+                        this.switchToTab(tab);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     renderGrid() {
@@ -101,24 +111,38 @@ class MoreTools {
         });
 
         grid.innerHTML = html;
+        console.log(`Rendered ${tools.length} more tools`);
     }
 
     switchToTab(tabId) {
+        console.log(`MoreTools switching to tab: ${tabId}`);
+        
+        // Try using homeTab first if available
+        if (window.homeTab && typeof window.homeTab.switchToTab === 'function') {
+            window.homeTab.switchToTab(tabId);
+            return;
+        }
+        
+        // Fallback: manual tab switching
         // Hide all tab panes
         document.querySelectorAll('.tab-pane').forEach(pane => {
             pane.classList.remove('active');
         });
+        
         // Show the selected tab pane
         const targetPane = document.getElementById(`tab-${tabId}`);
         if (targetPane) {
             targetPane.classList.add('active');
             window.dispatchEvent(new CustomEvent('tab-changed', { detail: { tab: tabId } }));
+            console.log(`Successfully switched to tab: ${tabId}`);
         } else {
-            console.warn(`Tab pane not found: tab-${tabId}`);
+            console.error(`Tab pane not found: tab-${tabId}`);
+            this.tablet.showError(`Tab "${tabId}" not found`);
         }
     }
 
     refresh() {
+        console.log('Refreshing more tools');
         this.renderGrid();
         this.tablet.showToast('More tools refreshed', 'success');
     }
