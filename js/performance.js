@@ -217,17 +217,29 @@ class PerformanceMonitor {
         const lastFps = this.metrics.fps[this.metrics.fps.length - 1]?.value || 60;
         const lastPlayers = this.metrics.players[this.metrics.players.length - 1]?.value || 0;
 
-        document.getElementById('cpu-gauge').querySelector('.gauge-fill').style.width = lastCpu + '%';
-        document.getElementById('cpu-value').innerText = lastCpu + '%';
-        
-        document.getElementById('ram-gauge').querySelector('.gauge-fill').style.width = lastRam + '%';
-        document.getElementById('ram-value').innerText = lastRam + '%';
-        
-        document.getElementById('fps-gauge').querySelector('.gauge-fill').style.width = (lastFps / 60 * 100) + '%';
-        document.getElementById('fps-value').innerText = lastFps;
-        
-        document.getElementById('players-gauge').querySelector('.gauge-fill').style.width = (lastPlayers / 100 * 100) + '%';
-        document.getElementById('players-value').innerText = lastPlayers + '/100';
+        const cpuGauge = document.getElementById('cpu-gauge');
+        const cpuFill = cpuGauge?.querySelector('.gauge-fill');
+        const cpuVal = document.getElementById('cpu-value');
+        if (cpuFill) cpuFill.style.width = lastCpu + '%';
+        if (cpuVal) cpuVal.innerText = lastCpu + '%';
+
+        const ramGauge = document.getElementById('ram-gauge');
+        const ramFill = ramGauge?.querySelector('.gauge-fill');
+        const ramVal = document.getElementById('ram-value');
+        if (ramFill) ramFill.style.width = lastRam + '%';
+        if (ramVal) ramVal.innerText = lastRam + '%';
+
+        const fpsGauge = document.getElementById('fps-gauge');
+        const fpsFill = fpsGauge?.querySelector('.gauge-fill');
+        const fpsVal = document.getElementById('fps-value');
+        if (fpsFill) fpsFill.style.width = (lastFps / 60 * 100) + '%';
+        if (fpsVal) fpsVal.innerText = lastFps;
+
+        const playersGauge = document.getElementById('players-gauge');
+        const playersFill = playersGauge?.querySelector('.gauge-fill');
+        const playersVal = document.getElementById('players-value');
+        if (playersFill) playersFill.style.width = (lastPlayers / 100 * 100) + '%';
+        if (playersVal) playersVal.innerText = lastPlayers + '/100';
     }
 
     drawChart() {
@@ -322,6 +334,8 @@ class PerformanceMonitor {
 
     renderAlerts() {
         const list = document.getElementById('alerts-list');
+        if (!list) return;
+        
         let html = '';
 
         this.alerts.forEach(alert => {
