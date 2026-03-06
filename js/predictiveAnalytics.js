@@ -128,7 +128,7 @@ class PredictiveAnalytics {
         this.predictPeakHours();
         this.calculateRaidRisk();
         this.calculateRetention();
-        this.renderPredictions();
+        this.renderPredictions();  // now safe because we added guards
         this.drawTrendChart();
     }
 
@@ -249,38 +249,39 @@ class PredictiveAnalytics {
     }
 
     renderPredictions() {
+        // Guard: if predictions object isn't fully built, return
         if (!this.predictions.wipe) return;
 
-        document.getElementById('wipe-prediction').innerText = 
-            this.predictions.wipe.date.toLocaleDateString();
-        document.getElementById('wipe-confidence').innerHTML = 
-            `<progress value="${this.predictions.wipe.confidence}" max="100"></progress>
-             ${this.predictions.wipe.confidence}% confidence - ${this.predictions.wipe.reason}`;
+        const wipeEl = document.getElementById('wipe-prediction');
+        if (wipeEl) wipeEl.innerText = this.predictions.wipe.date?.toLocaleDateString() || 'Calculating...';
 
-        document.getElementById('peak-prediction').innerText = 
-            this.predictions.peak.formatted;
-        
-        document.getElementById('raid-risk').innerHTML = `
-            <span class="risk-${this.predictions.raid.riskLevel.toLowerCase()}">
-                ${this.predictions.raid.riskLevel} (${this.predictions.raid.probability}%)
-            </span>
-        `;
+        const confEl = document.getElementById('wipe-confidence');
+        if (confEl) {
+            confEl.innerHTML = `<progress value="${this.predictions.wipe.confidence || 0}" max="100"></progress> ${this.predictions.wipe.confidence || 0}% confidence - ${this.predictions.wipe.reason || ''}`;
+        }
+
+        const peakEl = document.getElementById('peak-prediction');
+        if (peakEl) peakEl.innerText = this.predictions.peak?.formatted || 'Calculating...';
+
+        const raidEl = document.getElementById('raid-risk');
+        if (raidEl) {
+            raidEl.innerHTML = `<span class="risk-${this.predictions.raid?.riskLevel?.toLowerCase() || 'low'}">${this.predictions.raid?.riskLevel || 'LOW'} (${this.predictions.raid?.probability || 0}%)</span>`;
+        }
 
         const riskList = document.getElementById('risk-areas');
-        if (riskList && this.predictions.raid.topAreas) {
+        if (riskList && this.predictions.raid?.topAreas) {
             riskList.innerHTML = this.predictions.raid.topAreas.map(area => 
-                `<div class="risk-area">
-                    <span>${area.name}</span>
-                    <progress value="${area.risk}" max="100"></progress>
-                    <span>${area.risk}%</span>
-                </div>`
+                `<div class="risk-area"><span>${area.name}</span><progress value="${area.risk}" max="100"></progress><span>${area.risk}%</span></div>`
             ).join('');
         }
 
-        document.getElementById('retention').innerText = 
-            `${this.predictions.retention.rate}% weekly retention`;
-        document.getElementById('retention-trend').innerHTML = 
-            `New: ${this.predictions.retention.newPlayers} | Returning: ${this.predictions.retention.returning}`;
+        const retEl = document.getElementById('retention');
+        if (retEl) retEl.innerText = `${this.predictions.retention?.rate || 0}% weekly retention`;
+
+        const trendEl = document.getElementById('retention-trend');
+        if (trendEl) {
+            trendEl.innerHTML = `New: ${this.predictions.retention?.newPlayers || 0} | Returning: ${this.predictions.retention?.returning || 0}`;
+        }
     }
 
     drawTrendChart() {
