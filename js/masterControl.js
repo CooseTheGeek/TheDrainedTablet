@@ -13,7 +13,7 @@ class MasterControl {
     init() {
         this.createUI();
         this.loadUsers();
-        this.setupEventListeners();
+        // REMOVED: this.setupEventListeners(); – not needed, listeners are set in createUI
     }
 
     createUI() {
@@ -65,6 +65,7 @@ class MasterControl {
             </div>
         `;
 
+        // Event listeners are attached here directly
         document.getElementById('add-user-btn')?.addEventListener('click', () => this.addUser());
         document.getElementById('change-master-code')?.addEventListener('click', () => this.changeMasterCode());
         document.getElementById('change-backup-code')?.addEventListener('click', () => this.changeBackupCode());
@@ -207,7 +208,7 @@ class MasterControl {
             return;
         }
 
-        this.tablet.masterCode = newCode;
+        this.tablet.backupCode = newCode;
         this.tablet.showToast('Backup code changed', 'success');
     }
 
@@ -218,7 +219,7 @@ class MasterControl {
             users: this.users,
             settings: {
                 accessCode: this.tablet.accessCode,
-                masterCode: this.tablet.masterCode
+                backupCode: this.tablet.backupCode
             },
             timestamp: new Date().toISOString()
         };
