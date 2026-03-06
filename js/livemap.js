@@ -17,11 +17,14 @@ class LiveMap {
         this.lastX = 0;
         this.lastY = 0;
         this.markers = [];
+        this.mapLoaded = false;
+        this.useFallback = false;
         
         this.init();
     }
 
     init() {
+        console.log('LiveMap initializing...');
         this.setupCanvas();
         this.setupEventListeners();
         this.loadMap();
@@ -29,7 +32,9 @@ class LiveMap {
         // Listen for player updates
         window.addEventListener('players-updated', (e) => {
             this.players = e.detail.players;
-            this.drawMap();
+            if (this.mapLoaded || this.useFallback) {
+                this.drawMap();
+            }
         });
 
         // Listen for tab changes
@@ -47,7 +52,10 @@ class LiveMap {
 
     setupCanvas() {
         this.canvas = document.getElementById('live-map');
-        if (!this.canvas) return;
+        if (!this.canvas) {
+            console.error('Live map canvas not found');
+            return;
+        }
         
         this.ctx = this.canvas.getContext('2d');
         this.resizeCanvas();
@@ -63,13 +71,12 @@ class LiveMap {
         
         this.canvas.width = containerWidth;
         this.canvas.height = containerWidth * 0.5; // 2:1 aspect ratio
-        this.drawMap(); // redraw after resize
+        if (this.mapLoaded || this.useFallback) {
+            this.drawMap();
+        }
     }
 
     setupEventListeners() {
-        // Map controls (buttons are in HTML, we'll handle clicks)
-        // We can add refresh button listener if needed, but core already emits map-refresh
-        
         // Canvas interactions
         if (this.canvas) {
             this.canvas.addEventListener('mousedown', (e) => this.startDrag(e));
@@ -87,9 +94,11 @@ class LiveMap {
         // Get map URL from GPortal
         const ip = this.tablet.serverConfig.ip;
         const mapPort = 28016; // Default GPortal map port
-        this.mapUrl = `http://${ip}:${mapPort}/map.png`;
-
-        // Update status (maybe show loading)
+        
+        // Try HTTPS first, then fallback to HTTP (will be blocked but we have grid fallback)
+        this.mapUrl = `https://${ip}:${mapPort}/map.png`;
+        
+        // Update status
         const coordsEl = document.querySelector('.map-coords');
         if (coordsEl) coordsEl.innerText = 'Loading map...';
 
@@ -98,13 +107,32 @@ class LiveMap {
         this.mapImage.src = this.mapUrl;
 
         this.mapImage.onload = () => {
+            console.log('Map image loaded successfully');
+            this.mapLoaded = true;
+            this.useFallback = false;
             this.drawMap();
             if (coordsEl) coordsEl.innerText = 'Map loaded';
         };
 
         this.mapImage.onerror = () => {
+            console.warn('Failed to load map image over HTTPS, using grid fallback');
+            this.mapLoaded = false;
+            this.useFallback = true;
             this.drawGrid();
             if (coordsEl) coordsEl.innerText = 'Map unavailable - showing grid';
+            
+            // Try HTTP as last resort (will be blocked by mixed content, but we already have fallback)
+            const httpUrl = `http://${ip}:${mapPort}/map.png`;
+            const httpImg = new Image();
+            httpImg.src = httpUrl;
+            httpImg.onload = () => {
+                console.log('Map image loaded over HTTP');
+                this.mapImage = httpImg;
+                this.mapLoaded = true;
+                this.useFallback = false;
+                this.drawMap();
+                if (coordsEl) coordsEl.innerText = 'Map loaded (HTTP)';
+            };
         };
     }
 
@@ -119,7 +147,7 @@ class LiveMap {
         this.ctx.scale(this.zoom, this.zoom);
 
         // Draw map or grid
-        if (this.mapImage && this.mapImage.complete) {
+        if (this.mapLoaded && this.mapImage && this.mapImage.complete) {
             this.ctx.drawImage(this.mapImage, 0, 0, this.canvas.width / this.zoom, this.canvas.height / this.zoom);
         } else {
             this.drawGrid();
@@ -138,6 +166,11 @@ class LiveMap {
         const height = this.canvas.height / this.zoom;
         const gridSize = 50 / this.zoom;
 
+        // Fill background
+        this.ctx.fillStyle = '#0a0a0a';
+        this.ctx.fillRect(0, 0, width, height);
+
+        // Draw grid lines
         this.ctx.strokeStyle = 'rgba(255, 177, 0, 0.2)';
         this.ctx.lineWidth = 1 / this.zoom;
 
@@ -168,6 +201,14 @@ class LiveMap {
             this.ctx.fillText(String.fromCharCode(65 + i), x / this.zoom, 20 / this.zoom);
             this.ctx.fillText((i + 1).toString(), 10 / this.zoom, y / this.zoom);
         }
+
+        // Draw "MAP UNAVAILABLE" text
+        this.ctx.font = `${24 / this.zoom}px 'Inter'`;
+        this.ctx.fillStyle = 'rgba(255, 177, 0, 0.5)';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('MAP UNAVAILABLE', width / 2, height / 2 - 20 / this.zoom);
+        this.ctx.font = `${16 / this.zoom}px 'Inter'`;
+        this.ctx.fillText('Using grid fallback', width / 2, height / 2 + 20 / this.zoom);
     }
 
     drawPlayers() {
@@ -181,11 +222,9 @@ class LiveMap {
             if (!player.position) return; // skip if no position data
             
             // Convert world coordinates to pixel coordinates
-            // This is a simple linear mapping assuming world 0,0 maps to canvas center
-            // In a real implementation, you would use the calibration anchors
-            // For now, we'll use a placeholder mapping
-            const x = (player.position.x / mapSize) * width + width/2;
-            const y = (player.position.z / mapSize) * height + height/2;
+            // Simple linear mapping (can be improved with calibration data)
+            const x = (player.position.x / mapSize + 0.5) * width;
+            const y = (player.position.z / mapSize + 0.5) * height;
 
             // Draw player dot
             this.ctx.beginPath();
@@ -247,8 +286,8 @@ class LiveMap {
         const y = ((e.clientY - rect.top - this.panY) * scaleY) / this.zoom;
 
         const mapSize = this.tablet.serverConfig.mapSize || 3500;
-        const gameX = Math.round((x / (this.canvas.width / this.zoom)) * mapSize - mapSize/2);
-        const gameZ = Math.round((y / (this.canvas.height / this.zoom)) * mapSize - mapSize/2);
+        const gameX = Math.round((x / (this.canvas.width / this.zoom) - 0.5) * mapSize);
+        const gameZ = Math.round((y / (this.canvas.height / this.zoom) - 0.5) * mapSize);
 
         const coordsEl = document.querySelector('.map-coords');
         if (coordsEl) {
@@ -257,6 +296,7 @@ class LiveMap {
     }
 
     refresh() {
+        console.log('Refreshing live map');
         this.loadMap();
     }
 }
