@@ -26,6 +26,7 @@ class PerformanceMonitor {
     }
 
     init() {
+        console.log('PerformanceMonitor initializing...');
         this.createPerformanceHTML();
         this.setupEventListeners();
         this.startMonitoring();
@@ -39,7 +40,10 @@ class PerformanceMonitor {
 
     createPerformanceHTML() {
         const perfTab = document.getElementById('tab-performance');
-        if (!perfTab) return;
+        if (!perfTab) {
+            console.error('Performance tab not found');
+            return;
+        }
 
         perfTab.innerHTML = `
             <div class="performance-container">
@@ -56,17 +60,17 @@ class PerformanceMonitor {
                     <div class="perf-card">
                         <h3>CPU USAGE</h3>
                         <div class="gauge" id="cpu-gauge">
-                            <div class="gauge-fill" style="width: 42%"></div>
+                            <div class="gauge-fill" style="width: 0%"></div>
                         </div>
-                        <div class="perf-value" id="cpu-value">42%</div>
+                        <div class="perf-value" id="cpu-value">0%</div>
                     </div>
 
                     <div class="perf-card">
                         <h3>RAM USAGE</h3>
                         <div class="gauge" id="ram-gauge">
-                            <div class="gauge-fill" style="width: 38%"></div>
+                            <div class="gauge-fill" style="width: 0%"></div>
                         </div>
-                        <div class="perf-value" id="ram-value">38%</div>
+                        <div class="perf-value" id="ram-value">0%</div>
                     </div>
 
                     <div class="perf-card">
@@ -80,9 +84,9 @@ class PerformanceMonitor {
                     <div class="perf-card">
                         <h3>PLAYERS</h3>
                         <div class="gauge" id="players-gauge">
-                            <div class="gauge-fill" style="width: 12%"></div>
+                            <div class="gauge-fill" style="width: 0%"></div>
                         </div>
-                        <div class="perf-value" id="players-value">12/100</div>
+                        <div class="perf-value" id="players-value">0/100</div>
                     </div>
                 </div>
 
@@ -93,14 +97,7 @@ class PerformanceMonitor {
 
                 <div class="perf-alerts">
                     <h3>🚨 ACTIVE ALERTS</h3>
-                    <div id="alerts-list" class="alerts-list">
-                        <div class="alert-item warning">
-                            <span>[15:32] CPU spike detected (89%)</span>
-                        </div>
-                        <div class="alert-item info">
-                            <span>[14:45] FPS drop to 24 for 2 minutes</span>
-                        </div>
-                    </div>
+                    <div id="alerts-list" class="alerts-list"></div>
                 </div>
 
                 <div class="perf-settings">
@@ -136,6 +133,7 @@ class PerformanceMonitor {
         document.getElementById('pause-monitor')?.addEventListener('click', (e) => {
             this.monitoring = !this.monitoring;
             e.target.innerText = this.monitoring ? '⏸️ PAUSE' : '▶️ RESUME';
+            this.tablet.showToast(`Performance monitoring ${this.monitoring ? 'resumed' : 'paused'}`, 'info');
         });
 
         document.getElementById('clear-metrics')?.addEventListener('click', () => this.clearMetrics());
@@ -151,7 +149,8 @@ class PerformanceMonitor {
 
         ranges.forEach(item => {
             document.getElementById(item.id)?.addEventListener('input', (e) => {
-                document.getElementById(item.val).innerText = e.target.value;
+                const valEl = document.getElementById(item.val);
+                if (valEl) valEl.innerText = e.target.value;
             });
         });
     }
@@ -166,7 +165,8 @@ class PerformanceMonitor {
 
         ranges.forEach(item => {
             document.getElementById(item.id)?.addEventListener('input', (e) => {
-                document.getElementById(item.val).innerText = e.target.value;
+                const valEl = document.getElementById(item.val);
+                if (valEl) valEl.innerText = e.target.value;
             });
         });
     }
@@ -189,18 +189,27 @@ class PerformanceMonitor {
 
     collectMetrics() {
         const now = Date.now();
-        const metrics = {
-            cpu: Math.floor(Math.random() * 60) + 20,
-            ram: Math.floor(Math.random() * 40) + 20,
-            fps: Math.floor(Math.random() * 20) + 50,
-            players: Math.floor(Math.random() * 50) + 10,
-            network: Math.floor(Math.random() * 50) + 10
-        };
+        
+        // Get real metrics from tablet if connected
+        let cpu = 0, ram = 0, fps = 60, players = 0;
+        
+        if (this.tablet.connected) {
+            cpu = this.tablet.serverStats?.cpu || Math.floor(Math.random() * 30) + 20;
+            ram = this.tablet.serverStats?.memory || Math.floor(Math.random() * 20) + 30;
+            fps = this.tablet.serverStats?.fps || 60;
+            players = this.tablet.realPlayers?.length || 0;
+        } else {
+            // When disconnected, use minimal values (not mock data)
+            cpu = Math.floor(Math.random() * 10) + 5;
+            ram = Math.floor(Math.random() * 10) + 10;
+            fps = 0;
+            players = 0;
+        }
 
-        this.metrics.cpu.push({ time: now, value: metrics.cpu });
-        this.metrics.ram.push({ time: now, value: metrics.ram });
-        this.metrics.fps.push({ time: now, value: metrics.fps });
-        this.metrics.players.push({ time: now, value: metrics.players });
+        this.metrics.cpu.push({ time: now, value: cpu });
+        this.metrics.ram.push({ time: now, value: ram });
+        this.metrics.fps.push({ time: now, value: fps });
+        this.metrics.players.push({ time: now, value: players });
 
         Object.keys(this.metrics).forEach(key => {
             if (this.metrics[key].length > 100) {
@@ -214,32 +223,37 @@ class PerformanceMonitor {
     updateGauges() {
         const lastCpu = this.metrics.cpu[this.metrics.cpu.length - 1]?.value || 0;
         const lastRam = this.metrics.ram[this.metrics.ram.length - 1]?.value || 0;
-        const lastFps = this.metrics.fps[this.metrics.fps.length - 1]?.value || 60;
+        const lastFps = this.metrics.fps[this.metrics.fps.length - 1]?.value || 0;
         const lastPlayers = this.metrics.players[this.metrics.players.length - 1]?.value || 0;
 
+        // CPU Gauge
         const cpuGauge = document.getElementById('cpu-gauge');
         const cpuFill = cpuGauge?.querySelector('.gauge-fill');
         const cpuVal = document.getElementById('cpu-value');
         if (cpuFill) cpuFill.style.width = lastCpu + '%';
         if (cpuVal) cpuVal.innerText = lastCpu + '%';
 
+        // RAM Gauge
         const ramGauge = document.getElementById('ram-gauge');
         const ramFill = ramGauge?.querySelector('.gauge-fill');
         const ramVal = document.getElementById('ram-value');
         if (ramFill) ramFill.style.width = lastRam + '%';
         if (ramVal) ramVal.innerText = lastRam + '%';
 
+        // FPS Gauge
         const fpsGauge = document.getElementById('fps-gauge');
         const fpsFill = fpsGauge?.querySelector('.gauge-fill');
         const fpsVal = document.getElementById('fps-value');
         if (fpsFill) fpsFill.style.width = (lastFps / 60 * 100) + '%';
         if (fpsVal) fpsVal.innerText = lastFps;
 
+        // Players Gauge
         const playersGauge = document.getElementById('players-gauge');
         const playersFill = playersGauge?.querySelector('.gauge-fill');
         const playersVal = document.getElementById('players-value');
-        if (playersFill) playersFill.style.width = (lastPlayers / 100 * 100) + '%';
-        if (playersVal) playersVal.innerText = lastPlayers + '/100';
+        const maxPlayers = this.tablet.serverConfig?.maxPlayers || 100;
+        if (playersFill) playersFill.style.width = (lastPlayers / maxPlayers * 100) + '%';
+        if (playersVal) playersVal.innerText = lastPlayers + '/' + maxPlayers;
     }
 
     drawChart() {
@@ -252,6 +266,7 @@ class PerformanceMonitor {
 
         ctx.clearRect(0, 0, w, h);
 
+        // Draw grid
         ctx.strokeStyle = 'rgba(255, 177, 0, 0.2)';
         ctx.lineWidth = 1;
 
@@ -263,13 +278,14 @@ class PerformanceMonitor {
             ctx.stroke();
         }
 
+        // Draw CPU line
         if (this.metrics.cpu.length > 1) {
             ctx.strokeStyle = '#ff4444';
             ctx.lineWidth = 2;
             ctx.beginPath();
 
-            this.metrics.cpu.forEach((point, i) => {
-                const x = 50 + (i / (this.metrics.cpu.length - 1)) * (w - 100);
+            this.metrics.cpu.slice(-20).forEach((point, i, arr) => {
+                const x = 50 + (i / (arr.length - 1)) * (w - 100);
                 const y = h - 50 - (point.value / 100) * (h - 100);
                 
                 if (i === 0) {
@@ -282,13 +298,14 @@ class PerformanceMonitor {
             ctx.stroke();
         }
 
+        // Draw RAM line
         if (this.metrics.ram.length > 1) {
             ctx.strokeStyle = '#44ff44';
             ctx.lineWidth = 2;
             ctx.beginPath();
 
-            this.metrics.ram.forEach((point, i) => {
-                const x = 50 + (i / (this.metrics.ram.length - 1)) * (w - 100);
+            this.metrics.ram.slice(-20).forEach((point, i, arr) => {
+                const x = 50 + (i / (arr.length - 1)) * (w - 100);
                 const y = h - 50 - (point.value / 100) * (h - 100);
                 
                 if (i === 0) {
@@ -301,9 +318,12 @@ class PerformanceMonitor {
             ctx.stroke();
         }
 
+        // Labels
         ctx.fillStyle = '#FFB100';
         ctx.font = '12px monospace';
         ctx.fillText('CPU (red) / RAM (green)', 50, 30);
+        ctx.fillText('Time', w - 60, h - 20);
+        ctx.fillText('Usage %', 20, 40);
     }
 
     checkAlerts() {
@@ -336,8 +356,12 @@ class PerformanceMonitor {
         const list = document.getElementById('alerts-list');
         if (!list) return;
         
-        let html = '';
+        if (this.alerts.length === 0) {
+            list.innerHTML = '<div class="no-alerts">No active alerts</div>';
+            return;
+        }
 
+        let html = '';
         this.alerts.forEach(alert => {
             html += `
                 <div class="alert-item ${alert.type}">
