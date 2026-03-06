@@ -28,9 +28,16 @@ class HomeTab {
         });
 
         // Profile link click
-        document.getElementById('profile-link')?.addEventListener('click', () => {
-            this.switchToTab('owner'); // Owner commands includes profile
-        });
+        const profileLink = document.getElementById('profile-link');
+        if (profileLink) {
+            profileLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Profile link clicked - switching to owner tab');
+                this.switchToTab('owner');
+            });
+        } else {
+            console.warn('Profile link element not found');
+        }
 
         // Listen for player updates from core
         window.addEventListener('players-updated', (e) => {
@@ -58,10 +65,13 @@ class HomeTab {
     }
 
     switchToTab(tabId) {
+        console.log(`Switching to tab: ${tabId}`);
+        
         // Hide all tab panes
         document.querySelectorAll('.tab-pane').forEach(pane => {
             pane.classList.remove('active');
         });
+        
         // Show the selected tab pane
         const targetPane = document.getElementById(`tab-${tabId}`);
         if (targetPane) {
@@ -69,6 +79,14 @@ class HomeTab {
             window.dispatchEvent(new CustomEvent('tab-changed', { detail: { tab: tabId } }));
         } else {
             console.warn(`Tab pane not found: tab-${tabId}`);
+            // Try to find by exact ID match (without tab- prefix)
+            const altPane = document.getElementById(tabId);
+            if (altPane) {
+                altPane.classList.add('active');
+                window.dispatchEvent(new CustomEvent('tab-changed', { detail: { tab: tabId } }));
+            } else {
+                this.tablet.showError(`Tab "${tabId}" not found`);
+            }
         }
     }
 
