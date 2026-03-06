@@ -46,6 +46,7 @@ class ServerConnector {
     }
 
     init() {
+        console.log('ServerConnector initializing...');
         this.createConnectorHTML();
         this.setupEventListeners();
         
@@ -58,7 +59,10 @@ class ServerConnector {
 
     createConnectorHTML() {
         const connectorTab = document.getElementById('tab-serverConnect');
-        if (!connectorTab) return;
+        if (!connectorTab) {
+            console.error('Server connector tab not found');
+            return;
+        }
 
         connectorTab.innerHTML = `
             <div class="connector-container">
@@ -76,9 +80,9 @@ class ServerConnector {
                     <div class="quick-connect">
                         <h3>QUICK CONNECT</h3>
                         <div class="quick-connect-form">
-                            <input type="text" id="quick-ip" placeholder="IP Address">
-                            <input type="number" id="quick-port" placeholder="Port" value="28916">
-                            <input type="password" id="quick-pass" placeholder="Password">
+                            <input type="text" id="quick-ip" placeholder="IP Address" value="${this.tablet.serverConfig.ip}">
+                            <input type="number" id="quick-port" placeholder="Port" value="${this.tablet.serverConfig.rconPort}">
+                            <input type="password" id="quick-pass" placeholder="Password" value="${this.tablet.serverConfig.password}">
                             <select id="quick-platform">
                                 <option value="xbox">Xbox Series X|S</option>
                                 <option value="xboxone">Xbox One</option>
@@ -107,11 +111,11 @@ class ServerConnector {
                         <div id="current-status" class="status-panel">
                             <div class="status-row">
                                 <span>Server:</span>
-                                <span id="status-server">Not connected</span>
+                                <span id="status-server">${this.currentServer ? this.getServerName(this.currentServer) : 'Not connected'}</span>
                             </div>
                             <div class="status-row">
                                 <span>IP:</span>
-                                <span id="status-ip">-</span>
+                                <span id="status-ip">${this.tablet.serverConfig.ip}:${this.tablet.serverConfig.rconPort}</span>
                             </div>
                             <div class="status-row">
                                 <span>Platform:</span>
@@ -215,6 +219,11 @@ class ServerConnector {
         this.updateStatus();
     }
 
+    getServerName(serverId) {
+        const server = this.servers.find(s => s.id === serverId);
+        return server ? server.name : 'Unknown';
+    }
+
     setupEventListeners() {
         document.getElementById('add-server')?.addEventListener('click', () => this.openServerModal());
         document.getElementById('quick-connect-btn')?.addEventListener('click', () => this.quickConnect());
@@ -256,8 +265,9 @@ class ServerConnector {
         let html = '';
         this.servers.forEach(server => {
             const isFavorite = server.favorite ? '★' : '☆';
+            const isCurrent = server.id === this.currentServer;
             html += `
-                <div class="server-card ${server.id === this.currentServer ? 'connected' : ''}">
+                <div class="server-card ${isCurrent ? 'connected' : ''}">
                     <div class="server-header">
                         <span class="server-name">${server.name}</span>
                         <span class="server-fav" data-id="${server.id}">${isFavorite}</span>
@@ -280,6 +290,7 @@ class ServerConnector {
 
     renderHistory() {
         const container = document.getElementById('history-container');
+        if (!container) return;
         
         if (this.connectionHistory.length === 0) {
             container.innerHTML = '<div class="no-history">No connection history</div>';
@@ -405,6 +416,15 @@ class ServerConnector {
             mapSeed: server.mapSeed
         };
 
+        // Update profile tab fields if they exist
+        const ipInput = document.getElementById('server-ip');
+        const portInput = document.getElementById('rcon-port');
+        const passInput = document.getElementById('rcon-pass');
+        
+        if (ipInput) ipInput.value = server.ip;
+        if (portInput) portInput.value = server.rconPort;
+        if (passInput) passInput.value = server.password;
+
         // Attempt connection
         this.tablet.connectToServer().then(success => {
             this.connectionHistory.unshift({
@@ -415,6 +435,11 @@ class ServerConnector {
             this.saveHistory();
             this.renderHistory();
             this.updateStatus(server);
+            
+            if (success) {
+                server.lastConnected = new Date().toISOString();
+                this.saveServers();
+            }
         });
 
         this.renderServers();
@@ -456,22 +481,22 @@ class ServerConnector {
             return;
         }
 
-        const server = {
-            id: 'temp_' + Date.now(),
-            name: ip + ':' + port,
-            ip: ip,
-            rconPort: port,
-            password: password,
-            mapSize: 3500,
-            mapSeed: 10325,
-            platform: platform,
-            region: region,
-            favorite: false,
-            temporary: true
-        };
+        // Update tablet config
+        this.tablet.serverConfig.ip = ip;
+        this.tablet.serverConfig.rconPort = port;
+        this.tablet.serverConfig.password = password;
 
-        this.connectToServer(server.id);
-        // Would need to add temp server to list
+        // Update profile tab fields
+        const ipInput = document.getElementById('server-ip');
+        const portInput = document.getElementById('rcon-port');
+        const passInput = document.getElementById('rcon-pass');
+        
+        if (ipInput) ipInput.value = ip;
+        if (portInput) portInput.value = port;
+        if (passInput) passInput.value = password;
+
+        // Connect
+        this.tablet.connectToServer();
     }
 
     testConnection() {
@@ -494,7 +519,7 @@ class ServerConnector {
             document.getElementById('status-latency').innerText = '24ms';
         } else {
             document.getElementById('status-server').innerText = 'Not connected';
-            document.getElementById('status-ip').innerText = '-';
+            document.getElementById('status-ip').innerText = this.tablet.serverConfig.ip + ':' + this.tablet.serverConfig.rconPort;
             document.getElementById('status-platform').innerText = '-';
             document.getElementById('status-region').innerText = '-';
             document.getElementById('status-latency').innerText = '-';
