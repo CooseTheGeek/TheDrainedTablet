@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>THE DRAINED TABLET | ULTIMATE EDITION v7.0.0</title>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3Ctext x='20' y='70' fill='%23FFB100' font-size='70' font-family='Arial'%3E⎔%3C/text%3E%3C/svg%3E">
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="The most comprehensive Rust Console server management dashboard ever created">
+    <meta name="author" content="Casey Steward (CooseTheGeek)">
+    <meta name="theme-color" content="#FFB100">
+</head>
+<body>
+    <!-- SECURITY DOOR LAYER - ALWAYS SHOWS FIRST (unless Chronicle is enabled) -->
+    <div id="security-door" class="security-door active">
+        <div class="door-container">
+            <div class="door-header">
+                <h1 class="door-title">⎔ DRAINED TABLET ⎔</h1>
+                <p class="door-subtitle">ENTER ACCESS CODE</p>
+            </div>
+            <!-- LED display -->
+            <div class="door-display">
+                <div class="code-dots" id="code-dots">
+                    <span class="dot" data-index="0"></span>
+                    <span class="dot" data-index="1"></span>
+                    <span class="dot" data-index="2"></span>
+                    <span class="dot" data-index="3"></span>
+                </div>
+                <div class="attempts" id="attempts">3 attempts remaining</div>
+                <div class="last-attempt" id="last-attempt">Last attempt: --:--</div>
+                <div class="lock-timer" id="lock-timer" style="display: none;"></div>
+            </div>
+            <!-- Numpad -->
+            <div class="door-numpad">
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="7">7</button>
+                    <button class="numpad-btn" data-num="8">8</button>
+                    <button class="numpad-btn" data-num="9">9</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="4">4</button>
+                    <button class="numpad-btn" data-num="5">5</button>
+                    <button class="numpad-btn" data-num="6">6</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="1">1</button>
+                    <button class="numpad-btn" data-num="2">2</button>
+                    <button class="numpad-btn" data-num="3">3</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn clear-btn" data-num="C">C</button>
+                    <button class="numpad-btn" data-num="0">0</button>
+                    <button class="numpad-btn enter-btn" data-num="E">E</button>
+                </div>
+            </div>
+            <div class="door-footer">
+                <button class="door-btn" id="unlock-btn">🔓 UNLOCK</button>
+                <button class="door-btn" id="clear-btn">🗑️ CLEAR</button>
+                <button class="door-btn" id="forgot-btn">❓ FORGOT?</button>
+            </div>
+            <div class="master-override">
+                <p>Master: <span class="master-name">CooseTheGeek</span></p>
+            </div>
+            <div class="door-version">v7.0.0 ULTIMATE</div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD - HIDDEN UNTIL UNLOCKED -->
+    <div id="dashboard" class="dashboard hidden">
+        <!-- HEADER -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1 class="tablet-title">⎔⎔⎔ THE DRAINED TABLET ⎔⎔⎔</h1>
+            </div>
+            <div class="header-right">
+                <div class="connection-info">
+                    <span class="connection-status" id="connection-status">
+                        <span class="dot offline"></span> DISCONNECTED
+                    </span>
+                    <span class="profile-link" id="profile-link" title="Click to view profile">👤 CooseTheGeek</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- HOME LAYOUT (three columns) -->
+        <div class="home-layout">
+            <!-- LEFT COLUMN – STATUS -->
+            <div class="panel left-panel">
+                <div class="panel-header">[ STATUS ]</div>
+                <div class="panel-content">
+                    <div class="gauge-container">
+                        <div class="gauge">
+                            <div class="gauge-circle" id="health-gauge">76</div>
+                            <div class="gauge-label">HEALTH</div>
+                        </div>
+                        <div class="gauge">
+                            <div class="gauge-circle" id="hydration-gauge">58/100</div>
+                            <div class="gauge-label">HYDRATION</div>
+                        </div>
+                        <div class="gauge">
+                            <div class="gauge-circle" id="food-gauge">87/100</div>
+                            <div class="gauge-label">FOOD</div>
+                        </div>
+                    </div>
+                    <div class="radiation-bar">
+                        <div class="bar-fill" id="radiation-fill" style="width: 3.5%;"></div>
+                        <span class="bar-text" id="radiation-text">35/9999</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER COLUMN – ARMOR & CHARACTER -->
+            <div class="panel center-panel">
+                <div class="panel-header">[ ARMOR ]</div>
+                <div class="panel-content">
+                    <div class="character-model" id="character-model">👤</div>
+                    <div class="armor-slots">
+                        <div class="slot" id="slot-head" title="Empty">🪖</div>
+                        <div class="slot" id="slot-chest" title="Empty">👕</div>
+                        <div class="slot" id="slot-hands" title="Empty">🧤</div>
+                        <div class="slot" id="slot-legs" title="Empty">👖</div>
+                        <div class="slot" id="slot-feet" title="Empty">👢</div>
+                    </div>
+                    <div class="armor-details" id="armor-details">
+                        • Metal Facemask (100%)<br>
+                        • Road Sign Jacket (80%)
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN – ACTIONS -->
+            <div class="panel right-panel">
+                <div class="panel-header">[ ACTIONS ]</div>
+                <div class="panel-content action-cards">
+                    <button class="action-card" data-tab="livemap">🗺️ LIVE MAP</button>
+                    <button class="action-card" data-tab="owner">👑 OWNER COMMANDS</button>
+                    <button class="action-card" data-tab="settings">⚙️ SERVER SETTINGS</button>
+                    <button class="action-card" data-tab="kits">🧰 KIT MAKER</button>
+                    <button class="action-card" data-tab="chat">💬 CHAT CENTER</button>
+                    <button class="action-card" data-tab="inventory">🎒 VIEW INVENTORY</button>
+                    <button class="action-card" data-tab="more">📊 MORE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            <div class="footer-left">⎔ DRAINED LAND · discord.gg/6UWy35tk</div>
+            <div class="footer-right" id="master-control-footer">👑 MASTER CONTROL</div>
+        </footer>
+
+        <!-- TAB CONTENT CONTAINERS (all pages) -->
+        <div id="tab-content" class="tab-content">
+            <!-- Livemap page -->
+            <div id="tab-livemap" class="tab-pane">
+                <div class="map-container">
+                    <h2>🗺️ LIVE MAP</h2>
+                    <canvas id="live-map" width="1200" height="600"></canvas>
+                    <div class="map-coords">X: <span id="coord-x">0</span> Z: <span id="coord-z">0</span></div>
+                </div>
+            </div>
+            <!-- Owner page (will be populated by JS) -->
+            <div id="tab-owner" class="tab-pane"></div>
+            <!-- Settings page -->
+            <div id="tab-settings" class="tab-pane"></div>
+            <!-- Kits page -->
+            <div id="tab-kits" class="tab-pane"></div>
+            <!-- Chat page -->
+            <div id="tab-chat" class="tab-pane"></div>
+            <!-- Inventory viewer page -->
+            <div id="tab-inventory" class="tab-pane"></div>
+            <!-- More page (grid of all other tools) -->
+            <div id="tab-more" class="tab-pane"></div>
+            <!-- All other tabs (clans, events, etc.) will be added dynamically -->
+        </div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loading" class="loading hidden">LOADING...</div>
+
+    <!-- ERROR MODAL -->
+    <div id="error-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>⚠️ ERROR</h2>
+            <p id="error-message"></p>
+            <button class="modal-btn" id="error-close">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>⚠️ CONFIRM ACTION</h2>
+            <p id="confirm-message"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn" id="confirm-yes">YES</button>
+                <button class="modal-btn" id="confirm-no">NO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- SCRIPTS – all 63 JS files (will be added in order) -->
+    <script src="core.js"></script>
+    <script src="security.js"></script>
+    <script src="securityDoor.js"></script>
+    <script src="home.js"></script>
+    <script src="livemap.js"></script>
+    <script src="items.js"></script>
+    <script src="decay.js"></script>
+    <script src="scheduler.js"></script>
+    <script src="zones.js"></script>
+    <script src="zorp.js"></script>
+    <script src="status.js"></script>
+    <script src="entities.js"></script>
+    <script src="events.js"></script>
+    <script src="global.js"></script>
+    <script src="inventory.js"></script>
+    <script src="kits.js"></script>
+    <script src="modifiers.js"></script>
+    <script src="players.js"></script>
+    <script src="spawn.js"></script>
+    <script src="inventoryViewer.js"></script>
+    <script src="kitVending.js"></script>
+    <script src="economy.js"></script>
+    <script src="profile.js"></script>
+    <script src="themeStudio.js"></script>
+    <script src="serverConnector.js"></script>
+    <script src="masterControl.js"></script>
+    <script src="chat.js"></script>
+    <script src="branding.js"></script>
+    <script src="halloween.js"></script>
+    <script src="monuments.js"></script>
+    <script src="heli.js"></script>
+    <script src="animals.js"></script>
+    <script src="explosives.js"></script>
+    <script src="traps.js"></script>
+    <script src="underwater.js"></script>
+    <script src="playerActions.js"></script>
+    <script src="shopSystem.js"></script>
+    <script src="clans.js"></script>
+    <script src="playerHub.js"></script>
+    <script src="playerProfiling.js"></script>
+    <script src="psychological.js"></script>
+    <script src="predictiveAnalytics.js"></script>
+    <script src="heatmap.js"></script>
+    <script src="autoMod.js"></script>
+    <script src="performance.js"></script>
+    <script src="discordSync.js"></script>
+    <script src="voiceCommands.js"></script>
+    <script src="communityPolls.js"></script>
+    <script src="mobileSync.js"></script>
+    <script src="raidDetector.js"></script>
+    <script src="tradingFloor.js"></script>
+    <script src="baseDefense.js"></script>
+    <script src="allianceNetwork.js"></script>
+    <script src="map3d.js"></script>
+    <script src="drainedAI.js"></script>
+    <script src="backup.js"></script>
+    <script src="dashboardSettings.js"></script>
+    <script src="more.js"></script>
+    <script src="echoMemory.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            window.drainedTablet = new DrainedTablet();
+        });
+    </script>
+</body>
+</html>
