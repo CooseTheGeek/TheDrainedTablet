@@ -1,6 +1,5 @@
 // home.js – DRAINED TABLET ULTIMATE v7.0.0
 // Dashboard home page with real‑time server stats, recent events, and quick actions.
-// NO MOCK DATA – all data from live RCON.
 
 class Home {
     constructor() {
@@ -16,14 +15,14 @@ class Home {
             entities: 0
         };
         this.recentEvents = [];
-        this.playerHistory = []; // for chart
+        this.playerHistory = [];
         this.updateInterval = null;
         this.init();
     }
 
     init() {
         this.createHTML();
-        this.attachEvents();
+        this.attachEvents(); // this method must exist
         this.startUpdates();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'home') {
@@ -42,11 +41,7 @@ class Home {
                     <h2>🏠 DASHBOARD</h2>
                     <button id="home-refresh" class="home-btn">🔄 REFRESH</button>
                 </div>
-
-                <div class="home-grid" id="home-grid">
-                    <!-- Gauges will be injected here -->
-                </div>
-
+                <div class="home-grid" id="home-grid"></div>
                 <div class="home-row">
                     <div class="home-card" id="recent-events-card">
                         <h3>📋 RECENT EVENTS</h3>
@@ -57,7 +52,6 @@ class Home {
                         <div class="quick-actions-grid" id="quick-actions"></div>
                     </div>
                 </div>
-
                 <div class="home-card" id="player-activity-card">
                     <h3>📈 PLAYER ACTIVITY (LAST 24H)</h3>
                     <canvas id="activity-chart" width="800" height="200"></canvas>
@@ -69,10 +63,14 @@ class Home {
         this.renderQuickActions();
     }
 
+    attachEvents() {
+        document.getElementById('home-refresh')?.addEventListener('click', () => this.refresh());
+        // Quick action buttons are handled by delegation in renderQuickActions
+    }
+
     renderGauges() {
         const grid = document.getElementById('home-grid');
         if (!grid) return;
-
         grid.innerHTML = `
             <div class="gauge-card" id="gauge-cpu">
                 <div class="gauge-title">CPU</div>
@@ -100,7 +98,6 @@ class Home {
     renderQuickActions() {
         const actionsDiv = document.getElementById('quick-actions');
         if (!actionsDiv) return;
-
         let actions = [
             { label: 'Restart', command: 'global.restart', icon: '🔄', role: 'owner' },
             { label: 'Save', command: 'server.save', icon: '💾', role: 'master' },
@@ -109,15 +106,13 @@ class Home {
             { label: 'Airdrop', command: 'airdrop.drop', icon: '📡', role: 'master' },
             { label: 'Heli', command: 'heli.call', icon: '🚁', role: 'master' }
         ];
-
         let html = '';
         actions.forEach(action => {
-            if (this.access.hasRole(action.role)) {
+            if (this.access?.hasRole(action.role)) {
                 html += `<button class="quick-action" data-cmd="${action.command}" ${action.needsInput ? 'data-needs-input' : ''}>${action.icon} ${action.label}</button>`;
             }
         });
         actionsDiv.innerHTML = html;
-
         actionsDiv.querySelectorAll('.quick-action').forEach(btn => {
             btn.addEventListener('click', () => this.executeQuickAction(btn));
         });
@@ -133,9 +128,9 @@ class Home {
         }
         try {
             await ConnectionManager.executeCommand(fullCmd);
-            this.tablet.showToast('Command executed', 'success');
+            toast.success('Command executed');
         } catch (err) {
-            this.tablet.showError(err.message);
+            toast.error(err.message);
         }
     }
 
@@ -148,9 +143,7 @@ class Home {
             this.showDisconnected();
             return;
         }
-
         try {
-            // Fetch real stats via RCON
             const fps = await ConnectionManager.executeCommand('server.fps');
             const cpu = await ConnectionManager.executeCommand('server.cpu');
             const mem = await ConnectionManager.executeCommand('server.memory');
@@ -158,7 +151,6 @@ class Home {
             const maxPlayers = AppState.connection.server?.maxPlayers || 100;
             const uptime = await ConnectionManager.executeCommand('server.uptime');
             const entities = await ConnectionManager.executeCommand('entity.count');
-
             this.stats = {
                 fps: parseInt(fps) || 0,
                 cpu: parseInt(cpu) || 0,
@@ -168,7 +160,6 @@ class Home {
                 uptime: uptime || '0d 0h 0m',
                 entities: parseInt(entities) || 0
             };
-
             this.updateGauges();
             this.updateEvents();
             this.updateChart();
@@ -178,50 +169,54 @@ class Home {
     }
 
     showDisconnected() {
-        // Show waiting overlay or gray out
-        document.getElementById('cpu-value').innerText = '--';
-        document.getElementById('ram-value').innerText = '--';
-        document.getElementById('players-value').innerText = '--/--';
-        document.getElementById('fps-value').innerText = '--';
-        document.getElementById('recent-events-list').innerHTML = 'Waiting for connection...';
+        const ids = ['cpu-value', 'ram-value', 'players-value', 'fps-value'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = '--';
+        });
+        const eventsEl = document.getElementById('recent-events-list');
+        if (eventsEl) eventsEl.innerHTML = 'Waiting for connection...';
     }
 
     updateGauges() {
-        document.getElementById('cpu-value').innerText = this.stats.cpu + '%';
-        document.getElementById('cpu-fill').style.width = this.stats.cpu + '%';
-        document.getElementById('ram-value').innerText = this.stats.memory + '%';
-        document.getElementById('ram-fill').style.width = this.stats.memory + '%';
-        document.getElementById('players-value').innerText = this.stats.players + '/' + this.stats.maxPlayers;
-        document.getElementById('players-fill').style.width = (this.stats.players / this.stats.maxPlayers * 100) + '%';
-        document.getElementById('fps-value').innerText = this.stats.fps;
-        const fpsPercent = Math.min(100, (this.stats.fps / 60) * 100);
-        document.getElementById('fps-fill').style.width = fpsPercent + '%';
+        const setText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        };
+        const setWidth = (id, width) => {
+            const el = document.getElementById(id);
+            if (el) el.style.width = width + '%';
+        };
+        setText('cpu-value', this.stats.cpu + '%');
+        setWidth('cpu-fill', this.stats.cpu);
+        setText('ram-value', this.stats.memory + '%');
+        setWidth('ram-fill', this.stats.memory);
+        setText('players-value', this.stats.players + '/' + this.stats.maxPlayers);
+        setWidth('players-fill', (this.stats.players / this.stats.maxPlayers * 100));
+        setText('fps-value', this.stats.fps);
+        setWidth('fps-fill', (this.stats.fps / 60 * 100));
     }
 
     async updateEvents() {
-        // In a real implementation, you might fetch recent events from the server or bridge
-        // For now, we'll use a placeholder
         const list = document.getElementById('recent-events-list');
         if (!list) return;
+        // Placeholder – in real implementation, fetch from server
         list.innerHTML = '<div class="event-item">Airdrop dropped (2m ago)</div><div class="event-item">PlayerX killed PlayerY (5m ago)</div>';
     }
 
     updateChart() {
-        // Simple chart – we could use a canvas or a placeholder
-        // For now, we'll just add a note
         const canvas = document.getElementById('activity-chart');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            ctx.fillStyle = '#FFB100';
-            ctx.font = '12px monospace';
-            ctx.fillText('Chart would show player count over time', 10, 100);
-        }
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = '#FFB100';
+        ctx.font = '12px monospace';
+        ctx.fillText('Chart would show player count over time', 10, 100);
     }
 
     refresh() {
         this.updateStats();
-        this.tablet.showToast('Home refreshed', 'success');
+        toast.success('Home refreshed');
     }
 }
 

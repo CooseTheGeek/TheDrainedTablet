@@ -1,6 +1,5 @@
 // playerHub.js – DRAINED TABLET ULTIMATE v7.0.0
 // Player hub: overview of online, recent, and offline players with statistics.
-// All original features preserved, now with real player data from AppState and enhanced UI.
 
 class PlayerHub {
     constructor() {
@@ -13,11 +12,7 @@ class PlayerHub {
 
     loadPlayers() {
         const saved = localStorage.getItem('tdl_player_hub');
-        return saved ? JSON.parse(saved) : {
-            online: [],
-            recent: [],
-            offline: []
-        };
+        return saved ? JSON.parse(saved) : { online: [], recent: [], offline: [] };
     }
 
     loadJoinHistory() {
@@ -54,10 +49,6 @@ class PlayerHub {
             kills: p.kills || 0,
             deaths: p.deaths || 0
         }));
-
-        // For offline and recent, we might need to maintain history
-        // This is a simplified approach; in a full implementation, you'd track joins/leaves via events.
-        // For now, we'll keep the existing structure and just update online.
         this.players.online = onlinePlayers;
         this.renderOnline();
         this.renderStats();
@@ -66,12 +57,10 @@ class PlayerHub {
     createHTML() {
         const tab = document.getElementById('tab-playerHub');
         if (!tab) return;
-
         if (!this.access.hasRole('master')) {
             tab.innerHTML = '<div class="access-denied">Master access required</div>';
             return;
         }
-
         tab.innerHTML = `
             <div class="hub-container">
                 <div class="hub-header">
@@ -81,24 +70,20 @@ class PlayerHub {
                         <button id="hub-refresh" class="hub-btn">🔄 REFRESH</button>
                     </div>
                 </div>
-
                 <div class="hub-grid">
                     <div class="hub-section online">
                         <h3>🟢 ONLINE NOW (${this.players.online.length})</h3>
                         <div id="online-players" class="player-list"></div>
                     </div>
-
                     <div class="hub-section recent">
                         <h3>⏱️ RECENTLY JOINED (24h)</h3>
                         <div id="recent-players" class="player-list"></div>
                     </div>
-
                     <div class="hub-section offline">
                         <h3>⚫ OFFLINE PLAYERS</h3>
                         <div id="offline-players" class="player-list"></div>
                     </div>
                 </div>
-
                 <div class="hub-stats">
                     <h3>📈 PLAYER STATISTICS</h3>
                     <div class="stats-grid">
@@ -120,14 +105,12 @@ class PlayerHub {
                         </div>
                     </div>
                 </div>
-
                 <div class="join-history">
                     <h3>📜 JOIN HISTORY</h3>
                     <div id="join-history-list" class="history-list"></div>
                 </div>
             </div>
         `;
-
         this.renderOnline();
         this.renderRecent();
         this.renderOffline();
@@ -138,7 +121,6 @@ class PlayerHub {
     attachEvents() {
         document.getElementById('hub-refresh')?.addEventListener('click', () => this.refresh());
         document.getElementById('hub-search')?.addEventListener('input', (e) => this.search(e.target.value));
-
         // Delegate for player actions
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('view-player')) {
@@ -180,7 +162,8 @@ class PlayerHub {
             `;
         });
         list.innerHTML = html;
-        document.getElementById('online-count').innerText = this.players.online.length;
+        const onlineCount = document.getElementById('online-count');
+        if (onlineCount) onlineCount.innerText = this.players.online.length;
     }
 
     renderRecent() {
@@ -252,10 +235,12 @@ class PlayerHub {
 
     renderStats() {
         const total = this.players.online.length + this.players.offline.length;
-        document.getElementById('total-players').innerText = total;
-        document.getElementById('joined-today').innerText = this.players.recent.length;
-        // Average playtime – placeholder
-        document.getElementById('avg-playtime').innerText = '12h';
+        const totalEl = document.getElementById('total-players');
+        if (totalEl) totalEl.innerText = total;
+        const joinedTodayEl = document.getElementById('joined-today');
+        if (joinedTodayEl) joinedTodayEl.innerText = this.players.recent.length;
+        const avgEl = document.getElementById('avg-playtime');
+        if (avgEl) avgEl.innerText = '12h'; // placeholder
     }
 
     search(query) {
@@ -276,11 +261,7 @@ class PlayerHub {
             }
             let html = '';
             filtered.forEach(p => {
-                html += `
-                    <div class="player-row">
-                        <span class="player-name">${p.name}</span>
-                    </div>
-                `;
+                html += `<div class="player-row"><span class="player-name">${p.name}</span></div>`;
             });
             container.innerHTML = html;
         };
@@ -290,35 +271,23 @@ class PlayerHub {
     }
 
     viewPlayer(player) {
-        this.tablet.showToast(`Viewing ${player} profile`, 'info');
+        toast.info(`Viewing ${player} profile`);
     }
-
     messagePlayer(player) {
-        this.tablet.showToast(`Messaging ${player}...`, 'info');
+        toast.info(`Messaging ${player}...`);
     }
-
     playerStats(player) {
-        this.tablet.showToast(`Loading stats for ${player}...`, 'info');
+        toast.info(`Loading stats for ${player}...`);
     }
 
     recordJoin(player) {
-        this.joinHistory.unshift({
-            player,
-            action: 'joined',
-            time: new Date().toISOString(),
-            type: 'join'
-        });
+        this.joinHistory.unshift({ player, action: 'joined', time: new Date().toISOString(), type: 'join' });
         this.saveJoinHistory();
         this.renderJoinHistory();
     }
 
     recordLeave(player) {
-        this.joinHistory.unshift({
-            player,
-            action: 'left',
-            time: new Date().toISOString(),
-            type: 'leave'
-        });
+        this.joinHistory.unshift({ player, action: 'left', time: new Date().toISOString(), type: 'leave' });
         this.saveJoinHistory();
         this.renderJoinHistory();
     }
@@ -330,7 +299,7 @@ class PlayerHub {
         this.renderOffline();
         this.renderJoinHistory();
         this.renderStats();
-        this.tablet.showToast('Player hub refreshed', 'success');
+        toast.success('Player hub refreshed');
     }
 }
 
