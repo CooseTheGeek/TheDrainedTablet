@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>DRAINED TABLET · 3UNKS</title>
+    <link rel="stylesheet" href="global.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Additional inline styles for critical elements – full global.css will be loaded separately */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- Toast container (for notifications) -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- SECURITY DOOR (shown first) -->
+    <div id="security-door" class="security-door">
+        <div class="door-container glass-panel">
+            <div class="door-header">
+                <h1>🔒 THE DRAINED TABLET</h1>
+                <p>Enter your 4‑digit access code</p>
+            </div>
+            <div class="code-dots">
+                <span class="dot" id="dot1"></span>
+                <span class="dot" id="dot2"></span>
+                <span class="dot" id="dot3"></span>
+                <span class="dot" id="dot4"></span>
+            </div>
+            <div class="numpad">
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="1">1</button>
+                    <button class="numpad-btn" data-num="2">2</button>
+                    <button class="numpad-btn" data-num="3">3</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="4">4</button>
+                    <button class="numpad-btn" data-num="5">5</button>
+                    <button class="numpad-btn" data-num="6">6</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="7">7</button>
+                    <button class="numpad-btn" data-num="8">8</button>
+                    <button class="numpad-btn" data-num="9">9</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="C">C</button>
+                    <button class="numpad-btn" data-num="0">0</button>
+                    <button class="numpad-btn" data-num="E">E</button>
+                </div>
+            </div>
+            <div class="door-actions">
+                <button id="unlock-btn" class="door-btn">UNLOCK</button>
+                <button id="clear-btn" class="door-btn">CLEAR</button>
+                <button id="forgot-btn" class="door-btn">FORGOT CODE</button>
+            </div>
+            <div class="door-footer">
+                <p id="attempts">3 attempts remaining</p>
+                <p id="last-attempt">Last: Never</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD (hidden until unlocked) -->
+    <div id="dashboard" class="dashboard hidden">
+        <!-- Header with server status, profile, and connection info -->
+        <header class="main-header glass-panel">
+            <div class="header-left">
+                <span class="logo">⚡ 3UNKS</span>
+                <span class="server-name" id="server-name-display">The Drained Land's 2X</span>
+            </div>
+            <div class="header-right">
+                <div class="connection-status" id="connection-status">
+                    <span class="dot offline"></span> DISCONNECTED
+                </div>
+                <div class="profile-badge" id="profile-link">
+                    <span id="profile-icon">👤</span>
+                    <span id="profile-name">CooseTheGeek</span>
+                </div>
+                <button id="sign-out-btn" class="header-btn">🚪</button>
+            </div>
+        </header>
+
+        <!-- Sidebar and Main Content -->
+        <div class="main-layout">
+            <!-- SIDEBAR (collapsible) -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <button id="collapse-sidebar" class="sidebar-collapse">◀</button>
+                </div>
+                <nav class="sidebar-nav">
+                    <a href="#" class="nav-item active" data-tab="home"><span class="nav-icon">🏠</span> <span class="nav-text">Home</span></a>
+                    <a href="#" class="nav-item" data-tab="players"><span class="nav-icon">👥</span> <span class="nav-text">Players</span></a>
+                    <a href="#" class="nav-item" data-tab="master"><span class="nav-icon">👑</span> <span class="nav-text">Master Control</span></a>
+                    <a href="#" class="nav-item" data-tab="economy"><span class="nav-icon">💰</span> <span class="nav-text">Economy</span></a>
+                    <a href="#" class="nav-item" data-tab="livemap"><span class="nav-icon">🗺️</span> <span class="nav-text">Live Map</span></a>
+                    <a href="#" class="nav-item" data-tab="vehicles"><span class="nav-icon">🚗</span> <span class="nav-text">Vehicles</span></a>
+                    <a href="#" class="nav-item" data-tab="teleport"><span class="nav-icon">📍</span> <span class="nav-text">Teleport</span></a>
+                    <a href="#" class="nav-item" data-tab="events"><span class="nav-icon">🎉</span> <span class="nav-text">Events</span></a>
+                    <a href="#" class="nav-item" data-tab="items"><span class="nav-icon">📦</span> <span class="nav-text">Items</span></a>
+                    <a href="#" class="nav-item" data-tab="world"><span class="nav-icon">🌍</span> <span class="nav-text">World</span></a>
+                    <a href="#" class="nav-item" data-tab="backups"><span class="nav-icon">💾</span> <span class="nav-text">Backups</span></a>
+                    <a href="#" class="nav-item" data-tab="logs"><span class="nav-icon">📜</span> <span class="nav-text">Logs</span></a>
+                    <a href="#" class="nav-item" data-tab="console"><span class="nav-icon">🖥️</span> <span class="nav-text">Console</span></a>
+                    <a href="#" class="nav-item" data-tab="gportal"><span class="nav-icon">🔌</span> <span class="nav-text">GPortal</span></a>
+                    <a href="#" class="nav-item" data-tab="health"><span class="nav-icon">📡</span> <span class="nav-text">Health</span></a>
+                    <a href="#" class="nav-item" data-tab="recovery"><span class="nav-icon">🔄</span> <span class="nav-text">Recovery</span></a>
+                    <a href="#" class="nav-item" data-tab="performance"><span class="nav-icon">📊</span> <span class="nav-text">Performance</span></a>
+                    <a href="#" class="nav-item" data-tab="deepseek"><span class="nav-icon">🤖</span> <span class="nav-text">DeepSeek AI</span></a>
+                    <a href="#" class="nav-item" data-tab="profile"><span class="nav-icon">👤</span> <span class="nav-text">Profile</span></a>
+                    <a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>
+                    <a href="#" class="nav-item" data-tab="more"><span class="nav-icon">📊</span> <span class="nav-text">More Tools</span></a>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="role-indicator" id="role-indicator"></div>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT AREA (tabs) -->
+            <main class="main-content" id="main-content">
+                <!-- Tab panes – each corresponds to a nav item -->
+                <div id="tab-home" class="tab-pane active"></div>
+                <div id="tab-players" class="tab-pane"></div>
+                <div id="tab-master" class="tab-pane"></div>
+                <div id="tab-economy" class="tab-pane"></div>
+                <div id="tab-livemap" class="tab-pane"></div>
+                <div id="tab-vehicles" class="tab-pane"></div>
+                <div id="tab-teleport" class="tab-pane"></div>
+                <div id="tab-events" class="tab-pane"></div>
+                <div id="tab-items" class="tab-pane"></div>
+                <div id="tab-world" class="tab-pane"></div>
+                <div id="tab-backups" class="tab-pane"></div>
+                <div id="tab-logs" class="tab-pane"></div>
+                <div id="tab-console" class="tab-pane"></div>
+                <div id="tab-gportal" class="tab-pane"></div>
+                <div id="tab-health" class="tab-pane"></div>
+                <div id="tab-recovery" class="tab-pane"></div>
+                <div id="tab-performance" class="tab-pane"></div>
+                <div id="tab-deepseek" class="tab-pane"></div>
+                <div id="tab-profile" class="tab-pane"></div>
+                <div id="tab-settings" class="tab-pane"></div>
+                <div id="tab-more" class="tab-pane"></div>
+                <!-- Additional legacy/feature tabs -->
+                <div id="tab-animals" class="tab-pane"></div>
+                <div id="tab-autoMod" class="tab-pane"></div>
+                <div id="tab-defense" class="tab-pane"></div>
+                <div id="tab-clans" class="tab-pane"></div>
+                <div id="tab-claims" class="tab-pane"></div>
+                <div id="tab-polls" class="tab-pane"></div>
+                <div id="tab-zones" class="tab-pane"></div>
+                <div id="tab-zorp" class="tab-pane"></div>
+                <div id="tab-combatlog" class="tab-pane"></div>
+                <div id="tab-idcard" class="tab-pane"></div>
+                <div id="tab-user-management" class="tab-pane"></div>
+                <div id="tab-audit" class="tab-pane"></div>
+                <div id="tab-orchestrator" class="tab-pane"></div>
+                <div id="tab-discord" class="tab-pane"></div>
+                <div id="tab-voice" class="tab-pane"></div>
+                <div id="tab-trading" class="tab-pane"></div>
+                <div id="tab-raid" class="tab-pane"></div>
+                <div id="tab-map3d" class="tab-pane"></div>
+                <div id="tab-drainedAI" class="tab-pane"></div>
+                <div id="tab-inventoryViewer" class="tab-pane"></div>
+                <div id="tab-psych" class="tab-pane"></div>
+                <div id="tab-predictive" class="tab-pane"></div>
+                <div id="tab-profiling" class="tab-pane"></div>
+                <div id="tab-playerHub" class="tab-pane"></div>
+                <div id="tab-playerActions" class="tab-pane"></div>
+                <div id="tab-modifiers" class="tab-pane"></div>
+                <div id="tab-entities" class="tab-pane"></div>
+                <div id="tab-spawn" class="tab-pane"></div>
+                <div id="tab-kits" class="tab-pane"></div>
+                <div id="tab-kitVending" class="tab-pane"></div>
+                <div id="tab-heli" class="tab-pane"></div>
+                <div id="tab-explosives" class="tab-pane"></div>
+                <div id="tab-traps" class="tab-pane"></div>
+                <div id="tab-underwater" class="tab-pane"></div>
+                <div id="tab-halloween" class="tab-pane"></div>
+                <div id="tab-decay" class="tab-pane"></div>
+                <div id="tab-scheduler" class="tab-pane"></div>
+                <div id="tab-monuments" class="tab-pane"></div>
+                <div id="tab-global" class="tab-pane"></div>
+                <div id="tab-status" class="tab-pane"></div>
+                <div id="tab-mobile" class="tab-pane"></div>
+                <div id="tab-heatmap" class="tab-pane"></div>
+                <div id="tab-alliance" class="tab-pane"></div>
+                <div id="tab-shop" class="tab-pane"></div>
+                <div id="tab-theme" class="tab-pane"></div>
+                <div id="tab-branding" class="tab-pane"></div>
+            </main>
+        </div>
+
+        <!-- Footer with branding -->
+        <footer class="main-footer glass-panel">
+            <span>⚡ The Drained Land's | 3UNKS ⚡</span>
+            <span class="version">v7.0.0</span>
+        </footer>
+    </div>
+
+    <!-- Modals (error, confirm, etc.) -->
+    <div id="error-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>❌ Error</h3>
+            <p id="error-message"></p>
+            <div class="modal-actions">
+                <button id="error-close" class="modal-btn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>⚠️ Confirm</h3>
+            <p id="confirm-message"></p>
+            <div class="modal-actions">
+                <button id="confirm-yes" class="modal-btn primary">Yes</button>
+                <button id="confirm-no" class="modal-btn">No</button>
+            </div>
+        </div>
+    </div>    <!-- ========== SCRIPT LOADING (all JS files in correct order) ========== -->
+    <!-- Core and foundational modules -->
+    <script src="js/core.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/access-control.js"></script>
+    <script src="js/user-management.js"></script>
+    <script src="js/audit-log.js"></script>
+    <script src="js/command-queue.js"></script>
+    <script src="js/auto-recovery.js"></script>
+    <script src="js/connection-health.js"></script>
+
+    <!-- Profile & ID card -->
+    <script src="js/profile.js"></script>
+    <script src="js/id-card-generator.js"></script>
+    <script src="js/claim-system.js"></script>
+
+    <!-- Combat log -->
+    <script src="js/combat-log.js"></script>
+
+    <!-- Master control and server commands -->
+    <script src="js/server-commands.js"></script>
+    <script src="js/master-control.js"></script>
+    <script src="js/map-generation.js"></script>
+
+    <!-- Main page modules -->
+    <script src="js/home.js"></script>
+    <script src="js/players.js"></script>
+    <script src="js/vehicles.js"></script>
+    <script src="js/teleport.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/economy.js"></script>
+    <script src="js/items.js"></script>
+    <script src="js/console.js"></script>
+    <script src="js/backups.js"></script>
+    <script src="js/logs.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/gportal-connector.js"></script>
+    <script src="js/performance-metrics.js"></script>
+
+    <!-- UI utilities -->
+    <script src="js/icons.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/toast.js"></script>
+    <script src="js/deepseek-ai.js"></script>
+
+    <!-- Legacy / extra modules (many from original set) -->
+    <script src="js/animals.js"></script>
+    <script src="js/autoMod.js"></script>
+    <script src="js/baseDefense.js"></script>
+    <script src="js/branding.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/clans.js"></script>
+    <script src="js/communityPolls.js"></script>
+    <script src="js/decay.js"></script>
+    <script src="js/discordSync.js"></script>
+    <script src="js/drainedAI.js"></script>
+    <script src="js/echoMemory.js"></script>
+    <script src="js/entities.js"></script>
+    <script src="js/eventOrchestrator.js"></script>
+    <script src="js/explosives.js"></script>
+    <script src="js/global.js"></script>
+    <script src="js/halloween.js"></script>
+    <script src="js/heatmap.js"></script>
+    <script src="js/heli.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/inventoryViewer.js"></script>
+    <script src="js/kits.js"></script>
+    <script src="js/kitVending.js"></script>
+    <script src="js/livemap.js"></script>
+    <script src="js/map3d.js"></script>
+    <script src="js/mobileSync.js"></script>
+    <script src="js/modifiers.js"></script>
+    <script src="js/monuments.js"></script>
+    <script src="js/more.js"></script>
+    <script src="js/performance.js"></script>
+    <script src="js/playerActions.js"></script>
+    <script src="js/playerHub.js"></script>
+    <script src="js/playerProfiling.js"></script>
+    <script src="js/predictiveAnalytics.js"></script>
+    <script src="js/psychological.js"></script>
+    <script src="js/raidDetector.js"></script>
+    <script src="js/scheduler.js"></script>
+    <script src="js/security.js"></script>
+    <script src="js/securityDoor.js"></script>
+    <script src="js/serverConnector.js"></script>
+    <script src="js/shopSystem.js"></script>
+    <script src="js/spawn.js"></script>
+    <script src="js/status.js"></script>
+    <script src="js/themeStudio.js"></script>
+    <script src="js/tradingFloor.js"></script>
+    <script src="js/traps.js"></script>
+    <script src="js/underwater.js"></script>
+    <script src="js/voiceCommands.js"></script>
+    <script src="js/zones.js"></script>
+    <script src="js/zorp.js"></script>
+
+    <!-- Initialization (runs after all scripts) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 DRAINED TABLET fully loaded');
+            // Any post‑load setup
+        });
+    </script>
+</body>
+</html>
