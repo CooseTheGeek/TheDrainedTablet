@@ -128,6 +128,18 @@ class Profile {
         // Live preview when platform/ID changes
         document.getElementById('profile-platform')?.addEventListener('change', () => this.updateIDPreview());
         document.getElementById('profile-platform-id')?.addEventListener('input', () => this.updateIDPreview());
+
+        // Delegate for server actions
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('load-server')) {
+                const id = e.target.dataset.id;
+                this.loadServer(id);
+            }
+            if (e.target.classList.contains('delete-server')) {
+                const id = e.target.dataset.id;
+                this.deleteServer(id);
+            }
+        });
     }
 
     getAvatarHTML() {
@@ -178,7 +190,7 @@ class Profile {
         const platform = document.getElementById('profile-platform').value;
         const platformId = document.getElementById('profile-platform-id').value.trim();
         if (platform && !platformId) {
-            this.tablet.showError('Platform ID is required when platform is selected');
+            toast.error('Platform ID is required when platform is selected');
             return;
         }
         AppState.user.platform = platform || null;
@@ -186,7 +198,7 @@ class Profile {
         if (platform) localStorage.setItem('tdl_platform', platform);
         if (platformId) localStorage.setItem('tdl_platform_id', platformId);
         this.updateIDPreview();
-        this.tablet.showToast('Profile saved', 'success');
+        toast.success('Profile saved');
     }
 
     updateIDPreview() {
@@ -204,13 +216,12 @@ class Profile {
     }
 
     downloadID() {
-        const card = document.getElementById('id-card');
         // Simple screenshot using html2canvas? For now, just a placeholder.
-        this.tablet.showToast('ID card download feature coming soon', 'info');
+        toast.info('ID card download feature coming soon');
     }
 
     customizeID() {
-        this.tablet.showToast('ID card customization coming soon', 'info');
+        toast.info('ID card customization coming soon');
     }
 
     renderServers() {
@@ -236,19 +247,6 @@ class Profile {
             `;
         });
         listDiv.innerHTML = html;
-
-        listDiv.querySelectorAll('.load-server').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.target.dataset.id;
-                this.loadServer(id);
-            });
-        });
-        listDiv.querySelectorAll('.delete-server').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.target.dataset.id;
-                this.deleteServer(id);
-            });
-        });
     }
 
     addServer() {
@@ -270,7 +268,7 @@ class Profile {
         this.savedServers.push(server);
         this.saveServers();
         this.renderServers();
-        this.tablet.showToast('Server saved', 'success');
+        toast.success('Server saved');
     }
 
     loadServer(id) {
@@ -283,18 +281,15 @@ class Profile {
         if (ipField) ipField.value = server.ip;
         if (portField) portField.value = server.port;
         if (passField) passField.value = server.password;
-        this.tablet.showToast(`Loaded server: ${server.name}`, 'success');
+        toast.success(`Loaded server: ${server.name}`);
     }
 
     deleteServer(id) {
-        this.tablet.showConfirm('Delete this server?', (confirmed) => {
-            if (confirmed) {
-                this.savedServers = this.savedServers.filter(s => s.id !== id);
-                this.saveServers();
-                this.renderServers();
-                this.tablet.showToast('Server deleted', 'info');
-            }
-        });
+        if (!confirm('Delete this server?')) return;
+        this.savedServers = this.savedServers.filter(s => s.id !== id);
+        this.saveServers();
+        this.renderServers();
+        toast.info('Server deleted');
     }
 
     refresh() {

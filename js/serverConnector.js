@@ -1,6 +1,6 @@
 // serverConnector.js – DRAINED TABLET ULTIMATE v7.0.0
 // Multi‑server connection manager: save, edit, quick‑connect, and switch between GPortal/Nitrado servers.
-// All original features preserved, now integrated with ConnectionManager and enhanced UI.
+// Full version with all original features.
 
 class ServerConnector {
     constructor() {
@@ -8,6 +8,8 @@ class ServerConnector {
         this.access = window.accessControl;
         this.servers = this.loadServers();
         this.connectionHistory = this.loadHistory();
+        this.currentServer = null;
+        this.editingServerId = null;
         this.init();
     }
 
@@ -249,7 +251,7 @@ class ServerConnector {
                 <div class="server-card ${isCurrent ? 'connected' : ''}">
                     <div class="server-header">
                         <span class="server-name">${server.name}</span>
-                        <span class="server-fav" data-id="${server.id}">${isFavorite}</span>
+                        <span class="server-fav favorite-server" data-id="${server.id}">${isFavorite}</span>
                     </div>
                     <div class="server-details">
                         <div>${server.ip}:${server.port}</div>
@@ -337,7 +339,7 @@ class ServerConnector {
         const port = parseInt(document.getElementById('server-port').value);
         const password = document.getElementById('server-password').value;
         if (!name || !ip || !port) {
-            this.tablet.showError('Please fill all required fields');
+            toast.error('Please fill all required fields');
             return;
         }
         const server = {
@@ -362,12 +364,13 @@ class ServerConnector {
         this.saveServers();
         this.renderServers();
         document.getElementById('server-modal').classList.add('hidden');
-        this.tablet.showToast(`Server ${name} saved`, 'success');
+        toast.success(`Server ${name} saved`);
     }
 
     connectToServer(id) {
         const server = this.servers.find(s => s.id === id);
         if (!server) return;
+        this.currentServer = id;
         ConnectionManager.connect({ ip: server.ip, port: server.port, password: server.password }).then(success => {
             this.connectionHistory.unshift({
                 server: server.name,
@@ -394,7 +397,7 @@ class ServerConnector {
         this.servers = this.servers.filter(s => s.id !== id);
         this.saveServers();
         this.renderServers();
-        this.tablet.showToast('Server deleted', 'info');
+        toast.info('Server deleted');
     }
 
     toggleFavorite(id) {
@@ -411,7 +414,7 @@ class ServerConnector {
         const port = parseInt(document.getElementById('quick-port').value);
         const password = document.getElementById('quick-pass').value;
         if (!ip || !port) {
-            this.tablet.showError('Enter IP and port');
+            toast.error('Enter IP and port');
             return;
         }
         ConnectionManager.connect({ ip, port, password }).then(success => {
@@ -431,8 +434,8 @@ class ServerConnector {
     testConnection() {
         const ip = document.getElementById('server-ip').value;
         const port = document.getElementById('server-port').value;
-        this.tablet.showToast(`Testing connection to ${ip}:${port}...`, 'info');
-        setTimeout(() => this.tablet.showToast('Connection successful!', 'success'), 2000);
+        toast.info(`Testing connection to ${ip}:${port}...`);
+        setTimeout(() => toast.success('Connection successful!'), 2000);
     }
 
     updateStatus(server = null) {
@@ -454,7 +457,7 @@ class ServerConnector {
     refresh() {
         this.renderServers();
         this.renderHistory();
-        this.tablet.showToast('Server connector refreshed', 'success');
+        toast.success('Server connector refreshed');
     }
 }
 

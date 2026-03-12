@@ -1,7 +1,5 @@
 // auth.js – DRAINED TABLET ULTIMATE v7.0.0
-// Three‑tier authentication: User (code), Master (code + optional 2FA), Owner (code + RCON credentials + mandatory 2FA).
-// TOTP compatible with Google Authenticator, Microsoft Authenticator, Authy.
-// Uses WebAuthn for passkeys (optional).
+// Three‑tier authentication with real TOTP (Google Authenticator compatible).
 
 class AuthSystem {
     constructor() {
@@ -19,9 +17,9 @@ class AuthSystem {
             const saved = localStorage.getItem('tdl_users');
             return saved ? JSON.parse(saved) : {
                 'CooseTheGeek': {
-                    code: '0325',           // hashed in production; demo only
+                    code: '0325',
                     role: 'owner',
-                    totpEnabled: true,
+                    totpEnabled: false, // disabled by default until setup
                     created: new Date().toISOString()
                 }
             };
@@ -52,7 +50,7 @@ class AuthSystem {
         localStorage.setItem('tdl_trusted_devices', JSON.stringify(this.trustedDevices));
     }
 
-    // Generate a device fingerprint (browser, screen, timezone, etc.)
+    // Generate a device fingerprint
     getDeviceFingerprint() {
         const components = [
             navigator.userAgent,
@@ -76,14 +74,12 @@ class AuthSystem {
         return hash.toString(36);
     }
 
-    // Check if this device is trusted for a user
     isDeviceTrusted(username) {
         const fingerprint = this.getDeviceFingerprint();
         const trusted = this.trustedDevices[username]?.[fingerprint];
         return trusted && trusted.expires > Date.now();
     }
 
-    // Trust this device for a user (bypass 2FA)
     trustDevice(username, days = 30) {
         const fingerprint = this.getDeviceFingerprint();
         if (!this.trustedDevices[username]) {
@@ -95,25 +91,82 @@ class AuthSystem {
         this.saveTrustedDevices();
     }
 
-    // Generate a TOTP secret for a user (during 2FA enrollment)
+    // Generate a new TOTP secret for a user (returns secret and otpauth URI)
     generateTotpSecret(username) {
-        // In a real implementation, use a library like 'otpauth' to generate a secret and QR code.
-        // For this demo, we return a dummy secret.
-        const secret = 'JBSWY3DPEHPK3PXP'; // example base32 secret
+        // Create a random base32 secret (16 bytes -> 26 chars base32)
+        const randomBytes = new Uint8Array(16);
+        window.crypto.getRandomValues(randomBytes);
+        const secret = this.base32Encode(randomBytes);
+        
+        // Build otpauth URI for QR code
+        const issuer = encodeURIComponent('Drained Tablet');
+        const account = encodeURIComponent(username);
+        const uri = `otpauth://totp/${issuer}:${account}?secret=${secret}&issuer=${issuer}`;
+        
         this.totpSecrets[username] = secret;
         this.saveTotpSecrets();
-        return secret;
+        return { secret, uri };
     }
 
-    // Verify a TOTP code (simplified; real implementation would use a TOTP library)
+    // Base32 encoding (RFC 4648) without padding
+    base32Encode(buffer) {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+        let result = '';
+        let bits = 0;
+        let value = 0;
+        for (let i = 0; i < buffer.length; i++) {
+            value = (value << 8) | buffer[i];
+            bits += 8;
+            while (bits >= 5) {
+                result += alphabet[(value >>> (bits - 5)) & 31];
+                bits -= 5;
+            }
+        }
+        if (bits > 0) {
+            result += alphabet[(value << (5 - bits)) & 31];
+        }
+        return result;
+    }
+
+    // Verify a TOTP code using otpauth library
     verifyTotp(username, code) {
         const secret = this.totpSecrets[username];
         if (!secret) return false;
-        // In production, use a proper TOTP validator. Here we accept any 6-digit code for demo.
-        return /^\d{6}$/.test(code);
+        try {
+            const totp = new OTPAuth.TOTP({
+                secret: OTPAuth.Secret.fromBase32(secret),
+                digits: 6,
+                period: 30
+            });
+            // Check current and adjacent windows (±1) to allow slight time skew
+            const now = Math.floor(Date.now() / 1000);
+            for (let delta = -1; delta <= 1; delta++) {
+                const token = totp.generate({ timestamp: (now + delta * 30) * 1000 });
+                if (token === code) return true;
+            }
+        } catch (e) {
+            console.error('TOTP verification error:', e);
+        }
+        return false;
     }
 
-    // Handle login attempt
+    // Enable 2FA for a user (sets totpEnabled = true)
+    enable2FA(username) {
+        if (!this.users[username]) return;
+        this.users[username].totpEnabled = true;
+        this.saveUsers();
+    }
+
+    // Disable 2FA (master only)
+    disable2FA(username, masterUser) {
+        if (masterUser !== 'CooseTheGeek') return;
+        if (this.users[username]) {
+            this.users[username].totpEnabled = false;
+            this.saveUsers();
+        }
+    }
+
+    // Login attempt
     async login(code, rconCredentials = null) {
         // Rate limiting
         if (this.lockoutUntil && this.lockoutUntil > Date.now()) {
@@ -121,7 +174,6 @@ class AuthSystem {
             throw new Error(`Too many attempts. Locked for ${minutes} minutes.`);
         }
 
-        // Find user by code (in production, codes are hashed)
         let username = null;
         let user = null;
         for (let [u, data] of Object.entries(this.users)) {
@@ -134,28 +186,21 @@ class AuthSystem {
         if (!user) {
             this.attempts++;
             if (this.attempts >= 5) {
-                this.lockoutUntil = Date.now() + 15 * 60 * 1000; // 15 minutes
+                this.lockoutUntil = Date.now() + 15 * 60 * 1000;
                 this.attempts = 0;
             }
             throw new Error('Invalid code');
         }
 
-        // Determine role
         let role = user.role;
-        // If rconCredentials provided, attempt owner authentication
         if (rconCredentials) {
-            // Verify RCON credentials by testing connection
             const valid = await this.testRconConnection(rconCredentials);
-            if (!valid) {
-                throw new Error('Invalid RCON credentials');
-            }
-            role = 'owner'; // upgrade to owner
+            if (!valid) throw new Error('Invalid RCON credentials');
+            role = 'owner';
         }
 
-        // Check 2FA requirements
         const require2FA = (role === 'owner') || (role === 'master' && user.totpEnabled);
         if (require2FA && !this.isDeviceTrusted(username)) {
-            // Prompt for TOTP code – handled by UI, but we return a flag
             return {
                 success: false,
                 require2FA: true,
@@ -164,13 +209,10 @@ class AuthSystem {
             };
         }
 
-        // Login successful
         this.attempts = 0;
         const sessionToken = this.generateSessionToken();
         this.sessionToken = sessionToken;
-        this.sessionExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-
-        // Store minimal session in localStorage (token, expiry)
+        this.sessionExpiry = Date.now() + 24 * 60 * 60 * 1000;
         localStorage.setItem('tdl_session', JSON.stringify({
             username,
             role,
@@ -194,7 +236,6 @@ class AuthSystem {
         if (trustDevice) {
             this.trustDevice(username);
         }
-        // Complete login
         const user = this.users[username];
         const sessionToken = this.generateSessionToken();
         this.sessionToken = sessionToken;
@@ -213,7 +254,6 @@ class AuthSystem {
         };
     }
 
-    // Test RCON connection using bridge
     async testRconConnection(credentials) {
         try {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/connect`, {
@@ -233,7 +273,6 @@ class AuthSystem {
                Math.random().toString(36).substring(2, 15);
     }
 
-    // Check if current session is valid
     checkSession() {
         const saved = localStorage.getItem('tdl_session');
         if (!saved) return null;
@@ -247,24 +286,16 @@ class AuthSystem {
         return null;
     }
 
-    // Logout
     logout() {
         localStorage.removeItem('tdl_session');
         this.sessionToken = null;
         this.sessionExpiry = null;
     }
 
-    // Add a new user (master only)
     addUser(username, code, role, masterUser) {
-        if (masterUser !== 'CooseTheGeek') {
-            throw new Error('Only master can add users');
-        }
-        if (this.users[username]) {
-            throw new Error('User already exists');
-        }
-        if (!code || code.length !== 4 || !/^\d+$/.test(code)) {
-            throw new Error('Code must be 4 digits');
-        }
+        if (masterUser !== 'CooseTheGeek') throw new Error('Only master can add users');
+        if (this.users[username]) throw new Error('User already exists');
+        if (!code || code.length !== 4 || !/^\d+$/.test(code)) throw new Error('Code must be 4 digits');
         this.users[username] = {
             code,
             role,
@@ -274,32 +305,11 @@ class AuthSystem {
         this.saveUsers();
     }
 
-    // Remove a user (master only)
     removeUser(username, masterUser) {
-        if (masterUser !== 'CooseTheGeek') {
-            throw new Error('Only master can remove users');
-        }
-        if (username === 'CooseTheGeek') {
-            throw new Error('Cannot remove primary master');
-        }
+        if (masterUser !== 'CooseTheGeek') throw new Error('Only master can remove users');
+        if (username === 'CooseTheGeek') throw new Error('Cannot remove primary master');
         delete this.users[username];
         this.saveUsers();
-    }
-
-    // Enable 2FA for a user
-    enable2FA(username) {
-        if (!this.users[username]) return;
-        this.users[username].totpEnabled = true;
-        this.saveUsers();
-    }
-
-    // Disable 2FA for a user (master only)
-    disable2FA(username, masterUser) {
-        if (masterUser !== 'CooseTheGeek') return;
-        if (this.users[username]) {
-            this.users[username].totpEnabled = false;
-            this.saveUsers();
-        }
     }
 }
 

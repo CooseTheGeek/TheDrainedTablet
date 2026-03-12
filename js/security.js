@@ -1,5 +1,5 @@
 // security.js – DRAINED TABLET ULTIMATE v7.0.0
-// Security door and access control, with 2FA support.
+// Security door and access control, with 2FA support and first‑time role selection.
 
 class Security {
     constructor() {
@@ -18,6 +18,7 @@ class Security {
         this.setupButtons();
         this.updateDisplay();
         this.create2FAModal();
+        this.createRoleModal(); // Add role selection modal
     }
 
     setupNumpad() {
@@ -81,6 +82,10 @@ class Security {
                 this.clearCode();
                 document.getElementById('attempts').innerText = '3 attempts remaining';
                 
+                // Update global user state
+                AppState.user.role = result.role;
+                AppState.user.username = result.username;
+                
                 // Unlock dashboard
                 document.getElementById('security-door').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
@@ -90,12 +95,16 @@ class Security {
                 if (userEl) userEl.innerText = result.username;
                 
                 toast.success(`Welcome, ${result.username}!`);
+
+                // If the user has no role (shouldn't happen, but just in case), show role modal
+                if (!result.role || result.role === 'none') {
+                    this.showRoleModal(result.username);
+                }
             } else if (result.require2FA) {
-                // Store pending user and show 2FA modal
                 this.pendingUser = result.username;
                 this.pendingRole = result.role;
                 this.show2FAModal();
-                this.clearCode(); // Clear code for security
+                this.clearCode();
             } else {
                 this.failedAttempt();
             }
@@ -130,7 +139,6 @@ class Security {
                 <button class="door-btn" onclick="location.reload()">RELOAD</button>
             </div>
         `;
-        // Auto-unlock after 15 minutes
         setTimeout(() => {
             this.locked = false;
             this.attempts = 3;
@@ -144,8 +152,8 @@ class Security {
         }
     }
 
+    // ---------- 2FA Modal ----------
     create2FAModal() {
-        // Check if modal already exists
         if (document.getElementById('2fa-modal')) return;
         
         const modalHTML = `
@@ -199,6 +207,10 @@ class Security {
             if (result.success) {
                 document.getElementById('2fa-modal').classList.add('hidden');
                 
+                // Update global user state
+                AppState.user.role = result.role;
+                AppState.user.username = result.username;
+                
                 // Unlock dashboard
                 document.getElementById('security-door').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
@@ -215,6 +227,82 @@ class Security {
         } catch (err) {
             toast.error(err.message);
         }
+    }
+
+    // ---------- Role Selection Modal ----------
+    createRoleModal() {
+        if (document.getElementById('role-modal')) return;
+        
+        const modalHTML = `
+            <div id="role-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h3>👤 Select Your Role</h3>
+                    <p>Choose your initial role. You can change this later in User Management.</p>
+                    <div class="role-option" data-role="user">
+                        <input type="radio" name="role" value="user" id="role-user">
+                        <label for="role-user">👤 User</label>
+                        <span>Basic access – view only, no commands</span>
+                    </div>
+                    <div class="role-option" data-role="master">
+                        <input type="radio" name="role" value="master" id="role-master">
+                        <label for="role-master">👑 Master</label>
+                        <span>Dashboard admin – can manage users, no server commands</span>
+                    </div>
+                    <div class="role-option" data-role="owner">
+                        <input type="radio" name="role" value="owner" id="role-owner">
+                        <label for="role-owner">🔒 Owner</label>
+                        <span>Full control – server commands, master access</span>
+                    </div>
+                    <div class="modal-actions">
+                        <button id="set-role" class="modal-btn primary">Set Role</button>
+                        <button id="skip-role" class="modal-btn">Skip (stay as user)</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        document.getElementById('set-role')?.addEventListener('click', () => this.setRole());
+        document.getElementById('skip-role')?.addEventListener('click', () => {
+            document.getElementById('role-modal').classList.add('hidden');
+            toast.info('Role selection skipped – you are a basic user.');
+        });
+
+        // Make role options clickable
+        document.querySelectorAll('.role-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                opt.querySelector('input').checked = true;
+            });
+        });
+    }
+
+    showRoleModal(username) {
+        this.pendingUser = username;
+        document.getElementById('role-modal').classList.remove('hidden');
+    }
+
+    setRole() {
+        const selected = document.querySelector('input[name="role"]:checked');
+        if (!selected) {
+            toast.error('Please select a role');
+            return;
+        }
+        const role = selected.value;
+        // Update user role in AppState and localStorage
+        AppState.user.role = role;
+        localStorage.setItem('tdl_role', role);
+        // Also update in users object
+        let users = JSON.parse(localStorage.getItem('tdl_users') || '{}');
+        if (users[this.pendingUser]) {
+            users[this.pendingUser].role = role;
+            localStorage.setItem('tdl_users', JSON.stringify(users));
+        }
+        document.getElementById('role-modal').classList.add('hidden');
+        toast.success(`Role set to ${role}`);
+        if (window.accessControl) window.accessControl.applyUIPermissions();
+        this.pendingUser = null;
     }
 }
 

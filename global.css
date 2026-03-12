@@ -318,9 +318,9 @@ code, pre {
     z-index: 1000;
 }
 .door-container {
-    width: 400px;
+    width: 350px;
     max-width: 90%;
-    padding: 2rem;
+    padding: 1.5rem;
     text-align: center;
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
@@ -336,12 +336,12 @@ code, pre {
 .code-dots {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 0.8rem;
     margin: 2rem 0;
 }
 .dot {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 2px solid var(--accent-primary);
@@ -362,13 +362,13 @@ code, pre {
     gap: 1rem;
 }
 .numpad-btn {
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 2px solid var(--glass-border);
     color: var(--text-primary);
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
