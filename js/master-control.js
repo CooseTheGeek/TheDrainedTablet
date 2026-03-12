@@ -7,7 +7,7 @@ class MasterControl {
     constructor() {
         this.tablet = window.drainedTablet;
         this.access = window.accessControl;
-        this.commands = window.serverCommands; // from server-commands.js (next file)
+        this.commands = window.serverCommands; // from server-commands.js
         this.activeCategory = 'serverCore';
         this.settingsConfig = this.defineSettings();
         this.init();
@@ -306,7 +306,7 @@ class MasterControl {
         }
         container.innerHTML = html;
 
-        // Attach event listeners for inputs/buttons
+        // Attach event listeners for this category's settings
         container.querySelectorAll('input, select, button').forEach(el => {
             const settingName = el.dataset.setting;
             if (!settingName) return;
@@ -416,26 +416,22 @@ class MasterControl {
         } else if (setting.type === 'select') {
             command += ` ${value}`;
         } else {
-            // For other types, we handle in specific button handlers
             return;
         }
         try {
             const result = await ConnectionManager.executeCommand(command);
-            this.tablet.showToast(`Command executed: ${command}`, 'success');
+            toast.success(`Command executed: ${command}`);
         } catch (err) {
-            this.tablet.showError(`Failed: ${err.message}`);
+            toast.error(`Failed: ${err.message}`);
         }
     }
 
     async executeAction(setting) {
         if (!this.access.isMaster()) return;
         let command = setting.command;
-        // Handle special actions with additional inputs
         if (setting.type === 'text+action') {
             const input = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-input`);
-            if (input) {
-                command += ` ${input.value}`;
-            }
+            if (input) command += ` ${input.value}`;
         } else if (setting.type === 'text+number') {
             const player = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-player`).value;
             const duration = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-duration`).value;
@@ -450,21 +446,19 @@ class MasterControl {
         } else if (setting.type === 'file') {
             const file = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-file`).files[0];
             if (file) {
-                // Handle file upload via bridge
-                this.tablet.showToast('File upload not implemented yet', 'info');
+                toast.info('File upload not implemented yet');
                 return;
             }
         }
         try {
             const result = await ConnectionManager.executeCommand(command);
-            this.tablet.showToast(`Command executed: ${command}`, 'success');
+            toast.success(`Command executed: ${command}`);
         } catch (err) {
-            this.tablet.showError(`Failed: ${err.message}`);
+            toast.error(`Failed: ${err.message}`);
         }
     }
 
     refresh() {
-        // Re-create HTML to reflect permission changes
         this.createHTML();
     }
 }
