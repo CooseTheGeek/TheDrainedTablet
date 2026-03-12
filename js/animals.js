@@ -225,8 +225,12 @@ class Animals {
     }
 
     async fetchPopulations() {
-        if (!this.tablet.connected) return;
-        // Attempt to fetch real animal counts via RCON
+        if (AppState.connection.status !== 'connected') {
+            // Not connected – set populations to zero
+            this.populations = { bears:0, wolves:0, boars:0, deer:0, chickens:0, horses:0 };
+            this.updatePopulations();
+            return;
+        }
         try {
             const result = await ConnectionManager.executeCommand('animal.counts');
             // Parse result (format depends on plugin)
@@ -241,6 +245,7 @@ class Animals {
             };
         } catch (err) {
             console.warn('Could not fetch animal populations');
+            this.populations = { bears:0, wolves:0, boars:0, deer:0, chickens:0, horses:0 };
         }
         this.updatePopulations();
     }
@@ -257,12 +262,11 @@ class Animals {
     async spawnAnimal(type) {
         try {
             await ConnectionManager.executeCommand(`spawn.animal ${type}`);
-            this.tablet.showToast(`Spawned a ${type}`, 'success');
-            // Optionally increment population locally
+            toast.success(`Spawned a ${type}`);
             this.populations[type + 's']++;
             this.updatePopulations();
         } catch (err) {
-            this.tablet.showError('Spawn failed: ' + err.message);
+            toast.error('Spawn failed: ' + err.message);
         }
     }
 
@@ -272,9 +276,9 @@ class Animals {
             await ConnectionManager.executeCommand(`kill.animals ${type}`);
             this.populations[type] = 0;
             this.updatePopulations();
-            this.tablet.showToast(`All ${type} removed`, 'info');
+            toast.info(`All ${type} removed`);
         } catch (err) {
-            this.tablet.showError('Remove failed: ' + err.message);
+            toast.error('Remove failed: ' + err.message);
         }
     }
 
@@ -284,9 +288,9 @@ class Animals {
             await ConnectionManager.executeCommand('kill.animals all');
             this.populations = { bears:0, wolves:0, boars:0, deer:0, chickens:0, horses:0 };
             this.updatePopulations();
-            this.tablet.showToast('All animals killed', 'error');
+            toast.error('All animals killed');
         } catch (err) {
-            this.tablet.showError('Kill failed: ' + err.message);
+            toast.error('Kill failed: ' + err.message);
         }
     }
 
@@ -294,10 +298,10 @@ class Animals {
         if (!confirm('Reset animal populations to default?')) return;
         try {
             await ConnectionManager.executeCommand('reset.animal.population');
-            this.tablet.showToast('Population reset', 'success');
+            toast.success('Population reset');
             this.fetchPopulations();
         } catch (err) {
-            this.tablet.showError('Reset failed: ' + err.message);
+            toast.error('Reset failed: ' + err.message);
         }
     }
 
@@ -314,7 +318,7 @@ class Animals {
             chickenEggRate: parseInt(document.getElementById('egg-rate').value)
         };
         this.saveSettings();
-        this.tablet.showToast('Animal settings saved', 'success');
+        toast.success('Animal settings saved');
     }
 
     resetSettings() {
@@ -348,12 +352,12 @@ class Animals {
         document.getElementById('taming-val').innerText = this.settings.horseTamingTime;
         document.getElementById('egg-rate').value = this.settings.chickenEggRate;
         document.getElementById('egg-rate-val').innerText = this.settings.chickenEggRate;
-        this.tablet.showToast('Settings reset to default', 'info');
+        toast.info('Settings reset to default');
     }
 
     refresh() {
         this.fetchPopulations();
-        this.tablet.showToast('Animal controls refreshed', 'success');
+        toast.success('Animal controls refreshed');
     }
 }
 
