@@ -1,6 +1,6 @@
 // animals.js – DRAINED TABLET ULTIMATE v7.0.0
 // Complete animal control: spawn, remove, and adjust settings.
-// All original features preserved, now with bridge integration and enhanced UI.
+// All original features preserved, now with null checks.
 
 class Animals {
     constructor() {
@@ -192,7 +192,8 @@ class Animals {
         ];
         ranges.forEach(item => {
             document.getElementById(item.id)?.addEventListener('input', (e) => {
-                document.getElementById(item.val).innerText = e.target.value;
+                const valSpan = document.getElementById(item.val);
+                if (valSpan) valSpan.innerText = e.target.value;
             });
         });
     }
@@ -251,12 +252,16 @@ class Animals {
     }
 
     updatePopulations() {
-        document.getElementById('bear-pop').innerText = this.populations.bears;
-        document.getElementById('wolf-pop').innerText = this.populations.wolves;
-        document.getElementById('boar-pop').innerText = this.populations.boars;
-        document.getElementById('deer-pop').innerText = this.populations.deer;
-        document.getElementById('chicken-pop').innerText = this.populations.chickens;
-        document.getElementById('horse-pop').innerText = this.populations.horses;
+        const setPop = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = value;
+        };
+        setPop('bear-pop', this.populations.bears);
+        setPop('wolf-pop', this.populations.wolves);
+        setPop('boar-pop', this.populations.boars);
+        setPop('deer-pop', this.populations.deer);
+        setPop('chicken-pop', this.populations.chickens);
+        setPop('horse-pop', this.populations.horses);
     }
 
     async spawnAnimal(type) {

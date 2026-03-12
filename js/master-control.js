@@ -225,15 +225,13 @@ class MasterControl {
 
     init() {
         this.createHTML();
-        this.attachEvents();
+        // attachEvents() call REMOVED – listeners are attached in renderCategory
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'master') {
                 this.refresh();
             }
         });
-    }
-
-    createHTML() {
+    }    createHTML() {
         const tab = document.getElementById('tab-master');
         if (!tab) return;
 
