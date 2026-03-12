@@ -1,10 +1,8 @@
 // security.js – DRAINED TABLET ULTIMATE v7.0.0
-// Security door and access control (legacy system, now integrated with auth.js).
-// Provides the 4‑digit door interface and delegates authentication to authSystem.
+// Security door and access control, using global authSystem and toast.
 
 class Security {
     constructor() {
-        this.tablet = window.drainedTablet;
         this.auth = window.authSystem;
         this.currentCode = '';
         this.attempts = 3;
@@ -16,14 +14,14 @@ class Security {
     init() {
         this.setupNumpad();
         this.setupButtons();
-        this.loadCodeDisplay();
+        this.updateDisplay();
     }
 
     setupNumpad() {
         document.querySelectorAll('.numpad-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 if (this.locked) {
-                    this.tablet.showError('Door is locked. Try again later.');
+                    toast.error('Door is locked. Try again later.');
                     return;
                 }
                 const num = e.target.innerText;
@@ -42,10 +40,6 @@ class Security {
         document.getElementById('unlock-btn')?.addEventListener('click', () => this.submitCode());
         document.getElementById('clear-btn')?.addEventListener('click', () => this.clearCode());
         document.getElementById('forgot-btn')?.addEventListener('click', () => this.forgotCode());
-    }
-
-    loadCodeDisplay() {
-        this.updateDisplay();
     }
 
     addDigit(digit) {
@@ -73,7 +67,7 @@ class Security {
 
     async submitCode() {
         if (this.currentCode.length !== 4) {
-            this.tablet.showError('Enter 4-digit code');
+            toast.error('Enter 4-digit code');
             return;
         }
 
@@ -92,17 +86,15 @@ class Security {
                 const userEl = document.getElementById('profile-name');
                 if (userEl) userEl.innerText = result.username;
                 
-                this.tablet.showToast(`Welcome, ${result.username}!`, 'success');
+                toast.success(`Welcome, ${result.username}!`);
             } else if (result.require2FA) {
-                // 2FA required – delegate to auth module (would open a modal)
-                this.tablet.showToast('2FA required – please complete authentication', 'info');
+                toast.info('2FA required – please complete authentication');
                 // In a full implementation, we'd open a 2FA input modal.
-                // For now, we'll just log and continue.
             } else {
                 this.failedAttempt();
             }
         } catch (err) {
-            this.tablet.showError(err.message);
+            toast.error(err.message);
             this.failedAttempt();
         }
     }
@@ -110,7 +102,7 @@ class Security {
     failedAttempt() {
         this.attempts--;
         document.getElementById('attempts').innerText = `${this.attempts} attempts remaining`;
-        this.tablet.showError('Invalid code');
+        toast.error('Invalid code');
         this.clearCode();
         if (this.attempts <= 0) {
             this.lockDoor();
@@ -132,7 +124,7 @@ class Security {
                 <button class="door-btn" onclick="location.reload()">RELOAD</button>
             </div>
         `;
-        this.tablet.logAccess('SYSTEM', 'LOCKED');
+        // Auto-unlock after 15 minutes
         setTimeout(() => {
             this.locked = false;
             this.attempts = 3;
@@ -141,12 +133,9 @@ class Security {
     }
 
     forgotCode() {
-        this.tablet.showConfirm('Contact master CooseTheGeek for code reset?', (confirmed) => {
-            if (confirmed) {
-                this.tablet.showToast('Master has been notified', 'info');
-                this.tablet.logAccess('SYSTEM', 'FORGOT_CODE');
-            }
-        });
+        if (confirm('Contact master CooseTheGeek for code reset?')) {
+            toast.info('Master has been notified');
+        }
     }
 }
 

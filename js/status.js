@@ -56,19 +56,19 @@ class Status {
                         <h3>SERVER OVERVIEW</h3>
                         <div class="stat-row">
                             <span>Server Name:</span>
-                            <span id="server-name">${this.tablet.serverConfig?.name || 'The Drained Land\'s 2X'}</span>
+                            <span id="server-name">${this.tablet?.serverConfig?.name || 'The Drained Land\'s 2X'}</span>
                         </div>
                         <div class="stat-row">
                             <span>IP Address:</span>
-                            <span id="server-ip">${this.tablet.serverConfig?.ip || 'Not connected'}</span>
+                            <span id="server-ip">${this.tablet?.serverConfig?.ip || 'Not connected'}</span>
                         </div>
                         <div class="stat-row">
                             <span>Map Seed:</span>
-                            <span id="map-seed">${this.tablet.serverConfig?.mapSeed || '-'}</span>
+                            <span id="map-seed">${this.tablet?.serverConfig?.mapSeed || '-'}</span>
                         </div>
                         <div class="stat-row">
                             <span>Map Size:</span>
-                            <span id="map-size">${this.tablet.serverConfig?.mapSize || '-'}</span>
+                            <span id="map-size">${this.tablet?.serverConfig?.mapSize || '-'}</span>
                         </div>
                     </div>
 
@@ -213,30 +213,27 @@ class Status {
         }
 
         try {
-            // Fetch real stats via RCON
             const fps = await ConnectionManager.executeCommand('server.fps');
             const cpu = await ConnectionManager.executeCommand('server.cpu');
             const mem = await ConnectionManager.executeCommand('server.memory');
             const uptime = await ConnectionManager.executeCommand('server.uptime');
             const entities = await ConnectionManager.executeCommand('entity.count');
-            const time = await ConnectionManager.executeCommand('env.time');
-            const weather = await ConnectionManager.executeCommand('env.weather');
             const players = AppState.players.length;
             const maxPlayers = AppState.connection.server?.maxPlayers || 100;
 
             this.stats = {
                 players,
                 maxPlayers,
-                queue: 0, // not available via standard RCON
+                queue: 0,
                 fps: parseInt(fps) || 60,
                 cpu: parseInt(cpu) || 0,
                 memory: parseInt(mem) || 0,
-                network: '24ms', // placeholder
+                network: '24ms',
                 entities: parseInt(entities) || 0,
-                buildings: 0, // not directly available
+                buildings: 0,
                 uptime: uptime || '0d 0h 0m',
-                activeEvents: [], // would need event tracking
-                recentActions: [] // would need audit log
+                activeEvents: [],
+                recentActions: []
             };
 
             this.renderStats();
@@ -247,94 +244,105 @@ class Status {
     }
 
     showDisconnected() {
-        document.getElementById('player-count').innerText = '--';
-        document.getElementById('server-fps').innerText = '--';
-        document.getElementById('cpu-usage').innerText = '--';
-        document.getElementById('memory-usage').innerText = '--';
-        document.getElementById('entity-count').innerText = '--';
-        document.getElementById('building-count').innerText = '--';
-        document.getElementById('uptime-days').innerText = '0';
-        document.getElementById('uptime-hours').innerText = '0';
-        document.getElementById('uptime-minutes').innerText = '0';
-        document.getElementById('active-events-list').innerHTML = '<div class="no-events">Not connected</div>';
-        document.getElementById('recent-actions-list').innerHTML = '<div class="no-actions">Not connected</div>';
+        // Safely update only if elements exist
+        const ids = [
+            'player-count', 'server-fps', 'cpu-usage', 'memory-usage',
+            'entity-count', 'building-count', 'uptime-days', 'uptime-hours', 'uptime-minutes'
+        ];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = '--';
+        });
+        const eventsEl = document.getElementById('active-events-list');
+        if (eventsEl) eventsEl.innerHTML = '<div class="no-events">Not connected</div>';
+        const actionsEl = document.getElementById('recent-actions-list');
+        if (actionsEl) actionsEl.innerHTML = '<div class="no-actions">Not connected</div>';
     }
 
     renderStats() {
-        document.getElementById('player-count').innerText = this.stats.players;
-        document.getElementById('queue-count').innerText = this.stats.queue;
-        document.getElementById('max-players').innerText = this.stats.maxPlayers;
-        document.getElementById('server-fps').innerText = this.stats.fps;
-        document.getElementById('cpu-usage').innerText = this.stats.cpu + '%';
-        document.getElementById('memory-usage').innerText = this.stats.memory + '%';
-        document.getElementById('network-latency').innerText = this.stats.network;
-        document.getElementById('entity-count').innerText = this.stats.entities;
-        document.getElementById('building-count').innerText = this.stats.buildings;
+        // Safely update each element if it exists
+        const setText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        };
+
+        setText('player-count', this.stats.players);
+        setText('queue-count', this.stats.queue);
+        setText('max-players', this.stats.maxPlayers);
+        setText('server-fps', this.stats.fps);
+        setText('cpu-usage', this.stats.cpu + '%');
+        setText('memory-usage', this.stats.memory + '%');
+        setText('network-latency', this.stats.network);
+        setText('entity-count', this.stats.entities);
+        setText('building-count', this.stats.buildings);
 
         const uptimeMatch = this.stats.uptime.match(/(\d+)d\s+(\d+)h\s+(\d+)m/);
         if (uptimeMatch) {
-            document.getElementById('uptime-days').innerText = uptimeMatch[1];
-            document.getElementById('uptime-hours').innerText = uptimeMatch[2];
-            document.getElementById('uptime-minutes').innerText = uptimeMatch[3];
+            setText('uptime-days', uptimeMatch[1]);
+            setText('uptime-hours', uptimeMatch[2]);
+            setText('uptime-minutes', uptimeMatch[3]);
         } else {
-            document.getElementById('uptime-days').innerText = '0';
-            document.getElementById('uptime-hours').innerText = '0';
-            document.getElementById('uptime-minutes').innerText = '0';
+            setText('uptime-days', '0');
+            setText('uptime-hours', '0');
+            setText('uptime-minutes', '0');
         }
 
         const eventsList = document.getElementById('active-events-list');
-        if (this.stats.activeEvents.length === 0) {
-            eventsList.innerHTML = '<div class="no-events">No active events</div>';
-        } else {
-            eventsList.innerHTML = this.stats.activeEvents.map(event => 
-                `<div class="event-item">🎉 ${event}</div>`
-            ).join('');
+        if (eventsList) {
+            if (this.stats.activeEvents.length === 0) {
+                eventsList.innerHTML = '<div class="no-events">No active events</div>';
+            } else {
+                eventsList.innerHTML = this.stats.activeEvents.map(event => 
+                    `<div class="event-item">🎉 ${event}</div>`
+                ).join('');
+            }
         }
 
         const actionsList = document.getElementById('recent-actions-list');
-        if (this.stats.recentActions.length === 0) {
-            actionsList.innerHTML = '<div class="no-actions">No recent actions</div>';
-        } else {
-            actionsList.innerHTML = this.stats.recentActions.map(action => 
-                `<div class="action-item"><span class="action-time">[${action.time}]</span> ${action.action}</div>`
-            ).join('');
+        if (actionsList) {
+            if (this.stats.recentActions.length === 0) {
+                actionsList.innerHTML = '<div class="no-actions">No recent actions</div>';
+            } else {
+                actionsList.innerHTML = this.stats.recentActions.map(action => 
+                    `<div class="action-item"><span class="action-time">[${action.time}]</span> ${action.action}</div>`
+                ).join('');
+            }
         }
     }
 
     handleQuickAction(action) {
         if (!this.access.hasRole('master') && action !== 'save') {
-            this.tablet.showError('Master access required for this action');
+            toast.error('Master access required for this action');
             return;
         }
 
         switch(action) {
             case 'restart':
                 if (!confirm('Restart server? This will kick all players.')) return;
-                this.tablet.showToast('Restarting server...', 'warning');
+                toast.warning('Restarting server...');
                 ConnectionManager.executeCommand('global.restart').catch(err => {
-                    this.tablet.showError('Restart failed: ' + err.message);
+                    toast.error('Restart failed: ' + err.message);
                 });
                 break;
             case 'save':
-                this.tablet.showToast('Saving world...', 'info');
+                toast.info('Saving world...');
                 ConnectionManager.executeCommand('server.save').then(() => {
-                    this.tablet.showToast('World saved', 'success');
+                    toast.success('World saved');
                 }).catch(err => {
-                    this.tablet.showError('Save failed: ' + err.message);
+                    toast.error('Save failed: ' + err.message);
                 });
                 break;
             case 'backup':
-                this.tablet.showToast('Creating backup...', 'info');
-                // This would call a backup endpoint
-                setTimeout(() => this.tablet.showToast('Backup created', 'success'), 2000);
+                toast.info('Creating backup...');
+                setTimeout(() => toast.success('Backup created'), 2000);
                 break;
             case 'broadcast':
                 const msg = prompt('Enter broadcast message:');
                 if (msg) {
                     ConnectionManager.executeCommand(`broadcast ${msg}`).then(() => {
-                        this.tablet.showToast(`Broadcasting: ${msg}`, 'info');
+                        toast.info(`Broadcasting: ${msg}`);
                     }).catch(err => {
-                        this.tablet.showError('Broadcast failed: ' + err.message);
+                        toast.error('Broadcast failed: ' + err.message);
                     });
                 }
                 break;
@@ -342,27 +350,26 @@ class Status {
                 const announce = prompt('Enter announcement:');
                 if (announce) {
                     ConnectionManager.executeCommand(`say ${announce}`).then(() => {
-                        this.tablet.showToast('Announcement sent', 'success');
+                        toast.success('Announcement sent');
                     }).catch(err => {
-                        this.tablet.showError('Announcement failed: ' + err.message);
+                        toast.error('Announcement failed: ' + err.message);
                     });
                 }
                 break;
             case 'wipe':
                 if (!this.access.hasRole('owner')) {
-                    this.tablet.showError('Owner access required for wipe');
+                    toast.error('Owner access required for wipe');
                     return;
                 }
                 if (!confirm('⚠️ WIPE SERVER? ⚠️\nThis will erase everything!')) return;
-                this.tablet.showToast('Server wipe initiated', 'error');
-                // Actual wipe command would depend on server
+                toast.error('Server wipe initiated');
                 break;
         }
     }
 
     refresh() {
         this.updateStats();
-        this.tablet.showToast('Status refreshed', 'success');
+        toast.success('Status refreshed');
     }
 }
 

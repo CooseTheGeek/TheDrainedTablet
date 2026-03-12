@@ -140,7 +140,8 @@ class ConnectionHealth {
         ];
         ranges.forEach(item => {
             document.getElementById(item.id)?.addEventListener('input', (e) => {
-                document.getElementById(item.val).innerText = e.target.value;
+                const valEl = document.getElementById(item.val);
+                if (valEl) valEl.innerText = e.target.value;
             });
         });
     }
@@ -161,7 +162,6 @@ class ConnectionHealth {
         }
 
         try {
-            // Fetch real stats via RCON (or bridge)
             const cpu = await ConnectionManager.executeCommand('server.cpu');
             const mem = await ConnectionManager.executeCommand('server.memory');
             const fps = await ConnectionManager.executeCommand('server.fps');
@@ -186,37 +186,46 @@ class ConnectionHealth {
             this.checkAlerts();
         } catch (err) {
             console.warn('Health metrics update failed', err);
+            this.setDisconnected();
         }
     }
 
     setDisconnected() {
-        document.getElementById('cpu-value').innerText = '--';
-        document.getElementById('ram-value').innerText = '--';
-        document.getElementById('fps-value').innerText = '--';
-        document.getElementById('ping-value').innerText = '--ms';
-        document.getElementById('packetloss-value').innerText = '--%';
-        document.getElementById('jitter-value').innerText = '--ms';
-        document.getElementById('cpu-fill').style.width = '0%';
-        document.getElementById('ram-fill').style.width = '0%';
-        document.getElementById('fps-fill').style.width = '0%';
-        document.getElementById('ping-fill').style.width = '0%';
-        document.getElementById('packetloss-fill').style.width = '0%';
-        document.getElementById('jitter-fill').style.width = '0%';
+        // Safely update only if elements exist
+        const valueIds = ['cpu-value', 'ram-value', 'fps-value', 'ping-value', 'packetloss-value', 'jitter-value'];
+        valueIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = '--';
+        });
+        const fillIds = ['cpu-fill', 'ram-fill', 'fps-fill', 'ping-fill', 'packetloss-fill', 'jitter-fill'];
+        fillIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.width = '0%';
+        });
     }
 
     updateGauges() {
-        document.getElementById('cpu-value').innerText = this.metrics.cpu + '%';
-        document.getElementById('cpu-fill').style.width = this.metrics.cpu + '%';
-        document.getElementById('ram-value').innerText = this.metrics.ram + '%';
-        document.getElementById('ram-fill').style.width = this.metrics.ram + '%';
-        document.getElementById('fps-value').innerText = this.metrics.fps;
-        document.getElementById('fps-fill').style.width = (this.metrics.fps / 60 * 100) + '%';
-        document.getElementById('ping-value').innerText = this.metrics.ping + 'ms';
-        document.getElementById('ping-fill').style.width = Math.min(100, (this.metrics.ping / 500) * 100) + '%';
-        document.getElementById('packetloss-value').innerText = this.metrics.packetLoss.toFixed(1) + '%';
-        document.getElementById('packetloss-fill').style.width = Math.min(100, this.metrics.packetLoss * 10) + '%';
-        document.getElementById('jitter-value').innerText = this.metrics.jitter.toFixed(1) + 'ms';
-        document.getElementById('jitter-fill').style.width = Math.min(100, (this.metrics.jitter / 50) * 100) + '%';
+        const setText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        };
+        const setWidth = (id, width) => {
+            const el = document.getElementById(id);
+            if (el) el.style.width = width + '%';
+        };
+
+        setText('cpu-value', this.metrics.cpu + '%');
+        setWidth('cpu-fill', this.metrics.cpu);
+        setText('ram-value', this.metrics.ram + '%');
+        setWidth('ram-fill', this.metrics.ram);
+        setText('fps-value', this.metrics.fps);
+        setWidth('fps-fill', (this.metrics.fps / 60) * 100);
+        setText('ping-value', this.metrics.ping + 'ms');
+        setWidth('ping-fill', Math.min(100, (this.metrics.ping / 500) * 100));
+        setText('packetloss-value', this.metrics.packetLoss.toFixed(1) + '%');
+        setWidth('packetloss-fill', Math.min(100, this.metrics.packetLoss * 10));
+        setText('jitter-value', this.metrics.jitter.toFixed(1) + 'ms');
+        setWidth('jitter-fill', Math.min(100, (this.metrics.jitter / 50) * 100));
     }
 
     checkAlerts() {
@@ -250,11 +259,7 @@ class ConnectionHealth {
     }
 
     addAlert(level, message) {
-        this.alerts.unshift({
-            level,
-            message,
-            time: new Date().toLocaleTimeString()
-        });
+        this.alerts.unshift({ level, message, time: new Date().toLocaleTimeString() });
         if (this.alerts.length > 20) this.alerts.pop();
     }
 
@@ -278,13 +283,13 @@ class ConnectionHealth {
         this.thresholds.ramWarn = parseInt(document.getElementById('ram-warn').value);
         this.thresholds.pingWarn = parseInt(document.getElementById('ping-warn').value);
         this.thresholds.pingCrit = parseInt(document.getElementById('ping-crit').value);
-        this.tablet.showToast('Thresholds saved', 'success');
+        toast.success('Thresholds saved');
     }
 
     refresh() {
         this.updateMetrics();
         this.renderAlerts();
-        this.tablet.showToast('Connection health refreshed', 'success');
+        toast.success('Connection health refreshed');
     }
 }
 
