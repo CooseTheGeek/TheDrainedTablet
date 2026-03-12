@@ -14,7 +14,7 @@ const AppState = {
     connection: {
         status: 'disconnected',       // 'disconnected', 'connecting', 'connected', 'error'
         server: null,                  // { ip, port, password }
-        bridgeUrl: 'https://your-bridge.onrender.com',   // CHANGE THIS
+        bridgeUrl: 'https://drained-bridge.onrender.com',   // CHANGE THIS
         lastPing: null,
         reconnectAttempts: 0,
         maxReconnect: 5,
