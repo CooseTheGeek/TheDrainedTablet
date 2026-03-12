@@ -5,7 +5,6 @@
 
 class AuthSystem {
     constructor() {
-        this.tablet = window.drainedTablet;
         this.users = this.loadUsers();
         this.totpSecrets = this.loadTotpSecrets();
         this.trustedDevices = this.loadTrustedDevices();
