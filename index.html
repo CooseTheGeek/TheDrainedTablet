@@ -426,6 +426,17 @@
                 });
             }
 
+            // Sidebar collapse toggle (NEW)
+            const collapseBtn = document.getElementById('collapse-sidebar');
+            if (collapseBtn) {
+                collapseBtn.addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.toggle('collapsed');
+                    // Update button icon based on state
+                    const isCollapsed = document.getElementById('sidebar').classList.contains('collapsed');
+                    collapseBtn.textContent = isCollapsed ? '▶' : '◀';
+                });
+            }
+
             // Role selection modal logic (integrated with security.js)
             const roleOptions = document.querySelectorAll('.role-option');
             roleOptions.forEach(opt => {
