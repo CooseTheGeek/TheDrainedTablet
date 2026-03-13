@@ -304,7 +304,7 @@ code, pre {
     font-size: 0.9rem;
     color: var(--text-secondary);
     z-index: 10;
-}/* ========== SECURITY DOOR ========== */
+/* ========== SECURITY DOOR ========== */
 .security-door {
     position: fixed;
     top: 0;
@@ -318,9 +318,9 @@ code, pre {
     z-index: 1000;
 }
 .door-container {
-    width: min(400px, 90vw);
-    height: min(400px, 90vw);
-    padding: 1rem;
+    width: min(420px, 85vw);
+    height: min(420px, 85vw);
+    padding: 1rem 0.8rem;
     text-align: center;
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
@@ -333,20 +333,24 @@ code, pre {
     aspect-ratio: 1 / 1;
 }
 .door-header h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+    font-size: clamp(1.2rem, 6vw, 1.8rem);
+    margin-bottom: 0.25rem;
     color: var(--accent-primary);
+    line-height: 1.2;
+}
+.door-header p {
+    font-size: clamp(0.8rem, 3vw, 1rem);
+    margin-bottom: 0.5rem;
 }
 .code-dots {
     display: flex;
     justify-content: center;
-    gap: 0.8rem;
-    margin: 1rem 0;
+    gap: clamp(0.3rem, 2vw, 0.8rem);
+    margin: 0.5rem 0;
 }
-
 .dot {
-    width: min(18px, 4vw);
-    height: min(18px, 4vw);
+    width: clamp(12px, 4vw, 18px);
+    height: clamp(12px, 4vw, 18px);
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 2px solid var(--accent-primary);
@@ -358,25 +362,28 @@ code, pre {
 .numpad {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
-    margin: 1.5rem 0;
+    gap: clamp(0.3rem, 2vw, 0.8rem);
+    margin: 0.5rem 0;
 }
 .numpad-row {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: clamp(0.3rem, 2vw, 0.8rem);
 }
 .numpad-btn {
-    width: 60px;
-    height: 60px;
+    width: min(60px, 15vw);
+    height: min(60px, 15vw);
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 2px solid var(--glass-border);
     color: var(--text-primary);
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 5vw, 1.8rem);
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .numpad-btn:hover {
     background: var(--accent-primary);
@@ -387,11 +394,11 @@ code, pre {
     display: flex;
     justify-content: center;
     gap: 0.5rem;
-    margin: 0.5rem 0;
+    margin: 0.3rem 0;
     flex-wrap: wrap;
 }
 .door-btn {
-    padding: 0.6rem 1.2rem;
+    padding: 0.4rem 1rem;
     border: none;
     border-radius: 30px;
     background: var(--accent-primary);
@@ -399,14 +406,15 @@ code, pre {
     font-weight: 600;
     cursor: pointer;
     transition: opacity 0.2s;
+    font-size: clamp(0.8rem, 3vw, 1rem);
 }
 .door-btn:hover {
     opacity: 0.8;
 }
 .door-footer {
-    margin-top: 1rem;
+    margin-top: 0.3rem;
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: clamp(0.7rem, 2.5vw, 0.9rem);
 }
 
 /* ========== TOAST NOTIFICATIONS ========== */
