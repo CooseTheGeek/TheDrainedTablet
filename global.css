@@ -304,7 +304,6 @@ code, pre {
     font-size: 0.9rem;
     color: var(--text-secondary);
     z-index: 10;
-
 /* ========== SECURITY DOOR ========== */
 .security-door {
     position: fixed;
