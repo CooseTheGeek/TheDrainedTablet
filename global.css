@@ -359,30 +359,24 @@ code, pre {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
-    margin: 1rem 0;
+    margin: 1.5rem 0;
 }
-
 .numpad-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.8rem;
-    justify-items: center;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
 }
-
 .numpad-btn {
-    width: 100%;
-    aspect-ratio: 1 / 1;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 2px solid var(--glass-border);
     color: var(--text-primary);
-    font-size: clamp(1.2rem, 5vw, 1.8rem);
+    font-size: 1.5rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 .numpad-btn:hover {
     background: var(--accent-primary);
@@ -2111,4 +2105,17 @@ input:checked + .slider:before {
     padding: 3rem;
     color: var(--error);
     font-size: 1.5rem;
+}
+
+@media (max-width: 480px) {
+    .numpad {
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+    .numpad-row {
+        gap: 0.5rem;
+    }
+    .door-actions {
+        gap: 0.3rem;
+    }
 }
