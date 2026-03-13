@@ -83,22 +83,18 @@ class Security {
                 this.clearCode();
                 document.getElementById('attempts').innerText = '3 attempts remaining';
                 
-                // Update global user state
                 AppState.user.role = result.role;
                 AppState.user.username = result.username;
                 this.updateRoleBadge();
                 
-                // Unlock dashboard
                 document.getElementById('security-door').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
                 
-                // Update user info in header
                 const userEl = document.getElementById('profile-name');
                 if (userEl) userEl.innerText = result.username;
                 
                 toast.success(`Welcome, ${result.username}!`);
 
-                // If Discord not linked, show the modal
                 if (!localStorage.getItem('discord_linked')) {
                     setTimeout(() => this.showDiscordModal(), 500);
                 }
@@ -149,7 +145,6 @@ class Security {
     }
 
     forgotCode() {
-        // Show the Discord modal with options
         this.showDiscordModal();
     }
 
@@ -208,23 +203,19 @@ class Security {
             if (result.success) {
                 document.getElementById('2fa-modal').classList.add('hidden');
                 
-                // Update global user state
                 AppState.user.role = result.role;
                 AppState.user.username = result.username;
                 this.updateRoleBadge();
                 
-                // Unlock dashboard
                 document.getElementById('security-door').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
                 
-                // Update user info
                 const userEl = document.getElementById('profile-name');
                 if (userEl) userEl.innerText = result.username;
                 
                 toast.success(`Welcome, ${result.username}!`);
                 this.pendingUser = null;
 
-                // If Discord not linked, show the modal
                 if (!localStorage.getItem('discord_linked')) {
                     setTimeout(() => this.showDiscordModal(), 500);
                 }
@@ -245,85 +236,33 @@ class Security {
                 <div class="modal-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h3 style="margin:0;">🔗 Link Discord Account</h3>
-                        <button id="discord-close-btn" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: var(--text-primary);">&times;</button>
+                        <button id="discord-close-btn" onclick="document.getElementById('discord-modal').classList.add('hidden');" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: var(--text-primary);">&times;</button>
                     </div>
                     <p>Connect your Discord to enable notifications and direct messaging.</p>
                     <button id="discord-link-btn" class="modal-btn primary">Link Discord</button>
-                    <button id="discord-skip-btn" class="modal-btn">Skip</button>
+                    <button id="discord-skip-btn" onclick="localStorage.setItem('discord_linked', 'skipped'); document.getElementById('discord-modal').classList.add('hidden'); toast.info('Discord linking skipped');" class="modal-btn">Skip</button>
                     <hr>
                     <h4>Forgot your code?</h4>
                     <p>An email will be sent to the master. You can also DM CooseTheGeek directly.</p>
                     <button id="forgot-email-btn" class="modal-btn">Send Email</button>
                     <button id="forgot-discord-dm-btn" class="modal-btn">DM Master on Discord</button>
                     <div class="modal-actions" style="margin-top: 1rem;">
-                        <button id="discord-cancel-btn" class="modal-btn">Cancel</button>
+                        <button id="discord-cancel-btn" onclick="document.getElementById('discord-modal').classList.add('hidden');" class="modal-btn">Cancel</button>
                     </div>
                 </div>
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Get all buttons
-        const modal = document.getElementById('discord-modal');
-        const closeBtn = document.getElementById('discord-close-btn');
-        const cancelBtn = document.getElementById('discord-cancel-btn');
-        const skipBtn = document.getElementById('discord-skip-btn');
-        const linkBtn = document.getElementById('discord-link-btn');
-        const forgotEmailBtn = document.getElementById('forgot-email-btn');
-        const forgotDmBtn = document.getElementById('forgot-discord-dm-btn');
-
-        // Close button (X)
-        if (closeBtn) {
-            closeBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                modal.classList.add('hidden');
-            });
-        }
-
-        // Cancel button
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                modal.classList.add('hidden');
-            });
-        }
-
-        // Skip button
-        if (skipBtn) {
-            skipBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                localStorage.setItem('discord_linked', 'skipped');
-                modal.classList.add('hidden');
-                toast.info('Discord linking skipped');
-            });
-        }
-
-        // Link button
-        if (linkBtn) {
-            linkBtn.addEventListener('click', () => {
-                window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
-            });
-        }
-
-        // Forgot email button
-        if (forgotEmailBtn) {
-            forgotEmailBtn.addEventListener('click', () => {
-                this.sendForgotEmail();
-            });
-        }
-
-        // DM button
-        if (forgotDmBtn) {
-            forgotDmBtn.addEventListener('click', () => {
-                this.dmMaster();
-            });
-        }
+        // Link button still needs a listener
+        document.getElementById('discord-link-btn')?.addEventListener('click', () => this.linkDiscord());
+        document.getElementById('forgot-email-btn')?.addEventListener('click', () => this.sendForgotEmail());
+        document.getElementById('forgot-discord-dm-btn')?.addEventListener('click', () => this.dmMaster());
     }
 
     showDiscordModal() {
         const modal = document.getElementById('discord-modal');
         if (modal) {
-            // Don't show if already skipped
             if (localStorage.getItem('discord_linked') === 'skipped') {
                 return;
             }
@@ -332,10 +271,7 @@ class Security {
     }
 
     linkDiscord() {
-        // Redirect to bridge's Discord OAuth endpoint
         window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
-        // The modal will be hidden when the user returns (via query param)
-        // We'll handle that in checkDiscordReturn()
     }
 
     sendForgotEmail() {
@@ -357,8 +293,7 @@ class Security {
     }
 
     dmMaster() {
-        // Open Discord DM with master (replace with actual user ID)
-        const masterDiscordId = '546976779534073882'; // CooseTheGeek's Discord ID
+        const masterDiscordId = '546976779534073882';
         window.open(`https://discord.com/users/${masterDiscordId}`, '_blank');
         document.getElementById('discord-modal').classList.add('hidden');
     }
@@ -368,12 +303,10 @@ class Security {
         if (urlParams.get('discord') === 'linked') {
             localStorage.setItem('discord_linked', 'true');
             toast.success('Discord linked successfully!');
-            // Remove the query param
             window.history.replaceState({}, '', window.location.pathname);
         }
     }
 
-    // ---------- Role Badge ----------
     updateRoleBadge() {
         const badge = document.getElementById('role-badge');
         if (badge && AppState.user?.role) {
@@ -383,7 +316,6 @@ class Security {
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.security = new Security();
     window.security.checkDiscordReturn();
