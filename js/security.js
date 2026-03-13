@@ -1,5 +1,5 @@
 // security.js – DRAINED TABLET ULTIMATE v7.0.0
-// Security door and access control, with 2FA support and first‑time role selection.
+// Security door, 2FA, Discord linking, and forgot code.
 
 class Security {
     constructor() {
@@ -18,7 +18,8 @@ class Security {
         this.setupButtons();
         this.updateDisplay();
         this.create2FAModal();
-        this.createRoleModal(); // Add role selection modal
+        this.createDiscordModal();
+        this.updateRoleBadge();
     }
 
     setupNumpad() {
@@ -85,6 +86,7 @@ class Security {
                 // Update global user state
                 AppState.user.role = result.role;
                 AppState.user.username = result.username;
+                this.updateRoleBadge();
                 
                 // Unlock dashboard
                 document.getElementById('security-door').classList.add('hidden');
@@ -96,9 +98,9 @@ class Security {
                 
                 toast.success(`Welcome, ${result.username}!`);
 
-                // If the user has no role (shouldn't happen, but just in case), show role modal
-                if (!result.role || result.role === 'none') {
-                    this.showRoleModal(result.username);
+                // If Discord not linked, show the modal
+                if (!localStorage.getItem('discord_linked')) {
+                    setTimeout(() => this.showDiscordModal(), 500);
                 }
             } else if (result.require2FA) {
                 this.pendingUser = result.username;
@@ -147,9 +149,8 @@ class Security {
     }
 
     forgotCode() {
-        if (confirm('Contact master CooseTheGeek for code reset?')) {
-            toast.info('Master has been notified');
-        }
+        // Show the Discord modal with options
+        this.showDiscordModal();
     }
 
     // ---------- 2FA Modal ----------
@@ -210,6 +211,7 @@ class Security {
                 // Update global user state
                 AppState.user.role = result.role;
                 AppState.user.username = result.username;
+                this.updateRoleBadge();
                 
                 // Unlock dashboard
                 document.getElementById('security-door').classList.add('hidden');
@@ -221,6 +223,11 @@ class Security {
                 
                 toast.success(`Welcome, ${result.username}!`);
                 this.pendingUser = null;
+
+                // If Discord not linked, show the modal
+                if (!localStorage.getItem('discord_linked')) {
+                    setTimeout(() => this.showDiscordModal(), 500);
+                }
             } else {
                 toast.error('Invalid 2FA code');
             }
@@ -229,84 +236,97 @@ class Security {
         }
     }
 
-    // ---------- Role Selection Modal ----------
-    createRoleModal() {
-        if (document.getElementById('role-modal')) return;
+    // ---------- Discord/Forgot Modal ----------
+    createDiscordModal() {
+        if (document.getElementById('discord-modal')) return;
         
         const modalHTML = `
-            <div id="role-modal" class="modal hidden">
+            <div id="discord-modal" class="modal hidden">
                 <div class="modal-content">
-                    <h3>👤 Select Your Role</h3>
-                    <p>Choose your initial role. You can change this later in User Management.</p>
-                    <div class="role-option" data-role="user">
-                        <input type="radio" name="role" value="user" id="role-user">
-                        <label for="role-user">👤 User</label>
-                        <span>Basic access – view only, no commands</span>
-                    </div>
-                    <div class="role-option" data-role="master">
-                        <input type="radio" name="role" value="master" id="role-master">
-                        <label for="role-master">👑 Master</label>
-                        <span>Dashboard admin – can manage users, no server commands</span>
-                    </div>
-                    <div class="role-option" data-role="owner">
-                        <input type="radio" name="role" value="owner" id="role-owner">
-                        <label for="role-owner">🔒 Owner</label>
-                        <span>Full control – server commands, master access</span>
-                    </div>
-                    <div class="modal-actions">
-                        <button id="set-role" class="modal-btn primary">Set Role</button>
-                        <button id="skip-role" class="modal-btn">Skip (stay as user)</button>
-                    </div>
+                    <h3>🔗 Link Discord Account</h3>
+                    <p>Connect your Discord to enable notifications and direct messaging.</p>
+                    <button id="discord-link-btn" class="modal-btn primary">Link Discord</button>
+                    <button id="discord-skip-btn" class="modal-btn">Skip</button>
+                    <hr>
+                    <h4>Forgot your code?</h4>
+                    <p>An email will be sent to the master. You can also DM CooseTheGeek directly.</p>
+                    <button id="forgot-email-btn" class="modal-btn">Send Email</button>
+                    <button id="forgot-discord-dm-btn" class="modal-btn">DM Master on Discord</button>
                 </div>
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        document.getElementById('set-role')?.addEventListener('click', () => this.setRole());
-        document.getElementById('skip-role')?.addEventListener('click', () => {
-            document.getElementById('role-modal').classList.add('hidden');
-            toast.info('Role selection skipped – you are a basic user.');
+        document.getElementById('discord-link-btn')?.addEventListener('click', () => this.linkDiscord());
+        document.getElementById('discord-skip-btn')?.addEventListener('click', () => {
+            localStorage.setItem('discord_linked', 'skipped');
+            document.getElementById('discord-modal').classList.add('hidden');
         });
-
-        // Make role options clickable
-        document.querySelectorAll('.role-option').forEach(opt => {
-            opt.addEventListener('click', () => {
-                document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
-                opt.classList.add('selected');
-                opt.querySelector('input').checked = true;
-            });
-        });
+        document.getElementById('forgot-email-btn')?.addEventListener('click', () => this.sendForgotEmail());
+        document.getElementById('forgot-discord-dm-btn')?.addEventListener('click', () => this.dmMaster());
     }
 
-    showRoleModal(username) {
-        this.pendingUser = username;
-        document.getElementById('role-modal').classList.remove('hidden');
+    showDiscordModal() {
+        const modal = document.getElementById('discord-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
     }
 
-    setRole() {
-        const selected = document.querySelector('input[name="role"]:checked');
-        if (!selected) {
-            toast.error('Please select a role');
-            return;
+    linkDiscord() {
+        // Redirect to bridge's Discord OAuth endpoint
+        window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
+        // The modal will be hidden when the user returns (via query param)
+        // We'll handle that in checkDiscordReturn()
+    }
+
+    sendForgotEmail() {
+        fetch('https://drained-bridge.onrender.com/api/forgot-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: AppState.user?.username || 'unknown' })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                toast.info('Email sent to master.');
+            } else {
+                toast.error('Failed to send email.');
+            }
+        })
+        .catch(() => toast.error('Network error.'));
+        document.getElementById('discord-modal').classList.add('hidden');
+    }
+
+    dmMaster() {
+        // Open Discord DM with master (replace with actual user ID)
+        const masterDiscordId = '546976779534073882'; // CooseTheGeek's Discord ID
+        window.open(`discord://users/${masterDiscordId}`, '_blank');
+        document.getElementById('discord-modal').classList.add('hidden');
+    }
+
+    checkDiscordReturn() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('discord') === 'linked') {
+            localStorage.setItem('discord_linked', 'true');
+            toast.success('Discord linked successfully!');
+            // Remove the query param
+            window.history.replaceState({}, '', window.location.pathname);
         }
-        const role = selected.value;
-        // Update user role in AppState and localStorage
-        AppState.user.role = role;
-        localStorage.setItem('tdl_role', role);
-        // Also update in users object
-        let users = JSON.parse(localStorage.getItem('tdl_users') || '{}');
-        if (users[this.pendingUser]) {
-            users[this.pendingUser].role = role;
-            localStorage.setItem('tdl_users', JSON.stringify(users));
+    }
+
+    // ---------- Role Badge ----------
+    updateRoleBadge() {
+        const badge = document.getElementById('role-badge');
+        if (badge && AppState.user?.role) {
+            badge.className = `role-badge ${AppState.user.role}`;
+            badge.innerText = AppState.user.role.toUpperCase();
         }
-        document.getElementById('role-modal').classList.add('hidden');
-        toast.success(`Role set to ${role}`);
-        if (window.accessControl) window.accessControl.applyUIPermissions();
-        this.pendingUser = null;
     }
 }
 
 // Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.security = new Security();
+    window.security.checkDiscordReturn();
 });
