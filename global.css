@@ -318,15 +318,19 @@ code, pre {
     z-index: 1000;
 }
 .door-container {
-    width: 350px;
-    max-width: 90%;
-    padding: 1.5rem;
+    width: min(400px, 90vw);
+    height: min(400px, 90vw);
+    padding: 1rem;
     text-align: center;
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
     border-radius: 24px;
     box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    aspect-ratio: 1 / 1;
 }
 .door-header h1 {
     font-size: 2rem;
@@ -337,11 +341,12 @@ code, pre {
     display: flex;
     justify-content: center;
     gap: 0.8rem;
-    margin: 2rem 0;
+    margin: 1rem 0;
 }
+
 .dot {
-    width: 18px;
-    height: 18px;
+    width: min(18px, 4vw);
+    height: min(18px, 4vw);
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 2px solid var(--accent-primary);
@@ -362,16 +367,19 @@ code, pre {
     gap: 1rem;
 }
 .numpad-btn {
-    width: 60px;
-    height: 60px;
+    width: min(60px, 15vw);
+    height: min(60px, 15vw);
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 2px solid var(--glass-border);
     color: var(--text-primary);
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 5vw, 1.5rem);
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .numpad-btn:hover {
     background: var(--accent-primary);
@@ -800,6 +808,48 @@ tr:hover {
 .master-btn:hover {
     background: var(--accent-primary);
     color: #000;
+}
+
+/* Master Control toggle switch */
+.master-toggle {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    margin-right: 10px;
+}
+.master-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.master-toggle .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-tertiary);
+    transition: .4s;
+    border-radius: 24px;
+}
+.master-toggle .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+.master-toggle input:checked + .slider {
+    background-color: var(--accent-primary);
+}
+.master-toggle input:checked + .slider:before {
+    transform: translateX(26px);
 }
 
 /* ========== ECONOMY PAGE ========== */
