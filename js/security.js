@@ -19,7 +19,7 @@ class Security {
         this.updateDisplay();
         this.create2FAModal();
         this.createDiscordModal();
-        this.attachDiscordModalListeners(); // ensure listeners attached
+        this.setupDiscordModalDelegation(); // use delegation
         this.updateRoleBadge();
     }
 
@@ -256,53 +256,35 @@ class Security {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    attachDiscordModalListeners() {
+    setupDiscordModalDelegation() {
         const modal = document.getElementById('discord-modal');
         if (!modal) return;
 
-        const closeBtn = document.getElementById('discord-close-btn');
-        const cancelBtn = document.getElementById('discord-cancel-btn');
-        const skipBtn = document.getElementById('discord-skip-btn');
-        const linkBtn = document.getElementById('discord-link-btn');
-        const forgotEmailBtn = document.getElementById('forgot-email-btn');
-        const forgotDmBtn = document.getElementById('forgot-discord-dm-btn');
+        // Use event delegation – one listener for all clicks inside modal
+        modal.addEventListener('click', (e) => {
+            const target = e.target.closest('button'); // ensure we catch button clicks
+            if (!target) return;
 
-        if (closeBtn) {
-            closeBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            const id = target.id;
+            
+            if (id === 'discord-close-btn' || id === 'discord-cancel-btn') {
                 modal.classList.add('hidden');
-            });
-        }
-
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                modal.classList.add('hidden');
-            });
-        }
-
-        if (skipBtn) {
-            skipBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            }
+            else if (id === 'discord-skip-btn') {
                 localStorage.setItem('discord_linked', 'skipped');
                 modal.classList.add('hidden');
                 toast.info('Discord linking skipped');
-            });
-        }
-
-        if (linkBtn) {
-            linkBtn.addEventListener('click', () => {
+            }
+            else if (id === 'discord-link-btn') {
                 window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
-            });
-        }
-
-        if (forgotEmailBtn) {
-            forgotEmailBtn.addEventListener('click', () => this.sendForgotEmail());
-        }
-
-        if (forgotDmBtn) {
-            forgotDmBtn.addEventListener('click', () => this.dmMaster());
-        }
+            }
+            else if (id === 'forgot-email-btn') {
+                this.sendForgotEmail();
+            }
+            else if (id === 'forgot-discord-dm-btn') {
+                this.dmMaster();
+            }
+        });
     }
 
     showDiscordModal() {
@@ -312,8 +294,6 @@ class Security {
                 return;
             }
             modal.classList.remove('hidden');
-            // Ensure listeners are attached when showing
-            this.attachDiscordModalListeners();
         }
     }
 
