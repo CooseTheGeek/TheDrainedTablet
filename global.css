@@ -304,14 +304,14 @@ code, pre {
     font-size: 0.9rem;
     color: var(--text-secondary);
     z-index: 10;
-/* ========== SECURITY DOOR ========== */
+}/* ========== SECURITY DOOR ========== */
 .security-door {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: #0B0F14;
+    background: var(--bg-primary);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -319,87 +319,88 @@ code, pre {
 }
 .door-container {
     width: 350px;
-    height: 350px;
-    padding: 20px;
-    background: #1A1E2A;
-    border: 2px solid #D4AF37;
-    border-radius: 20px;
+    max-width: 90%;
+    padding: 1.5rem;
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
 }
 .door-header h1 {
-    font-size: 24px;
-    color: #D4AF37;
-    margin: 0 0 10px 0;
-}
-.door-header p {
-    color: #B0B0B0;
-    margin: 0 0 10px 0;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent-primary);
 }
 .code-dots {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    margin: 10px 0;
+    gap: 0.8rem;
+    margin: 2rem 0;
 }
 .dot {
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    background: #252B3A;
-    border: 2px solid #D4AF37;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--accent-primary);
+    transition: background 0.2s;
 }
 .dot.filled {
-    background: #D4AF37;
+    background: var(--accent-primary);
 }
 .numpad {
-    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin: 1.5rem 0;
 }
 .numpad-row {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    margin: 5px 0;
+    gap: 1rem;
 }
 .numpad-btn {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    background: #252B3A;
-    border: 2px solid #D4AF37;
-    color: white;
-    font-size: 20px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--glass-border);
+    color: var(--text-primary);
+    font-size: 1.5rem;
     font-weight: bold;
     cursor: pointer;
+    transition: all 0.2s;
 }
 .numpad-btn:hover {
-    background: #D4AF37;
-    color: black;
+    background: var(--accent-primary);
+    color: #000;
+    transform: scale(1.05);
 }
 .door-actions {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    margin: 10px 0;
+    gap: 1rem;
+    margin: 1rem 0;
 }
 .door-btn {
-    padding: 8px 16px;
-    background: #D4AF37;
-    color: black;
+    padding: 0.6rem 1.2rem;
     border: none;
-    border-radius: 20px;
-    font-weight: bold;
+    border-radius: 30px;
+    background: var(--accent-primary);
+    color: #000;
+    font-weight: 600;
     cursor: pointer;
+    transition: opacity 0.2s;
 }
 .door-btn:hover {
     opacity: 0.8;
 }
 .door-footer {
-    color: #B0B0B0;
-    font-size: 14px;
-    margin-top: 10px;
+    margin-top: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
 }
 
 /* ========== TOAST NOTIFICATIONS ========== */
@@ -799,48 +800,6 @@ tr:hover {
 .master-btn:hover {
     background: var(--accent-primary);
     color: #000;
-}
-
-/* Master Control toggle switch */
-.master-toggle {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-    margin-right: 10px;
-}
-.master-toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-.master-toggle .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--bg-tertiary);
-    transition: .4s;
-    border-radius: 24px;
-}
-.master-toggle .slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-}
-.master-toggle input:checked + .slider {
-    background-color: var(--accent-primary);
-}
-.master-toggle input:checked + .slider:before {
-    transform: translateX(26px);
 }
 
 /* ========== ECONOMY PAGE ========== */
@@ -2098,17 +2057,4 @@ input:checked + .slider:before {
     padding: 3rem;
     color: var(--error);
     font-size: 1.5rem;
-}
-
-@media (max-width: 480px) {
-    .numpad {
-        gap: 0.5rem;
-        margin: 1rem 0;
-    }
-    .numpad-row {
-        gap: 0.5rem;
-    }
-    .door-actions {
-        gap: 0.3rem;
-    }
 }
