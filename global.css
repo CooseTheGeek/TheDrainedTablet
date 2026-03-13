@@ -359,21 +359,24 @@ code, pre {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
-    margin: 1.5rem 0;
+    margin: 1rem 0;
 }
+
 .numpad-row {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+    justify-items: center;
 }
+
 .numpad-btn {
-    width: min(60px, 15vw);
-    height: min(60px, 15vw);
+    width: 100%;
+    aspect-ratio: 1 / 1;
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 2px solid var(--glass-border);
     color: var(--text-primary);
-    font-size: clamp(1.2rem, 5vw, 1.5rem);
+    font-size: clamp(1.2rem, 5vw, 1.8rem);
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
@@ -389,8 +392,9 @@ code, pre {
 .door-actions {
     display: flex;
     justify-content: center;
-    gap: 1rem;
-    margin: 1rem 0;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    flex-wrap: wrap;
 }
 .door-btn {
     padding: 0.6rem 1.2rem;
