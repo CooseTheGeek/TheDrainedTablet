@@ -19,6 +19,7 @@ class Security {
         this.updateDisplay();
         this.create2FAModal();
         this.createDiscordModal();
+        this.attachDiscordModalListeners(); // ensure listeners attached
         this.updateRoleBadge();
     }
 
@@ -236,28 +237,72 @@ class Security {
                 <div class="modal-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h3 style="margin:0;">🔗 Link Discord Account</h3>
-                        <button id="discord-close-btn" onclick="document.getElementById('discord-modal').classList.add('hidden');" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: var(--text-primary);">&times;</button>
+                        <button id="discord-close-btn" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: var(--text-primary);">&times;</button>
                     </div>
                     <p>Connect your Discord to enable notifications and direct messaging.</p>
                     <button id="discord-link-btn" class="modal-btn primary">Link Discord</button>
-                    <button id="discord-skip-btn" onclick="localStorage.setItem('discord_linked', 'skipped'); document.getElementById('discord-modal').classList.add('hidden'); toast.info('Discord linking skipped');" class="modal-btn">Skip</button>
+                    <button id="discord-skip-btn" class="modal-btn">Skip</button>
                     <hr>
                     <h4>Forgot your code?</h4>
                     <p>An email will be sent to the master. You can also DM CooseTheGeek directly.</p>
                     <button id="forgot-email-btn" class="modal-btn">Send Email</button>
                     <button id="forgot-discord-dm-btn" class="modal-btn">DM Master on Discord</button>
                     <div class="modal-actions" style="margin-top: 1rem;">
-                        <button id="discord-cancel-btn" onclick="document.getElementById('discord-modal').classList.add('hidden');" class="modal-btn">Cancel</button>
+                        <button id="discord-cancel-btn" class="modal-btn">Cancel</button>
                     </div>
                 </div>
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
 
-        // Link button still needs a listener
-        document.getElementById('discord-link-btn')?.addEventListener('click', () => this.linkDiscord());
-        document.getElementById('forgot-email-btn')?.addEventListener('click', () => this.sendForgotEmail());
-        document.getElementById('forgot-discord-dm-btn')?.addEventListener('click', () => this.dmMaster());
+    attachDiscordModalListeners() {
+        const modal = document.getElementById('discord-modal');
+        if (!modal) return;
+
+        const closeBtn = document.getElementById('discord-close-btn');
+        const cancelBtn = document.getElementById('discord-cancel-btn');
+        const skipBtn = document.getElementById('discord-skip-btn');
+        const linkBtn = document.getElementById('discord-link-btn');
+        const forgotEmailBtn = document.getElementById('forgot-email-btn');
+        const forgotDmBtn = document.getElementById('forgot-discord-dm-btn');
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                modal.classList.add('hidden');
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                modal.classList.add('hidden');
+            });
+        }
+
+        if (skipBtn) {
+            skipBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.setItem('discord_linked', 'skipped');
+                modal.classList.add('hidden');
+                toast.info('Discord linking skipped');
+            });
+        }
+
+        if (linkBtn) {
+            linkBtn.addEventListener('click', () => {
+                window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
+            });
+        }
+
+        if (forgotEmailBtn) {
+            forgotEmailBtn.addEventListener('click', () => this.sendForgotEmail());
+        }
+
+        if (forgotDmBtn) {
+            forgotDmBtn.addEventListener('click', () => this.dmMaster());
+        }
     }
 
     showDiscordModal() {
@@ -267,6 +312,8 @@ class Security {
                 return;
             }
             modal.classList.remove('hidden');
+            // Ensure listeners are attached when showing
+            this.attachDiscordModalListeners();
         }
     }
 
