@@ -18,7 +18,7 @@ class AuthSystem {
             return saved ? JSON.parse(saved) : {
                 'CooseTheGeek': {
                     code: '0325',
-                    role: 'owner',
+                    role: 'master',
                     totpEnabled: false, // disabled by default until setup
                     created: new Date().toISOString()
                 }

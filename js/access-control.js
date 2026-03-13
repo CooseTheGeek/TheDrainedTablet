@@ -8,8 +8,8 @@ class AccessControl {
         this.auth = window.authSystem;
         this.roleHierarchy = {
             user: 1,
-            master: 2,
-            owner: 3
+            owner: 2,
+            master: 3
         };
         this.init();
     }
@@ -27,7 +27,7 @@ class AccessControl {
 
     // Check if current user is specifically a master (or owner)
     isMaster() {
-        return AppState.user.role === 'master' || AppState.user.role === 'owner';
+        return AppState.user.role === 'master';
     }
 
     isOwner() {
