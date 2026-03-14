@@ -561,23 +561,23 @@ button:disabled {
     font-size: 0.85rem;
 }
 
-/* ========== CHECKBOX FIXES – tight and aligned ========== */
+/* ========== CHECKBOX FIXES ========== */
 .checkbox-item {
-    margin: 0.25rem 0;  /* reduced from 0.5rem */
+    margin: 0.25rem 0;
     display: flex;
     align-items: center;
 }
 .checkbox-item label {
     display: flex;
     align-items: center;
-    gap: 0.5rem;        /* space between checkbox and text */
+    gap: 0.5rem;
     cursor: pointer;
     line-height: 1.2;
 }
 .checkbox-item input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    margin: 0;           /* remove default margin */
+    margin: 0;
     accent-color: var(--accent-primary);
 }
 
@@ -780,7 +780,7 @@ tr:hover {
     overflow: hidden;
 }
 .master-category-header {
-    padding: 0.6rem 1rem; /* reduced from 1rem 1.5rem */
+    padding: 0.6rem 1rem;
     background: var(--bg-tertiary);
     cursor: pointer;
     display: flex;
@@ -799,13 +799,14 @@ tr:hover {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 0.8rem;
+    padding: 0.5rem;
     background: var(--bg-secondary);
     border-radius: 8px;
 }
 .master-setting label {
     font-weight: 500;
     color: var(--accent-primary);
+    font-size: 0.9rem;
 }
 .master-toggle {
     display: flex;
@@ -816,11 +817,12 @@ tr:hover {
 .master-btn {
     background: var(--bg-tertiary);
     border: none;
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.8rem;
     border-radius: 6px;
     color: var(--text-primary);
     cursor: pointer;
     transition: background 0.2s;
+    font-size: 0.9rem;
 }
 .master-btn:hover {
     background: var(--accent-primary);
@@ -1202,14 +1204,25 @@ tr:hover {
     margin: 0.3rem 0;
 }
 
-/* ========== PROFILE PAGE – NEW TABBED LAYOUT ========== */
+/* ========== PROFILE PAGE REDESIGN ========== */
 .profile-container {
-    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
 }
+
+.profile-header h2 {
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+
+/* Tabs */
 .profile-tabs {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     border-bottom: 1px solid var(--glass-border);
 }
 .profile-tab {
@@ -1220,6 +1233,8 @@ tr:hover {
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: all 0.2s;
+    font-size: 1rem;
+    font-weight: 500;
 }
 .profile-tab.active {
     color: var(--accent-primary);
@@ -1232,102 +1247,302 @@ tr:hover {
     display: block;
 }
 
-/* ID Card */
+/* ID Card – Main View */
+.id-card-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 600px;
+}
 .id-card {
-    background: linear-gradient(135deg, #0B0F14 0%, #1A1E2A 100%);
-    border: 3px solid var(--accent-primary);
-    border-radius: 20px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: var(--shadow);
-    transition: transform 0.3s;
-}
-.id-card:hover {
-    transform: scale(1.02);
-}
-.id-card-inner {
+    width: 100%;
+    max-width: 500px;
+    background: linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary));
+    border: 2px solid var(--accent-primary);
+    border-radius: 32px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
+    gap: 1.2rem;
 }
 .id-card-header {
-    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--accent-primary);
-    padding-bottom: 0.5rem;
-    margin-bottom: 0.5rem;
+    padding-bottom: 0.8rem;
 }
-.id-card-title {
+.card-title {
     font-weight: 800;
+    font-size: 1.2rem;
     color: var(--accent-primary);
+    letter-spacing: 1px;
 }
-.id-card-badge {
-    font-size: 0.8rem;
+.card-badge {
     background: var(--accent-primary);
     color: #000;
-    padding: 0.2rem 0.5rem;
-    border-radius: 12px;
-}
-.id-card-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    border: 2px solid var(--accent-primary);
-    overflow: hidden;
-    margin: 0.5rem 0;
-}
-.id-card-name {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-.id-card-role {
-    font-size: 1rem;
-    color: var(--accent-primary);
-    text-transform: uppercase;
-}
-.id-card-platform {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-.id-card-id {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.9rem;
-    background: var(--bg-tertiary);
     padding: 0.2rem 0.8rem;
     border-radius: 20px;
-}
-.id-card-footer {
-    margin-top: 0.5rem;
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
 }
-.id-card-controls {
+.card-avatar {
     display: flex;
-    gap: 0.5rem;
     justify-content: center;
+    margin: 0.5rem 0;
+}
+.avatar-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid var(--accent-primary);
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.avatar-img:hover {
+    transform: scale(1.05);
+}
+.avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid var(--accent-primary);
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--accent-primary);
+    cursor: pointer;
+}
+.card-username {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.card-tagline {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: -0.3rem;
+}
+.card-metadata {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.5rem;
+    background: rgba(0,0,0,0.3);
+    border-radius: 16px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+}
+.metadata-item {
+    display: flex;
+    flex-direction: column;
+}
+.metadata-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.metadata-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+.card-logo-block {
+    background: rgba(0,0,0,0.5);
+    border: 1px dashed var(--accent-primary);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+}
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+    letter-spacing: 2px;
+}
+.card-discord {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.2);
+    border-radius: 30px;
+    padding: 0.5rem 1rem;
+    margin: 0.5rem 0;
+}
+.discord-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+.discord-badge {
+    background: var(--success);
+    color: #000;
+    padding: 0.2rem 1rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.card-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.btn-manage {
+    flex: 2;
+    background: var(--accent-primary);
+    color: #000;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 30px;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.btn-manage:hover {
+    opacity: 0.8;
+}
+.btn-delete {
+    flex: 1;
+    background: transparent;
+    color: var(--error);
+    border: 2px solid var(--error);
+    padding: 0.8rem;
+    border-radius: 30px;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-delete:hover {
+    background: var(--error);
+    color: #000;
 }
 
-/* Customize ID Card form */
-.customize-card {
+/* Two-column layout for Customize tab */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+/* Customize form */
+.customize-form {
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 1.5rem;
+    border-radius: 24px;
+    padding: 2rem;
 }
-.customize-card .form-group {
+.form-section {
+    margin-bottom: 2rem;
+}
+.form-section h3 {
+    color: var(--accent-primary);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 0.5rem;
+}
+.form-group {
     margin-bottom: 1rem;
 }
-.customize-card label {
+.form-group label {
     display: block;
     margin-bottom: 0.3rem;
     color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+.avatar-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+.avatar-preview-small {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-primary);
+    object-fit: cover;
+}
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+.btn-save {
+    flex: 2;
+    background: var(--accent-primary);
+    color: #000;
+}
+.btn-cancel {
+    flex: 1;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
-/* Settings section within Profile */
+/* Live preview in Customize tab */
+.preview-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.preview-title {
+    color: var(--accent-primary);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    align-self: flex-start;
+}
+.preview-id-card {
+    width: 100%;
+    max-width: 350px;
+    background: linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary));
+    border: 2px solid var(--accent-primary);
+    border-radius: 32px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+.preview-id-card .card-username {
+    font-size: 1.5rem;
+}
+.preview-id-card .avatar-img {
+    width: 80px;
+    height: 80px;
+}
+.preview-id-card .avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+}
+.preview-id-card .card-metadata {
+    padding: 0.8rem;
+    gap: 0.5rem;
+}
+.preview-id-card .logo-text {
+    font-size: 1.2rem;
+}
+
+/* Settings tab (unchanged from previous) */
 .profile-settings {
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
@@ -1366,6 +1581,49 @@ tr:hover {
 .connection-btn.linked {
     background: var(--success);
     color: #000;
+}
+.servers-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 1rem 0;
+}
+.server-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.server-info {
+    display: flex;
+    flex-direction: column;
+}
+.server-name {
+    font-weight: 600;
+}
+.server-address {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+.server-actions {
+    display: flex;
+    gap: 0.3rem;
+}
+
+/* Avatar Crop Modal */
+.avatar-crop-modal .modal-content {
+    max-width: 600px;
+}
+.crop-container {
+    max-height: 400px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+.crop-container img {
+    max-width: 100%;
 }
 
 /* ========== ID CARD GENERATOR PAGE ========== */
@@ -2008,6 +2266,9 @@ input:checked + .slider:before {
     .more-grid {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
+    .two-col {
+        grid-template-columns: 1fr;
+    }
 }
 @media (max-width: 480px) {
     .header-left, .header-right {
@@ -2203,25 +2464,30 @@ input:checked + .slider:before {
     backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
     border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 0.5rem;
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.4rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.8rem;
     flex-wrap: wrap;
 }
 .command-item code {
     background: var(--bg-tertiary);
-    padding: 0.3rem 0.6rem;
+    padding: 0.2rem 0.5rem;
     border-radius: 4px;
-    min-width: 300px;
-    font-size: 0.9rem;
+    min-width: 250px;
+    font-size: 0.85rem;
     word-break: break-all;
 }
 .command-item .cmd-desc {
     flex: 1;
     color: var(--text-secondary);
     min-width: 200px;
+    font-size: 0.9rem;
+}
+.command-item .small-btn {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
 }
 .utilities-grid {
     display: grid;

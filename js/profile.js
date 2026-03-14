@@ -1,5 +1,6 @@
 // profile.js – DRAINED TABLET ULTIMATE v7.0.0
 // User profile with tabbed interface: ID Card, Customize ID Card, and Settings
+// Enhanced with avatar cropping using Cropper.js and live preview
 
 class Profile {
     constructor() {
@@ -8,6 +9,7 @@ class Profile {
         this.db = window.database;
         this.savedServers = this.loadServers();
         this.platforms = ['ps5', 'ps4', 'xbox', 'xboxone'];
+        this.cropper = null;
         this.init();
     }
 
@@ -49,53 +51,159 @@ class Profile {
 
                 <!-- ID Card Tab -->
                 <div id="profile-idcard" class="profile-tab-content active">
-                    <div class="id-card" id="id-card">
-                        <div class="id-card-inner">
+                    <div class="id-card-wrapper">
+                        <div class="id-card" id="id-card">
                             <div class="id-card-header">
-                                <span class="id-card-title">THE DRAINED LAND'S</span>
-                                <span class="id-card-badge">OFFICIAL</span>
+                                <span class="card-title">⚡ THE DRAINED LAND'S</span>
+                                <span class="card-badge">OFFICIAL</span>
                             </div>
-                            <div class="id-card-avatar" id="id-card-avatar">${this.getAvatarHTML()}</div>
-                            <div class="id-card-name" id="id-card-name">${AppState.user.username || 'SURVIVOR'}</div>
-                            <div class="id-card-role" id="id-card-role">${AppState.user.role ? AppState.user.role.toUpperCase() : 'PLAYER'}</div>
-                            <div class="id-card-platform" id="id-card-platform">${AppState.user.platform ? this.getPlatformDisplay(AppState.user.platform) : ''}</div>
-                            <div class="id-card-id" id="id-card-id">${AppState.user.platformId || ''}</div>
-                            <div class="id-card-footer">
-                                <span>⚡ 3UNKS ⚡</span>
+                            <div class="card-avatar" id="card-avatar">
+                                ${this.getAvatarHTML('large')}
+                            </div>
+                            <div class="card-username" id="card-username">${AppState.user.username || 'SURVIVOR'}</div>
+                            <div class="card-tagline" id="card-tagline">NEW GEN | US</div>
+                            <div class="card-metadata">
+                                <div class="metadata-item">
+                                    <span class="metadata-label">Expires</span>
+                                    <span class="metadata-value" id="card-expires">05/24/2024</span>
+                                </div>
+                                <div class="metadata-item">
+                                    <span class="metadata-label">Portal ID</span>
+                                    <span class="metadata-value" id="card-portal-id">#523489</span>
+                                </div>
+                                <div class="metadata-item">
+                                    <span class="metadata-label">Region</span>
+                                    <span class="metadata-value" id="card-region">North America</span>
+                                </div>
+                                <div class="metadata-item">
+                                    <span class="metadata-label">Name</span>
+                                    <span class="metadata-value" id="card-server-name">Geek's Survival Base</span>
+                                </div>
+                            </div>
+                            <div class="card-logo-block">
+                                <span class="logo-text" id="card-logo">GEEK BASE</span>
+                            </div>
+                            <div class="card-discord">
+                                <span class="discord-id" id="card-discord-id">Geek#1234</span>
+                                <span class="discord-badge">DISCORD CONNECTED</span>
+                            </div>
+                            <div class="card-actions">
+                                <button id="manage-server" class="btn-manage">MANAGE SERVER</button>
+                                <button id="delete-server" class="btn-delete">DELETE</button>
                             </div>
                         </div>
-                    </div>
-                    <div class="id-card-controls">
-                        <button id="download-id" class="profile-btn">⬇️ DOWNLOAD</button>
                     </div>
                 </div>
 
                 <!-- Customize ID Card Tab -->
                 <div id="profile-customize" class="profile-tab-content">
-                    <div class="customize-card">
-                        <h3>Customize Your ID Card</h3>
-                        <div class="form-group">
-                            <label>Avatar</label>
-                            <div class="avatar-controls">
-                                <button id="upload-avatar" class="profile-btn">📤 UPLOAD</button>
-                                <button id="remove-avatar" class="profile-btn">🗑️ REMOVE</button>
+                    <div class="two-col">
+                        <div class="customize-form">
+                            <h3>Customize Your ID Card</h3>
+                            <div class="form-section">
+                                <h3>Avatar</h3>
+                                <div class="form-group">
+                                    <div class="avatar-controls">
+                                        <img id="custom-avatar-preview" class="avatar-preview-small" src="${AppState.user.avatar || ''}" onerror="this.style.display='none'">
+                                        <div>
+                                            <button id="upload-avatar" class="small-btn">📤 Upload</button>
+                                            <button id="remove-avatar" class="small-btn">🗑️ Remove</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-section">
+                                <h3>Identity</h3>
+                                <div class="form-group">
+                                    <label>Display Name</label>
+                                    <input type="text" id="edit-username" value="${AppState.user.username || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tagline</label>
+                                    <input type="text" id="edit-tagline" value="NEW GEN | US">
+                                </div>
+                            </div>
+                            <div class="form-section">
+                                <h3>Server Metadata</h3>
+                                <div class="form-group">
+                                    <label>Expires</label>
+                                    <input type="text" id="edit-expires" value="05/24/2024">
+                                </div>
+                                <div class="form-group">
+                                    <label>Portal ID</label>
+                                    <input type="text" id="edit-portal-id" value="#523489">
+                                </div>
+                                <div class="form-group">
+                                    <label>Region</label>
+                                    <input type="text" id="edit-region" value="North America">
+                                </div>
+                                <div class="form-group">
+                                    <label>Server Name</label>
+                                    <input type="text" id="edit-server-name" value="Geek's Survival Base">
+                                </div>
+                            </div>
+                            <div class="form-section">
+                                <h3>Logo Text</h3>
+                                <div class="form-group">
+                                    <input type="text" id="edit-logo" value="GEEK BASE">
+                                </div>
+                            </div>
+                            <div class="form-section">
+                                <h3>Discord</h3>
+                                <div class="form-group">
+                                    <label>Discord ID</label>
+                                    <input type="text" id="edit-discord-id" value="Geek#1234">
+                                </div>
+                                <div class="checkbox-item">
+                                    <label>
+                                        <input type="checkbox" id="edit-discord-connected" checked> Discord Connected
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button id="save-customize" class="btn-save primary">Save Changes</button>
+                                <button id="cancel-customize" class="btn-cancel">Cancel</button>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Platform</label>
-                            <select id="profile-platform">
-                                <option value="">Select Platform</option>
-                                <option value="ps5" ${AppState.user.platform === 'ps5' ? 'selected' : ''}>PlayStation 5</option>
-                                <option value="ps4" ${AppState.user.platform === 'ps4' ? 'selected' : ''}>PlayStation 4</option>
-                                <option value="xbox" ${AppState.user.platform === 'xbox' ? 'selected' : ''}>Xbox Series X|S</option>
-                                <option value="xboxone" ${AppState.user.platform === 'xboxone' ? 'selected' : ''}>Xbox One</option>
-                            </select>
+                        <div class="preview-card">
+                            <h3 class="preview-title">Live Preview</h3>
+                            <div class="preview-id-card" id="preview-id-card">
+                                <div class="id-card-header">
+                                    <span class="card-title">⚡ THE DRAINED LAND'S</span>
+                                    <span class="card-badge">OFFICIAL</span>
+                                </div>
+                                <div class="card-avatar">
+                                    ${this.getAvatarHTML('preview')}
+                                </div>
+                                <div class="card-username" id="preview-username">${AppState.user.username || 'SURVIVOR'}</div>
+                                <div class="card-tagline" id="preview-tagline">NEW GEN | US</div>
+                                <div class="card-metadata">
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">Expires</span>
+                                        <span class="metadata-value" id="preview-expires">05/24/2024</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">Portal ID</span>
+                                        <span class="metadata-value" id="preview-portal-id">#523489</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">Region</span>
+                                        <span class="metadata-value" id="preview-region">North America</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">Name</span>
+                                        <span class="metadata-value" id="preview-server-name">Geek's Survival Base</span>
+                                    </div>
+                                </div>
+                                <div class="card-logo-block">
+                                    <span class="logo-text" id="preview-logo">GEEK BASE</span>
+                                </div>
+                                <div class="card-discord">
+                                    <span class="discord-id" id="preview-discord-id">Geek#1234</span>
+                                    <span class="discord-badge" id="preview-discord-badge">DISCORD CONNECTED</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Platform ID (PSN ID or Xbox Gamertag)</label>
-                            <input type="text" id="profile-platform-id" value="${AppState.user.platformId || ''}">
-                        </div>
-                        <button id="save-profile" class="profile-btn primary">💾 SAVE CHANGES</button>
                     </div>
                 </div>
 
@@ -128,51 +236,7 @@ class Profile {
         `;
     }
 
-    attachEvents() {
-        // Tab switching
-        document.querySelectorAll('.profile-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
-                e.target.classList.add('active');
-                document.getElementById(`profile-${e.target.dataset.tab}`).classList.add('active');
-            });
-        });
-
-        // Avatar controls
-        document.getElementById('upload-avatar')?.addEventListener('click', () => this.uploadAvatar());
-        document.getElementById('remove-avatar')?.addEventListener('click', () => this.removeAvatar());
-
-        // Save profile changes
-        document.getElementById('save-profile')?.addEventListener('click', () => this.saveProfile());
-
-        // ID card download
-        document.getElementById('download-id')?.addEventListener('click', () => this.downloadID());
-
-        // Server management
-        document.getElementById('add-server')?.addEventListener('click', () => this.addServer());
-
-        // Connection buttons
-        document.getElementById('connect-discord')?.addEventListener('click', () => this.connectDiscord());
-        document.getElementById('connect-gportal')?.addEventListener('click', () => this.connectGPortal());
-        document.getElementById('change-password')?.addEventListener('click', () => this.changePassword());
-        document.getElementById('enable-2fa')?.addEventListener('click', () => this.enable2FA());
-        document.getElementById('logout-all')?.addEventListener('click', () => this.logoutAll());
-
-        // Delegate for server actions
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('load-server')) {
-                const id = e.target.dataset.id;
-                this.loadServer(id);
-            }
-            if (e.target.classList.contains('delete-server')) {
-                const id = e.target.dataset.id;
-                this.deleteServer(id);
-            }
-        });
-    }
-
-    getAvatarHTML() {
+    getAvatarHTML(size = 'large') {
         const avatar = AppState.user.avatar;
         if (avatar) {
             return `<img src="${avatar}" alt="avatar" class="avatar-img">`;
@@ -190,7 +254,98 @@ class Profile {
         return map[platform] || platform;
     }
 
-    uploadAvatar() {
+    attachEvents() {
+        // Tab switching
+        document.querySelectorAll('.profile-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                document.getElementById(`profile-${e.target.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // Avatar upload & crop
+        document.getElementById('upload-avatar')?.addEventListener('click', () => this.uploadAndCropAvatar());
+        document.getElementById('remove-avatar')?.addEventListener('click', () => this.removeAvatar());
+        // Also allow clicking the main card avatar to upload
+        document.getElementById('card-avatar')?.addEventListener('click', () => this.uploadAndCropAvatar());
+
+        // Live preview updates
+        document.getElementById('edit-username')?.addEventListener('input', (e) => {
+            document.getElementById('preview-username').innerText = e.target.value || 'SURVIVOR';
+        });
+        document.getElementById('edit-tagline')?.addEventListener('input', (e) => {
+            document.getElementById('preview-tagline').innerText = e.target.value;
+        });
+        document.getElementById('edit-expires')?.addEventListener('input', (e) => {
+            document.getElementById('preview-expires').innerText = e.target.value;
+        });
+        document.getElementById('edit-portal-id')?.addEventListener('input', (e) => {
+            document.getElementById('preview-portal-id').innerText = e.target.value;
+        });
+        document.getElementById('edit-region')?.addEventListener('input', (e) => {
+            document.getElementById('preview-region').innerText = e.target.value;
+        });
+        document.getElementById('edit-server-name')?.addEventListener('input', (e) => {
+            document.getElementById('preview-server-name').innerText = e.target.value;
+        });
+        document.getElementById('edit-logo')?.addEventListener('input', (e) => {
+            document.getElementById('preview-logo').innerText = e.target.value;
+        });
+        document.getElementById('edit-discord-id')?.addEventListener('input', (e) => {
+            document.getElementById('preview-discord-id').innerText = e.target.value;
+        });
+        document.getElementById('edit-discord-connected')?.addEventListener('change', (e) => {
+            const badge = document.getElementById('preview-discord-badge');
+            badge.innerText = e.target.checked ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED';
+        });
+
+        // Save/Cancel in Customize tab
+        document.getElementById('save-customize')?.addEventListener('click', () => this.saveCustomizations());
+        document.getElementById('cancel-customize')?.addEventListener('click', () => {
+            // Switch back to ID Card tab
+            document.querySelector('.profile-tab[data-tab="idcard"]').click();
+        });
+
+        // Main ID card buttons
+        document.getElementById('manage-server')?.addEventListener('click', () => {
+            toast.info('Manage Server clicked – implement your logic');
+        });
+        document.getElementById('delete-server')?.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete this server?')) {
+                toast.error('Server deletion triggered');
+            }
+        });
+
+        // Settings buttons
+        document.getElementById('connect-discord')?.addEventListener('click', () => this.connectDiscord());
+        document.getElementById('connect-gportal')?.addEventListener('click', () => this.connectGPortal());
+        document.getElementById('change-password')?.addEventListener('click', () => this.changePassword());
+        document.getElementById('enable-2fa')?.addEventListener('click', () => this.enable2FA());
+        document.getElementById('logout-all')?.addEventListener('click', () => this.logoutAll());
+
+        // Server management
+        document.getElementById('add-server')?.addEventListener('click', () => this.addServer());
+
+        // Crop modal buttons
+        document.getElementById('crop-save')?.addEventListener('click', () => this.saveCroppedAvatar());
+        document.getElementById('crop-cancel')?.addEventListener('click', () => this.closeCropModal());
+
+        // Delegate for server actions
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('load-server')) {
+                const id = e.target.dataset.id;
+                this.loadServer(id);
+            }
+            if (e.target.classList.contains('delete-server')) {
+                const id = e.target.dataset.id;
+                this.deleteServer(id);
+            }
+        });
+    }
+
+    uploadAndCropAvatar() {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
@@ -199,54 +354,101 @@ class Profile {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (event) => {
-                AppState.user.avatar = event.target.result;
-                localStorage.setItem('tdl_avatar', event.target.result);
-                this.updateIDPreview();
-                document.getElementById('id-card-avatar').innerHTML = this.getAvatarHTML();
+                this.showCropModal(event.target.result);
             };
             reader.readAsDataURL(file);
         };
         input.click();
     }
 
+    showCropModal(imageSrc) {
+        const modal = document.getElementById('crop-modal');
+        const img = document.getElementById('crop-image');
+        img.src = imageSrc;
+        modal.classList.remove('hidden');
+
+        img.onload = () => {
+            if (this.cropper) this.cropper.destroy();
+            this.cropper = new Cropper(img, {
+                aspectRatio: 1,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 1,
+                cropBoxResizable: true,
+                cropBoxMovable: true,
+                background: false
+            });
+        };
+    }
+
+    closeCropModal() {
+        const modal = document.getElementById('crop-modal');
+        modal.classList.add('hidden');
+        if (this.cropper) {
+            this.cropper.destroy();
+            this.cropper = null;
+        }
+    }
+
+    saveCroppedAvatar() {
+        if (!this.cropper) return;
+        const canvas = this.cropper.getCroppedCanvas({
+            width: 300,
+            height: 300,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+        const croppedImage = canvas.toDataURL('image/png');
+        AppState.user.avatar = croppedImage;
+        localStorage.setItem('tdl_avatar', croppedImage);
+        this.updateAllAvatars();
+        this.closeCropModal();
+        toast.success('Avatar updated');
+    }
+
     removeAvatar() {
         AppState.user.avatar = null;
         localStorage.removeItem('tdl_avatar');
-        this.updateIDPreview();
-        document.getElementById('id-card-avatar').innerHTML = this.getAvatarHTML();
+        this.updateAllAvatars();
+        toast.info('Avatar removed');
     }
 
-    saveProfile() {
-        const platform = document.getElementById('profile-platform').value;
-        const platformId = document.getElementById('profile-platform-id').value.trim();
-        if (platform && !platformId) {
-            toast.error('Platform ID is required when platform is selected');
-            return;
+    updateAllAvatars() {
+        // Update main card avatar
+        const cardAvatar = document.getElementById('card-avatar');
+        if (cardAvatar) cardAvatar.innerHTML = this.getAvatarHTML('large');
+        // Update preview card avatar
+        const previewAvatar = document.querySelector('.preview-id-card .card-avatar');
+        if (previewAvatar) previewAvatar.innerHTML = this.getAvatarHTML('preview');
+        // Update customize form preview
+        const customPreview = document.getElementById('custom-avatar-preview');
+        if (customPreview) {
+            if (AppState.user.avatar) {
+                customPreview.src = AppState.user.avatar;
+                customPreview.style.display = 'inline-block';
+            } else {
+                customPreview.style.display = 'none';
+            }
         }
-        AppState.user.platform = platform || null;
-        AppState.user.platformId = platformId || null;
-        if (platform) localStorage.setItem('tdl_platform', platform);
-        if (platformId) localStorage.setItem('tdl_platform_id', platformId);
-        this.updateIDPreview();
-        toast.success('Profile saved');
     }
 
-    updateIDPreview() {
-        const platform = AppState.user.platform;
-        const platformId = AppState.user.platformId;
-        const username = AppState.user.username || 'SURVIVOR';
-        const role = AppState.user.role || 'user';
+    saveCustomizations() {
+        // In a real app, you'd save these to a database or localStorage
+        // For now, we just update the main card with preview values
+        document.getElementById('card-username').innerText = document.getElementById('preview-username').innerText;
+        document.getElementById('card-tagline').innerText = document.getElementById('preview-tagline').innerText;
+        document.getElementById('card-expires').innerText = document.getElementById('preview-expires').innerText;
+        document.getElementById('card-portal-id').innerText = document.getElementById('preview-portal-id').innerText;
+        document.getElementById('card-region').innerText = document.getElementById('preview-region').innerText;
+        document.getElementById('card-server-name').innerText = document.getElementById('preview-server-name').innerText;
+        document.getElementById('card-logo').innerText = document.getElementById('preview-logo').innerText;
+        document.getElementById('card-discord-id').innerText = document.getElementById('preview-discord-id').innerText;
+        const badge = document.getElementById('card-discord').querySelector('.discord-badge');
+        badge.innerText = document.getElementById('preview-discord-badge').innerText;
 
-        document.getElementById('id-card-avatar').innerHTML = this.getAvatarHTML();
-        document.getElementById('id-card-name').innerText = username;
-        document.getElementById('id-card-role').innerText = role.toUpperCase();
-        document.getElementById('id-card-platform').innerText = platform ? this.getPlatformDisplay(platform) : '';
-        document.getElementById('id-card-id').innerText = platformId || '';
-    }
-
-    downloadID() {
-        // Simple screenshot using html2canvas? For now, just a placeholder.
-        toast.info('ID card download feature coming soon');
+        toast.success('ID Card updated');
+        // Switch back to ID Card tab
+        document.querySelector('.profile-tab[data-tab="idcard"]').click();
     }
 
     renderServers() {
@@ -322,7 +524,6 @@ class Profile {
     }
 
     connectGPortal() {
-        // Switch to GPortal tab and maybe auto-fill?
         window.home?.switchToTab('gportal');
         toast.info('Please connect your Discord first in the GPortal tab');
     }
@@ -341,9 +542,19 @@ class Profile {
 
     logoutAll() {
         if (!confirm('This will log you out of all devices. Continue?')) return;
-        // Clear session and reload
         localStorage.removeItem('tdl_session');
         location.reload();
+    }
+
+    populateUserInfo() {
+        this.updateAllAvatars();
+        // Set initial values from AppState
+        const username = AppState.user.username || 'SURVIVOR';
+        document.getElementById('card-username').innerText = username;
+        document.getElementById('preview-username').innerText = username;
+        document.getElementById('edit-username').value = username;
+
+        // You could load other fields from a profile store if available
     }
 
     refresh() {
@@ -360,11 +571,6 @@ class Profile {
                 discordBtn.innerHTML = '<span>🔗</span> Discord';
             }
         }
-    }
-
-    populateUserInfo() {
-        // This is handled by updateIDPreview on save, but we can call it on refresh
-        this.updateIDPreview();
     }
 }
 
