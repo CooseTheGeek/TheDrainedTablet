@@ -1,15 +1,14 @@
-// resources.js – DRAINED TABLET ULTIMATE v7.0.0 (DEBUG VERSION)
+// resources.js – DRAINED TABLET ULTIMATE v7.0.0
+// Comprehensive knowledge base: build costs, raid costs, monument info, item database, command executor, and more.
+// All data provided by CooseTheGeek, integrated into a sleek, interactive UI.
 
 class Resources {
     constructor() {
-        console.log('🔧 Resources constructor starting');
         this.access = window.accessControl;
-        if (!this.access) console.warn('⚠️ accessControl not found!');
-        this.db = window.database;
+        this.db = window.database; // for future use
         this.currentCommandCategory = 'banitem';
         this.commandSearchTerm = '';
         this.itemSearchTerm = '';
-        console.log('🔧 Resources constructor finished, about to init');
         this.init();
     }
 
@@ -273,6 +272,7 @@ class Resources {
         "Large rechargeable battery": "24,000/100"
     };
 
+    // Command categories with syntax and description
     commandCategories = {
         banitem: {
             name: "Item Banning",
@@ -635,32 +635,22 @@ class Resources {
 
     // ---------- Initialization ----------
     init() {
-        console.log('🔧 Resources.init() called');
         this.createHTML();
         this.attachEvents();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'resources') {
-                console.log('🔧 Resources tab activated, refreshing');
                 this.refresh();
             }
         });
-        console.log('🔧 Resources.init() complete');
     }
 
     createHTML() {
-        console.log('🔧 Resources.createHTML() called');
         const tab = document.getElementById('tab-resources');
-        if (!tab) {
-            console.error('❌ tab-resources element not found!');
+        if (!tab) return;
+        if (!this.access.hasRole('master')) {
+            tab.innerHTML = '<div class="access-denied">Master access required</div>';
             return;
         }
-        console.log('🔧 tab-resources found, building HTML');
-
-        // TEMPORARILY BYPASS ROLE CHECK FOR TESTING
-        // if (!this.access.hasRole('master')) {
-        //     tab.innerHTML = '<div class="access-denied">Master access required</div>';
-        //     return;
-        // }
 
         tab.innerHTML = `
             <div class="resources-container">
@@ -779,18 +769,15 @@ class Resources {
             </div>
         `;
 
-        console.log('🔧 HTML injected, now rendering sub-components');
         this.renderBuildCosts();
         this.renderRaidCosts();
         this.renderMonuments();
         this.renderItems();
         this.renderCommands();
         this.renderUtilities();
-        console.log('🔧 createHTML() done');
     }
 
     attachEvents() {
-        console.log('🔧 attachEvents() called');
         // Tab switching
         document.querySelectorAll('.resources-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -840,7 +827,6 @@ class Resources {
                 this.openCommandModal(cmd, params);
             }
         });
-        console.log('🔧 attachEvents() done');
     }
 
     // ---------- Rendering Methods ----------
@@ -935,9 +921,11 @@ class Resources {
         let html = `<h3>${category.name}</h3>`;
         filtered.forEach(cmd => {
             const params = this.extractParams(cmd.syntax);
+            // Escape HTML in syntax to prevent injection (e.g., <color> tags)
+            const escapedSyntax = cmd.syntax.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             html += `
                 <div class="command-item">
-                    <code>${cmd.syntax}</code>
+                    <code>${escapedSyntax}</code>
                     <span class="cmd-desc">${cmd.desc}</span>
                     <button class="small-btn cmd-exec-btn" data-cmd="${this.escapeAttr(cmd.syntax)}" data-params="${params.join(',')}">Execute</button>
                 </div>
@@ -1126,6 +1114,5 @@ class Resources {
 
 // Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔧 DOMContentLoaded – creating Resources instance');
     window.resources = new Resources();
 });
