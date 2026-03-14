@@ -1,5 +1,5 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Fixed Discord OAuth and server list persistence.
+// Final version with player count storage for home screen.
 
 class GPortalConnector {
     constructor() {
@@ -9,13 +9,14 @@ class GPortalConnector {
         this.servers = [];
         this.serverIdentifier = 'main-server';
         this.apiReady = false;
+        this.lastStatus = null; // store the last server status
         this.init();
     }
 
     init() {
         this.createHTML();
         this.attachEvents();
-        this.checkDiscordReturn(); // This will process URL params and reload if needed
+        this.checkDiscordReturn();
         if (this.discordId) {
             this.loadServers();
             this.checkApiStatus();
@@ -59,6 +60,7 @@ class GPortalConnector {
                             ${this.discordLinked ? '✅ Discord Connected' : '🔗 Connect Discord'}
                         </button>
                         ${this.discordLinked ? '<p class="success-message">Discord linked! You can now add your servers below.</p>' : ''}
+                        ${this.discordLinked && this.servers.length === 0 ? '<p class="info-message">No servers found. Please add your server again.</p>' : ''}
                     </div>
 
                     ${this.discordLinked ? `
@@ -177,8 +179,11 @@ class GPortalConnector {
 
         this.logMessage(`Adding server ${name}...`);
 
+        const url = `${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`;
+        console.log('Adding server with URL:', url);
+
         try {
-            const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`, {
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, ip, port, password, server_id: serverId, region })
@@ -334,6 +339,7 @@ class GPortalConnector {
             const res = await fetch(`${this.bridgeUrl}/api/gportal/status`);
             const data = await res.json();
             if (res.ok) {
+                this.lastStatus = data; // Store for home screen
                 statusDiv.innerText = JSON.stringify(data, null, 2);
                 this.logMessage('✅ Server status fetched');
                 if (!this.apiReady) {
@@ -351,6 +357,18 @@ class GPortalConnector {
         }
     }
 
+    // Getter for player count (used by home.js)
+    getPlayerCount() {
+        if (!this.lastStatus) return 0;
+        // Try common fields
+        if (this.lastStatus.players) {
+            return Array.isArray(this.lastStatus.players) ? this.lastStatus.players.length : parseInt(this.lastStatus.players) || 0;
+        }
+        if (this.lastStatus.playerCount) return parseInt(this.lastStatus.playerCount) || 0;
+        if (this.lastStatus.numplayers) return parseInt(this.lastStatus.numplayers) || 0;
+        return 0;
+    }
+
     checkDiscordReturn() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('discord') === 'linked') {
@@ -360,8 +378,7 @@ class GPortalConnector {
                 localStorage.setItem('discord_linked', 'true');
                 localStorage.setItem('discord_id', discordId);
                 console.log('Saved to localStorage:', { linked: 'true', id: discordId });
-                // Force a page reload to ensure a clean state with the stored ID
-                window.location.href = window.location.pathname; // reload without query params
+                window.location.href = window.location.pathname;
             } else {
                 toast.error('Discord linking failed: no ID received');
             }

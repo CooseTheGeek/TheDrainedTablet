@@ -1,5 +1,4 @@
-// home.js – DRAINED TABLET ULTIMATE v7.0.0
-// Dashboard home page with real‑time server stats, recent events, and quick actions.
+// home.js – DRAINED TABLET ULTIMATE v7.0.0 (with GPortal player count)
 
 class Home {
     constructor() {
@@ -22,7 +21,7 @@ class Home {
 
     init() {
         this.createHTML();
-        this.attachEvents(); // this method must exist
+        this.attachEvents();
         this.startUpdates();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'home') {
@@ -61,11 +60,6 @@ class Home {
 
         this.renderGauges();
         this.renderQuickActions();
-    }
-
-    attachEvents() {
-        document.getElementById('home-refresh')?.addEventListener('click', () => this.refresh());
-        // Quick action buttons are handled by delegation in renderQuickActions
     }
 
     renderGauges() {
@@ -139,27 +133,34 @@ class Home {
     }
 
     async updateStats() {
-        if (AppState.connection.status !== 'connected') {
+        // Try to get player count from GPortal first
+        if (window.gportalConnector && window.gportalConnector.apiReady) {
+            const playerCount = window.gportalConnector.getPlayerCount();
+            this.stats.players = playerCount;
+            // Optionally fetch other stats from GPortal if available
+        } else if (AppState.connection.status === 'connected') {
+            this.stats.players = AppState.players.length;
+        } else {
             this.showDisconnected();
             return;
         }
+
+        // Fetch other stats via RCON (which now uses GPortal if available)
         try {
             const fps = await ConnectionManager.executeCommand('server.fps');
             const cpu = await ConnectionManager.executeCommand('server.cpu');
             const mem = await ConnectionManager.executeCommand('server.memory');
-            const players = AppState.players.length;
             const maxPlayers = AppState.connection.server?.maxPlayers || 100;
             const uptime = await ConnectionManager.executeCommand('server.uptime');
             const entities = await ConnectionManager.executeCommand('entity.count');
-            this.stats = {
-                fps: parseInt(fps) || 0,
-                cpu: parseInt(cpu) || 0,
-                memory: parseInt(mem) || 0,
-                players,
-                maxPlayers,
-                uptime: uptime || '0d 0h 0m',
-                entities: parseInt(entities) || 0
-            };
+            
+            this.stats.fps = parseInt(fps) || 0;
+            this.stats.cpu = parseInt(cpu) || 0;
+            this.stats.memory = parseInt(mem) || 0;
+            this.stats.maxPlayers = maxPlayers;
+            this.stats.uptime = uptime || '0d 0h 0m';
+            this.stats.entities = parseInt(entities) || 0;
+
             this.updateGauges();
             this.updateEvents();
             this.updateChart();
@@ -200,7 +201,6 @@ class Home {
     async updateEvents() {
         const list = document.getElementById('recent-events-list');
         if (!list) return;
-        // Placeholder – in real implementation, fetch from server
         list.innerHTML = '<div class="event-item">Airdrop dropped (2m ago)</div><div class="event-item">PlayerX killed PlayerY (5m ago)</div>';
     }
 
