@@ -1,11 +1,9 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
 // Complete GPortal connector with Discord linking, server storage, command execution,
-// and global connection status integration.
+// and global connection status integration (fixed).
 
 class GPortalConnector {
     constructor() {
-        this.tablet = window.drainedTablet;
-        this.access = window.accessControl;
         this.bridgeUrl = AppState.connection.bridgeUrl;
         this.discordLinked = localStorage.getItem('discord_linked') === 'true';
         this.discordId = localStorage.getItem('discord_id');
@@ -30,29 +28,14 @@ class GPortalConnector {
         });
     }
 
-    updateGlobalConnectionStatus() {
+    // Update the header's connection status without touching AppState.connection
+    updateHeaderStatus() {
+        const statusEl = document.getElementById('connection-status');
+        if (!statusEl) return;
         if (this.apiReady) {
-            AppState.connection.status = 'connected';
-            AppState.connection.server = { 
-                ip: 'GPortal API', 
-                port: 0, 
-                password: '',
-                name: 'GPortal'
-            };
-            const statusEl = document.getElementById('connection-status');
-            if (statusEl) {
-                statusEl.innerHTML = '<span class="dot online"></span> CONNECTED (GPortal)';
-            }
+            statusEl.innerHTML = '<span class="dot online"></span> CONNECTED (GPortal)';
         } else {
-            AppState.connection.status = 'disconnected';
-            AppState.connection.server = null;
-            const statusEl = document.getElementById('connection-status');
-            if (statusEl) {
-                statusEl.innerHTML = '<span class="dot offline"></span> DISCONNECTED';
-            }
-        }
-        if (window.ConnectionManager) {
-            window.ConnectionManager.notify();
+            statusEl.innerHTML = '<span class="dot offline"></span> DISCONNECTED';
         }
     }
 
@@ -179,7 +162,7 @@ class GPortalConnector {
         const region = document.getElementById('server-region').value.trim();
 
         if (!name || !ip || !port || !password) {
-            this.tablet.showError('Name, IP, port, and password are required');
+            toast.error('Name, IP, port, and password are required');
             btn.disabled = false;
             return;
         }
@@ -198,13 +181,14 @@ class GPortalConnector {
                 document.getElementById('server-name').value = ''; // clear name
                 // Wait a tiny bit for the database to commit, then refresh
                 setTimeout(() => this.loadServers(), 300);
+                toast.success('Server added successfully');
             } else {
                 this.logMessage(`❌ Failed: ${data.error}`);
-                this.tablet.showError(data.error || 'Failed to add server');
+                toast.error(data.error || 'Failed to add server');
             }
         } catch (err) {
             this.logMessage(`❌ Error: ${err.message}`);
-            this.tablet.showError('Network error');
+            toast.error('Network error');
         } finally {
             btn.disabled = false;
         }
@@ -252,7 +236,7 @@ class GPortalConnector {
         });
         container.innerHTML = html;
 
-        // Attach delete events (they need to be reattached after innerHTML update)
+        // Attach delete events
         container.querySelectorAll('.delete-server').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.dataset.id;
@@ -260,8 +244,9 @@ class GPortalConnector {
                     try {
                         await fetch(`${this.bridgeUrl}/api/user/servers/${id}?discord_id=${this.discordId}`, { method: 'DELETE' });
                         this.loadServers();
+                        toast.success('Server deleted');
                     } catch (err) {
-                        this.tablet.showError('Delete failed');
+                        toast.error('Delete failed');
                     }
                 }
             });
@@ -280,7 +265,7 @@ class GPortalConnector {
             this.apiReady = false;
         }
         this.updateApiStatusBadge();
-        this.updateGlobalConnectionStatus();
+        this.updateHeaderStatus();
     }
 
     updateApiStatusBadge() {
@@ -313,7 +298,7 @@ class GPortalConnector {
                 if (!this.apiReady) {
                     this.apiReady = true;
                     this.updateApiStatusBadge();
-                    this.updateGlobalConnectionStatus();
+                    this.updateHeaderStatus();
                 }
             } else {
                 document.getElementById('gportal-command-output').innerText = `Error: ${data.error}`;
@@ -337,7 +322,7 @@ class GPortalConnector {
                 if (!this.apiReady) {
                     this.apiReady = true;
                     this.updateApiStatusBadge();
-                    this.updateGlobalConnectionStatus();
+                    this.updateHeaderStatus();
                 }
             } else {
                 statusDiv.innerText = `Error: ${data.error}`;
