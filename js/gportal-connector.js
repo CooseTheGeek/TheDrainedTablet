@@ -1,5 +1,5 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Enhanced logging for server list debugging.
+// Fixed duplicate submissions and added network logging.
 
 class GPortalConnector {
     constructor() {
@@ -131,7 +131,10 @@ class GPortalConnector {
         if (this.discordLinked) {
             const addBtn = document.getElementById('add-server-btn');
             if (addBtn) {
-                addBtn.addEventListener('click', (e) => this.addServer(e));
+                // Remove any existing listeners to avoid duplicates
+                addBtn.replaceWith(addBtn.cloneNode(true));
+                const newAddBtn = document.getElementById('add-server-btn');
+                newAddBtn.addEventListener('click', (e) => this.addServer(e));
             }
             document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
             document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
@@ -155,6 +158,8 @@ class GPortalConnector {
     async addServer(e) {
         const btn = e.currentTarget;
         btn.disabled = true;
+        btn.textContent = 'ADDING...';
+
         const name = document.getElementById('server-name').value.trim();
         const ip = document.getElementById('server-ip').value.trim();
         const port = parseInt(document.getElementById('server-port').value);
@@ -165,46 +170,40 @@ class GPortalConnector {
         if (!name || !ip || !port || !password) {
             toast.error('Name, IP, port, and password are required');
             btn.disabled = false;
+            btn.textContent = 'ADD SERVER';
             return;
         }
 
         this.logMessage(`Adding server ${name}...`);
 
         try {
+            console.log('Sending POST to add server with discordId:', this.discordId);
             const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, ip, port, password, server_id: serverId, region })
             });
+            console.log('Add server response status:', res.status);
             const data = await res.json();
+            console.log('Add server response data:', data);
+
             if (data.success) {
                 this.logMessage('✅ Server added');
                 document.getElementById('server-name').value = ''; // clear name
                 toast.success('Server added successfully');
-
-                // Immediately add a temporary server to the list for instant feedback
-                const tempServer = {
-                    id: data.id || 'temp-' + Date.now(),
-                    name,
-                    ip,
-                    port,
-                    server_id: serverId,
-                    region
-                };
-                this.servers.push(tempServer);
-                this.renderServers();
-
-                // Then fetch the real list from the bridge to ensure consistency
-                setTimeout(() => this.loadServers(), 500);
+                // Fetch the real list from the bridge
+                await this.loadServers();
             } else {
                 this.logMessage(`❌ Failed: ${data.error}`);
                 toast.error(data.error || 'Failed to add server');
             }
         } catch (err) {
+            console.error('Add server error:', err);
             this.logMessage(`❌ Error: ${err.message}`);
             toast.error('Network error');
         } finally {
             btn.disabled = false;
+            btn.textContent = 'ADD SERVER';
         }
     }
 
@@ -215,11 +214,12 @@ class GPortalConnector {
             const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`);
             console.log('Response status:', res.status);
             if (!res.ok) {
-                throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+                const errorText = await res.text();
+                console.error('Error response text:', errorText);
+                throw new Error(`HTTP ${res.status}: ${errorText}`);
             }
             const servers = await res.json();
             console.log('Loaded servers (raw):', servers);
-            // Ensure servers is an array
             if (!Array.isArray(servers)) {
                 console.error('Server response is not an array:', servers);
                 throw new Error('Invalid response format');
