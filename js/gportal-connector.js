@@ -1,5 +1,5 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Handles GPortal connection with Discord linking and server storage.
+// Complete GPortal connector with Discord linking, server storage, and command execution via rce.js.
 
 class GPortalConnector {
     constructor() {
@@ -9,6 +9,7 @@ class GPortalConnector {
         this.discordLinked = localStorage.getItem('discord_linked') === 'true';
         this.discordId = localStorage.getItem('discord_id');
         this.servers = [];
+        this.serverIdentifier = 'main-server'; // matches the identifier used in the bridge
         this.init();
     }
 
@@ -84,6 +85,23 @@ class GPortalConnector {
                         <h3>📋 YOUR SERVERS</h3>
                         <div id="servers-list" class="servers-list"></div>
                     </div>
+
+                    <!-- Command Execution -->
+                    <div class="gportal-section">
+                        <h3>⚡ SEND COMMAND</h3>
+                        <div class="form-group">
+                            <input type="text" id="gportal-command" placeholder="Enter command (e.g., status)">
+                        </div>
+                        <button id="gportal-send-command" class="gportal-btn primary">SEND COMMAND</button>
+                        <div id="gportal-command-output" class="command-output"></div>
+                    </div>
+
+                    <!-- Server Status -->
+                    <div class="gportal-section">
+                        <h3>📊 SERVER STATUS</h3>
+                        <div id="gportal-server-status">Loading...</div>
+                        <button id="gportal-refresh-status" class="gportal-btn small">🔄 Refresh</button>
+                    </div>
                     ` : ''}
                 </div>
 
@@ -99,6 +117,11 @@ class GPortalConnector {
         document.getElementById('discord-connect-btn')?.addEventListener('click', () => this.connectDiscord());
         if (this.discordLinked) {
             document.getElementById('add-server-btn')?.addEventListener('click', () => this.addServer());
+            document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
+            document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
+            document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.sendCommand();
+            });
         }
     }
 
@@ -164,7 +187,6 @@ class GPortalConnector {
                     <div class="server-name">${s.name}</div>
                     <div class="server-details">${s.ip}:${s.port}</div>
                     <div class="server-actions">
-                        <button class="small-btn connect-server" data-id="${s.id}" data-ip="${s.ip}" data-port="${s.port}" data-password="***">Connect</button>
                         <button class="small-btn delete-server" data-id="${s.id}">Delete</button>
                     </div>
                 </div>
@@ -172,19 +194,6 @@ class GPortalConnector {
         });
         container.innerHTML = html;
 
-        // Add event listeners for connect buttons (still using manual RCON)
-        container.querySelectorAll('.connect-server').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const ip = btn.dataset.ip;
-                const port = parseInt(btn.dataset.port);
-                const password = prompt('Enter RCON password for this server:');
-                if (password) {
-                    ConnectionManager.connect({ ip, port, password });
-                }
-            });
-        });
-
-        // Delete buttons
         container.querySelectorAll('.delete-server').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
@@ -194,6 +203,58 @@ class GPortalConnector {
                 }
             });
         });
+    }
+
+    async sendCommand() {
+        const commandInput = document.getElementById('gportal-command');
+        const command = commandInput.value.trim();
+        if (!command) return;
+
+        this.logMessage(`Sending command: ${command}`);
+        document.getElementById('gportal-command-output').innerText = 'Sending...';
+
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/gportal/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command })
+            });
+            const data = await res.json();
+            if (data.success) {
+                // If the result is included, display it; otherwise show a generic success.
+                const output = data.result || 'Command executed successfully (no output)';
+                document.getElementById('gportal-command-output').innerText = output;
+                this.logMessage(`✅ Command executed: ${output.substring(0, 100)}...`);
+            } else {
+                document.getElementById('gportal-command-output').innerText = `Error: ${data.error}`;
+                this.logMessage(`❌ Command failed: ${data.error}`);
+            }
+        } catch (err) {
+            document.getElementById('gportal-command-output').innerText = `Network error: ${err.message}`;
+            this.logMessage(`❌ Network error: ${err.message}`);
+        }
+    }
+
+    async fetchStatus() {
+        const statusDiv = document.getElementById('gportal-server-status');
+        statusDiv.innerText = 'Loading...';
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/gportal/status`);
+            const data = await res.json();
+            if (res.ok) {
+                // Format the status nicely
+                let statusText = '';
+                if (data.name) statusText += `Name: ${data.name}\n`;
+                if (data.players) statusText += `Players: ${data.players}\n`;
+                if (data.map) statusText += `Map: ${data.map}\n`;
+                if (data.fps) statusText += `FPS: ${data.fps}\n`;
+                statusDiv.innerText = statusText || 'No status info available';
+            } else {
+                statusDiv.innerText = `Error: ${data.error}`;
+            }
+        } catch (err) {
+            statusDiv.innerText = `Network error: ${err.message}`;
+        }
     }
 
     checkDiscordReturn() {
@@ -206,7 +267,6 @@ class GPortalConnector {
                 this.discordLinked = true;
                 this.discordId = discordId;
                 toast.success('Discord linked successfully!');
-                // Remove query params
                 window.history.replaceState({}, '', window.location.pathname);
                 this.refresh();
                 this.loadServers();
@@ -233,6 +293,7 @@ class GPortalConnector {
         this.attachEvents();
         if (this.discordId) {
             this.loadServers();
+            this.fetchStatus(); // automatically fetch status on refresh
         }
     }
 }
