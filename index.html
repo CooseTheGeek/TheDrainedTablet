@@ -292,6 +292,7 @@
     </div>
 
     <!-- ========== SCRIPT LOADING ========== -->
+    <!-- Core & utilities first -->
     <script src="js/core.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
@@ -301,6 +302,9 @@
     <script src="js/command-queue.js"></script>
     <script src="js/auto-recovery.js"></script>
     <script src="js/connection-health.js"></script>
+    <script src="js/icons.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/toast.js"></script>   <!-- Toast now before all UI modules -->
 
     <script src="js/profile.js"></script>
     <script src="js/id-card-generator.js"></script>
@@ -325,10 +329,6 @@
     <script src="js/settings.js"></script>
     <script src="js/gportal-connector.js"></script>
     <script src="js/performance-metrics.js"></script>
-
-    <script src="js/icons.js"></script>
-    <script src="js/animations.js"></script>
-    <script src="js/toast.js"></script>
     <script src="js/deepseek-ai.js"></script>
 
     <!-- Legacy modules -->
@@ -418,7 +418,6 @@
                 signOutBtn.addEventListener('click', () => {
                     if (window.UserManager) UserManager.logout();
                     else {
-                        // Fallback
                         document.getElementById('security-door').classList.remove('hidden');
                         document.getElementById('dashboard').classList.add('hidden');
                         localStorage.removeItem('tdl_session');
@@ -426,18 +425,17 @@
                 });
             }
 
-            // Sidebar collapse toggle (NEW)
+            // Sidebar collapse toggle
             const collapseBtn = document.getElementById('collapse-sidebar');
             if (collapseBtn) {
                 collapseBtn.addEventListener('click', () => {
                     document.getElementById('sidebar').classList.toggle('collapsed');
-                    // Update button icon based on state
                     const isCollapsed = document.getElementById('sidebar').classList.contains('collapsed');
                     collapseBtn.textContent = isCollapsed ? '▶' : '◀';
                 });
             }
 
-            // Role selection modal logic (integrated with security.js)
+            // Role selection modal logic
             const roleOptions = document.querySelectorAll('.role-option');
             roleOptions.forEach(opt => {
                 opt.addEventListener('click', () => {
@@ -454,11 +452,9 @@
                     return;
                 }
                 const role = selected.value;
-                // Update user role in AppState and localStorage
                 if (AppState.user) {
                     AppState.user.role = role;
                     localStorage.setItem('tdl_role', role);
-                    // Also update in users object
                     let users = JSON.parse(localStorage.getItem('tdl_users') || '{}');
                     if (users[AppState.user.username]) {
                         users[AppState.user.username].role = role;

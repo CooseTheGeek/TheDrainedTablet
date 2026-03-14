@@ -43,15 +43,12 @@ class Players {
                     <div class="waiting">Waiting for connection...</div>
                 </div>
             </div>
-            <!-- Player Detail Slide‑out Panel -->
             <div id="player-detail-panel" class="player-detail-panel hidden">
                 <div class="panel-header">
                     <h3 id="detail-name">Player Name</h3>
                     <button id="close-detail">✕</button>
                 </div>
-                <div class="panel-content" id="detail-content">
-                    <!-- Populated dynamically -->
-                </div>
+                <div class="panel-content" id="detail-content"></div>
             </div>
         `;
     }
