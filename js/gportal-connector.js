@@ -10,6 +10,7 @@ class GPortalConnector {
         this.discordId = localStorage.getItem('discord_id');
         this.servers = [];
         this.serverIdentifier = 'main-server'; // matches the identifier used in the bridge
+        this.apiReady = false;
         this.init();
     }
 
@@ -19,6 +20,7 @@ class GPortalConnector {
         this.checkDiscordReturn();
         if (this.discordId) {
             this.loadServers();
+            this.checkApiStatus();
         }
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'gportal') {
@@ -35,7 +37,9 @@ class GPortalConnector {
             <div class="gportal-container">
                 <div class="gportal-header">
                     <h2>🔌 GPORTAL CONNECTOR</h2>
-                    <div class="connection-status" id="gportal-status">⚫ Not Connected</div>
+                    <div class="api-status" id="gportal-api-status">
+                        API Status: <span class="status-badge ${this.apiReady ? 'online' : 'offline'}">${this.apiReady ? 'Connected' : 'Unknown'}</span>
+                    </div>
                 </div>
 
                 <div class="gportal-grid">
@@ -84,6 +88,7 @@ class GPortalConnector {
                     <div class="gportal-section">
                         <h3>📋 YOUR SERVERS</h3>
                         <div id="servers-list" class="servers-list"></div>
+                        <button id="refresh-servers-btn" class="gportal-btn small" style="margin-top: 10px;">🔄 Refresh List</button>
                     </div>
 
                     <!-- Command Execution -->
@@ -99,7 +104,7 @@ class GPortalConnector {
                     <!-- Server Status -->
                     <div class="gportal-section">
                         <h3>📊 SERVER STATUS</h3>
-                        <div id="gportal-server-status">Loading...</div>
+                        <pre id="gportal-server-status" class="status-pre">Loading...</pre>
                         <button id="gportal-refresh-status" class="gportal-btn small">🔄 Refresh</button>
                     </div>
                     ` : ''}
@@ -116,9 +121,13 @@ class GPortalConnector {
     attachEvents() {
         document.getElementById('discord-connect-btn')?.addEventListener('click', () => this.connectDiscord());
         if (this.discordLinked) {
-            document.getElementById('add-server-btn')?.addEventListener('click', () => this.addServer());
+            const addBtn = document.getElementById('add-server-btn');
+            if (addBtn) {
+                addBtn.addEventListener('click', (e) => this.addServer(e));
+            }
             document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
             document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
+            document.getElementById('refresh-servers-btn')?.addEventListener('click', () => this.loadServers());
             document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') this.sendCommand();
             });
@@ -129,7 +138,9 @@ class GPortalConnector {
         window.location.href = `${this.bridgeUrl}/api/discord/login`;
     }
 
-    async addServer() {
+    async addServer(e) {
+        const btn = e.currentTarget;
+        btn.disabled = true; // prevent double submission
         const name = document.getElementById('server-name').value.trim();
         const ip = document.getElementById('server-ip').value.trim();
         const port = parseInt(document.getElementById('server-port').value);
@@ -139,6 +150,7 @@ class GPortalConnector {
 
         if (!name || !ip || !port || !password) {
             this.tablet.showError('Name, IP, port, and password are required');
+            btn.disabled = false;
             return;
         }
 
@@ -153,16 +165,24 @@ class GPortalConnector {
             const data = await res.json();
             if (data.success) {
                 this.logMessage('✅ Server added');
-                this.loadServers();
+                // Clear form? Optional
+                document.getElementById('server-name').value = '';
+                // Reload list
+                await this.loadServers();
             } else {
                 this.logMessage(`❌ Failed: ${data.error}`);
+                this.tablet.showError(data.error || 'Failed to add server');
             }
         } catch (err) {
             this.logMessage(`❌ Error: ${err.message}`);
+            this.tablet.showError('Network error');
+        } finally {
+            btn.disabled = false;
         }
     }
 
     async loadServers() {
+        if (!this.discordId) return;
         try {
             const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`);
             const servers = await res.json();
@@ -170,6 +190,7 @@ class GPortalConnector {
             this.renderServers();
         } catch (err) {
             console.error('Failed to load servers:', err);
+            this.logMessage(`❌ Failed to load servers: ${err.message}`);
         }
     }
 
@@ -195,14 +216,36 @@ class GPortalConnector {
         container.innerHTML = html;
 
         container.querySelectorAll('.delete-server').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.dataset.id;
+            btn.addEventListener('click', async (e) => {
+                const id = e.currentTarget.dataset.id;
                 if (confirm('Delete this server?')) {
                     await fetch(`${this.bridgeUrl}/api/user/servers/${id}?discord_id=${this.discordId}`, { method: 'DELETE' });
                     this.loadServers();
                 }
             });
         });
+    }
+
+    async checkApiStatus() {
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/gportal/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'status' })
+            });
+            this.apiReady = res.ok;
+        } catch {
+            this.apiReady = false;
+        }
+        this.updateApiStatusBadge();
+    }
+
+    updateApiStatusBadge() {
+        const badge = document.querySelector('#gportal-api-status .status-badge');
+        if (badge) {
+            badge.className = `status-badge ${this.apiReady ? 'online' : 'offline'}`;
+            badge.innerText = this.apiReady ? 'Connected' : 'Disconnected';
+        }
     }
 
     async sendCommand() {
@@ -221,10 +264,13 @@ class GPortalConnector {
             });
             const data = await res.json();
             if (data.success) {
-                // If the result is included, display it; otherwise show a generic success.
                 const output = data.result || 'Command executed successfully (no output)';
                 document.getElementById('gportal-command-output').innerText = output;
                 this.logMessage(`✅ Command executed: ${output.substring(0, 100)}...`);
+                if (!this.apiReady) {
+                    this.apiReady = true;
+                    this.updateApiStatusBadge();
+                }
             } else {
                 document.getElementById('gportal-command-output').innerText = `Error: ${data.error}`;
                 this.logMessage(`❌ Command failed: ${data.error}`);
@@ -242,18 +288,19 @@ class GPortalConnector {
             const res = await fetch(`${this.bridgeUrl}/api/gportal/status`);
             const data = await res.json();
             if (res.ok) {
-                // Format the status nicely
-                let statusText = '';
-                if (data.name) statusText += `Name: ${data.name}\n`;
-                if (data.players) statusText += `Players: ${data.players}\n`;
-                if (data.map) statusText += `Map: ${data.map}\n`;
-                if (data.fps) statusText += `FPS: ${data.fps}\n`;
-                statusDiv.innerText = statusText || 'No status info available';
+                statusDiv.innerText = JSON.stringify(data, null, 2);
+                this.logMessage('✅ Server status fetched');
+                if (!this.apiReady) {
+                    this.apiReady = true;
+                    this.updateApiStatusBadge();
+                }
             } else {
                 statusDiv.innerText = `Error: ${data.error}`;
+                this.logMessage(`❌ Status fetch failed: ${data.error}`);
             }
         } catch (err) {
             statusDiv.innerText = `Network error: ${err.message}`;
+            this.logMessage(`❌ Network error: ${err.message}`);
         }
     }
 
@@ -269,6 +316,7 @@ class GPortalConnector {
                 toast.success('Discord linked successfully!');
                 window.history.replaceState({}, '', window.location.pathname);
                 this.refresh();
+                // Load servers automatically
                 this.loadServers();
             } else {
                 toast.error('Discord linking failed: no ID received');
@@ -293,7 +341,8 @@ class GPortalConnector {
         this.attachEvents();
         if (this.discordId) {
             this.loadServers();
-            this.fetchStatus(); // automatically fetch status on refresh
+            this.checkApiStatus();
+            this.fetchStatus();
         }
     }
 }
