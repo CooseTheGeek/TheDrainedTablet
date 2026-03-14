@@ -1,4 +1,4 @@
-// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with GPortal command fallback)
+// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with GPortal player polling)
 
 // ========================= GLOBAL STATE =========================
 const AppState = {
@@ -99,11 +99,9 @@ const ConnectionManager = {
         this.notify();
     },
 
-    // Modified executeCommand: if GPortal API is ready, use it; otherwise fallback to old RCON
     async executeCommand(command) {
         console.log('⚡ Executing RCON command:', command);
         
-        // Check if GPortal API is available (via window.gportalConnector)
         if (window.gportalConnector && window.gportalConnector.apiReady) {
             console.log('Using GPortal API for command');
             try {
@@ -124,7 +122,6 @@ const ConnectionManager = {
             }
         }
 
-        // Fallback to old RCON method
         if (AppState.connection.status !== 'connected') {
             console.error('❌ Not connected to any server (old RCON)');
             throw new Error('Not connected to any server');
@@ -273,3 +270,59 @@ function sanitizeInput(input) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 DRAINED TABLET core loaded');
 });
+
+// ========================= GPortal Player List Polling =========================
+setInterval(async () => {
+    if (window.gportalConnector && window.gportalConnector.apiReady) {
+        try {
+            const res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'playerlist' })
+            });
+            const data = await res.json();
+            if (data.success && data.result) {
+                let players = [];
+                const raw = data.result;
+
+                // Handle different response formats
+                if (typeof raw === 'string') {
+                    const trimmed = raw.trim();
+                    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                        try {
+                            const parsed = JSON.parse(trimmed);
+                            if (Array.isArray(parsed)) {
+                                players = parsed.map(p => ({
+                                    name: p.name || p.displayName || p,
+                                    online: true,
+                                    playtime: p.playtime || 'N/A',
+                                    position: p.position || null
+                                }));
+                            }
+                        } catch {
+                            // fallback: split by lines
+                            const lines = trimmed.split('\n').filter(l => l.trim());
+                            players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
+                        }
+                    } else {
+                        // Assume plain text list, one name per line
+                        const lines = trimmed.split('\n').filter(l => l.trim());
+                        players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
+                    }
+                } else if (Array.isArray(raw)) {
+                    players = raw.map(p => ({
+                        name: p.name || p.displayName || p,
+                        online: true,
+                        playtime: p.playtime || 'N/A',
+                        position: p.position || null
+                    }));
+                }
+
+                AppState.players = players;
+                ConnectionManager.notify(); // Trigger UI updates
+            }
+        } catch (err) {
+            console.error('Error polling player list:', err);
+        }
+    }
+}, 15000); // Poll every 15 seconds

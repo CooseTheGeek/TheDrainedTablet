@@ -133,40 +133,55 @@ class Home {
     }
 
     async updateStats() {
-        // Try to get player count from GPortal first
+        // Get player count from AppState.players (populated by GPortal polling)
+        this.stats.players = (AppState.players || []).length;
+
+        // If GPortal is ready, also fetch other stats
         if (window.gportalConnector && window.gportalConnector.apiReady) {
-            const playerCount = window.gportalConnector.getPlayerCount();
-            this.stats.players = playerCount;
-            // Optionally fetch other stats from GPortal if available
+            try {
+                const fps = await ConnectionManager.executeCommand('server.fps');
+                const cpu = await ConnectionManager.executeCommand('server.cpu');
+                const mem = await ConnectionManager.executeCommand('server.memory');
+                const maxPlayers = AppState.connection.server?.maxPlayers || 100;
+                const uptime = await ConnectionManager.executeCommand('server.uptime');
+                const entities = await ConnectionManager.executeCommand('entity.count');
+                
+                this.stats.fps = parseInt(fps) || 0;
+                this.stats.cpu = parseInt(cpu) || 0;
+                this.stats.memory = parseInt(mem) || 0;
+                this.stats.maxPlayers = maxPlayers;
+                this.stats.uptime = uptime || '0d 0h 0m';
+                this.stats.entities = parseInt(entities) || 0;
+            } catch (err) {
+                console.warn('Failed to update stats via GPortal:', err);
+            }
         } else if (AppState.connection.status === 'connected') {
-            this.stats.players = AppState.players.length;
+            // Fallback to old RCON stats
+            try {
+                const fps = await ConnectionManager.executeCommand('server.fps');
+                const cpu = await ConnectionManager.executeCommand('server.cpu');
+                const mem = await ConnectionManager.executeCommand('server.memory');
+                const maxPlayers = AppState.connection.server?.maxPlayers || 100;
+                const uptime = await ConnectionManager.executeCommand('server.uptime');
+                const entities = await ConnectionManager.executeCommand('entity.count');
+                
+                this.stats.fps = parseInt(fps) || 0;
+                this.stats.cpu = parseInt(cpu) || 0;
+                this.stats.memory = parseInt(mem) || 0;
+                this.stats.maxPlayers = maxPlayers;
+                this.stats.uptime = uptime || '0d 0h 0m';
+                this.stats.entities = parseInt(entities) || 0;
+            } catch (err) {
+                console.warn('Failed to update stats via RCON:', err);
+            }
         } else {
             this.showDisconnected();
             return;
         }
 
-        // Fetch other stats via RCON (which now uses GPortal if available)
-        try {
-            const fps = await ConnectionManager.executeCommand('server.fps');
-            const cpu = await ConnectionManager.executeCommand('server.cpu');
-            const mem = await ConnectionManager.executeCommand('server.memory');
-            const maxPlayers = AppState.connection.server?.maxPlayers || 100;
-            const uptime = await ConnectionManager.executeCommand('server.uptime');
-            const entities = await ConnectionManager.executeCommand('entity.count');
-            
-            this.stats.fps = parseInt(fps) || 0;
-            this.stats.cpu = parseInt(cpu) || 0;
-            this.stats.memory = parseInt(mem) || 0;
-            this.stats.maxPlayers = maxPlayers;
-            this.stats.uptime = uptime || '0d 0h 0m';
-            this.stats.entities = parseInt(entities) || 0;
-
-            this.updateGauges();
-            this.updateEvents();
-            this.updateChart();
-        } catch (err) {
-            console.warn('Failed to update stats:', err);
-        }
+        this.updateGauges();
+        this.updateEvents();
+        this.updateChart();
     }
 
     showDisconnected() {

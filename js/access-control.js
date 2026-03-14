@@ -1,4 +1,4 @@
-// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (with final master override)
+// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (with temporary master override)
 
 class AccessControl {
     constructor() {
@@ -16,7 +16,7 @@ class AccessControl {
         console.log('AccessControl initialized');
     }
 
-    // Final override for CooseTheGeek
+    // Temporary override for CooseTheGeek
     isMasterUser() {
         const username = AppState.user?.username || localStorage.getItem('tdl_username');
         return username === 'CooseTheGeek';

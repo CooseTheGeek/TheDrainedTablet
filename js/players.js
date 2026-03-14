@@ -1,4 +1,4 @@
-// players.js – DRAINED TABLET ULTIMATE v7.0.0 (fixed toast usage)
+// players.js – DRAINED TABLET ULTIMATE v7.0.0 (with GPortal support)
 
 class Players {
     constructor() {
@@ -72,7 +72,8 @@ class Players {
         const listDiv = document.getElementById('players-list');
         if (!listDiv) return;
 
-        if (AppState.connection.status !== 'connected') {
+        const gportalReady = window.gportalConnector && window.gportalConnector.apiReady;
+        if (AppState.connection.status !== 'connected' && !gportalReady) {
             listDiv.innerHTML = '<div class="waiting">Waiting for connection...</div>';
             return;
         }
