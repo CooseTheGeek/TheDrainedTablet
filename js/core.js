@@ -37,16 +37,23 @@ const AppState = {
 const ConnectionManager = {
     // Check bridge health
     async checkHealth() {
+        console.log('📡 Checking bridge health...');
         try {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/health`);
-            if (!res.ok) throw new Error('Bridge unreachable');
+            console.log('📥 Health response status:', res.status);
+            if (!res.ok) {
+                console.error('❌ Bridge unreachable, status:', res.status);
+                throw new Error('Bridge unreachable');
+            }
             const data = await res.json();
+            console.log('✅ Bridge health OK:', data);
             AppState.connection.status = 'connected';
             AppState.connection.lastPing = Date.now();
             AppState.connection.error = null;
             this.notify();
             return true;
         } catch (err) {
+            console.error('🔥 Health check error:', err.message);
             AppState.connection.status = 'error';
             AppState.connection.error = err.message;
             this.notify();
@@ -56,16 +63,34 @@ const ConnectionManager = {
 
     // Connect to server using credentials
     async connect(credentials) {
+        console.log('🔌 Attempting to connect with credentials:', { 
+            ip: credentials.ip, 
+            port: credentials.port, 
+            password: '***' // hide password in logs
+        });
+
         AppState.connection.status = 'connecting';
         this.notify();
+
         try {
-            const res = await fetch(`${AppState.connection.bridgeUrl}/api/connect`, {
+            const url = `${AppState.connection.bridgeUrl}/api/connect`;
+            console.log('📡 Sending POST request to:', url);
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(credentials)
             });
+
+            console.log('📥 Response status:', res.status);
             const data = await res.json();
-            if (!data.success) throw new Error(data.error || 'Connection failed');
+            console.log('📦 Response data:', data);
+
+            if (!data.success) {
+                console.error('❌ Connection failed:', data.error);
+                throw new Error(data.error || 'Connection failed');
+            }
+
+            console.log('✅ Connection successful, server:', data.server);
             AppState.connection.status = 'connected';
             AppState.connection.server = data.server;
             AppState.connection.lastPing = Date.now();
@@ -76,6 +101,8 @@ const ConnectionManager = {
             this.notify();
             return true;
         } catch (err) {
+            console.error('🔥 Exception in connect():', err.message);
+            if (err.stack) console.error('Stack:', err.stack);
             AppState.connection.status = 'error';
             AppState.connection.error = err.message;
             this.notify();
@@ -85,6 +112,7 @@ const ConnectionManager = {
 
     // Disconnect (does not close bridge, just marks state)
     disconnect() {
+        console.log('🔌 Disconnecting from server');
         AppState.connection.status = 'disconnected';
         AppState.connection.server = null;
         AppState.connection.lastPing = null;
@@ -94,41 +122,66 @@ const ConnectionManager = {
 
     // Execute an RCON command
     async executeCommand(command) {
+        console.log('⚡ Executing RCON command:', command);
         if (AppState.connection.status !== 'connected') {
+            console.error('❌ Not connected to any server');
             throw new Error('Not connected to any server');
         }
-        const res = await fetch(`${AppState.connection.bridgeUrl}/api/command`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ip: AppState.connection.server.ip,
-                port: AppState.connection.server.port,
-                password: AppState.connection.server.password,
-                command
-            })
-        });
-        const data = await res.json();
-        if (!data.success) {
-            throw new Error(data.error || 'Command execution failed');
+
+        try {
+            const url = `${AppState.connection.bridgeUrl}/api/command`;
+            console.log('📡 Sending command to:', url);
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ip: AppState.connection.server.ip,
+                    port: AppState.connection.server.port,
+                    password: AppState.connection.server.password,
+                    command
+                })
+            });
+            console.log('📥 Command response status:', res.status);
+            const data = await res.json();
+            console.log('📦 Command response data:', data);
+
+            if (!data.success) {
+                console.error('❌ Command execution failed:', data.error);
+                throw new Error(data.error || 'Command execution failed');
+            }
+            console.log('✅ Command executed successfully');
+            return data.result;
+        } catch (err) {
+            console.error('🔥 Exception in executeCommand:', err.message);
+            throw err;
         }
-        return data.result;
     },
 
     // Auto‑reconnect with exponential backoff
     async autoReconnect() {
-        if (AppState.connection.status === 'connected') return;
+        console.log('🔄 Auto-reconnect attempt', AppState.connection.reconnectAttempts + 1);
+        if (AppState.connection.status === 'connected') {
+            console.log('✅ Already connected');
+            return;
+        }
         if (AppState.connection.reconnectAttempts >= AppState.connection.maxReconnect) {
+            console.log('⏹️ Max reconnect attempts reached');
             AppState.connection.status = 'disconnected';
             this.notify();
             return;
         }
         // Attempt to reconnect with stored credentials (if any)
         const lastCreds = localStorage.getItem('tdl_last_credentials');
-        if (!lastCreds) return;
+        if (!lastCreds) {
+            console.log('❌ No stored credentials for reconnect');
+            return;
+        }
         try {
             AppState.connection.reconnectAttempts++;
+            console.log('🔄 Attempt', AppState.connection.reconnectAttempts);
             await this.connect(JSON.parse(lastCreds));
         } catch (e) {
+            console.log('⏱️ Reconnect failed, scheduling next attempt');
             setTimeout(() => this.autoReconnect(), 2000 * AppState.connection.reconnectAttempts);
         }
     },
