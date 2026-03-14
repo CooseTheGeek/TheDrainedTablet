@@ -11,7 +11,7 @@ class GPortalConnector {
         this.discordId = localStorage.getItem('discord_id');
         this.servers = [];
         this.serverIdentifier = 'main-server'; // matches the identifier used in the bridge
-        this.apiReady = false; // will be set after first successful command/status
+        this.apiReady = false;
         this.init();
     }
 
@@ -30,7 +30,6 @@ class GPortalConnector {
         });
     }
 
-    // Update global connection status based on API readiness
     updateGlobalConnectionStatus() {
         if (this.apiReady) {
             AppState.connection.status = 'connected';
@@ -38,9 +37,8 @@ class GPortalConnector {
                 ip: 'GPortal API', 
                 port: 0, 
                 password: '',
-                name: 'GPortal' // optional
+                name: 'GPortal'
             };
-            // Update header elements
             const statusEl = document.getElementById('connection-status');
             if (statusEl) {
                 statusEl.innerHTML = '<span class="dot online"></span> CONNECTED (GPortal)';
@@ -53,7 +51,6 @@ class GPortalConnector {
                 statusEl.innerHTML = '<span class="dot offline"></span> DISCONNECTED';
             }
         }
-        // Notify any listeners (though header updates directly)
         if (window.ConnectionManager) {
             window.ConnectionManager.notify();
         }
@@ -157,7 +154,10 @@ class GPortalConnector {
             }
             document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
             document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
-            document.getElementById('refresh-servers-btn')?.addEventListener('click', () => this.loadServers());
+            const refreshBtn = document.getElementById('refresh-servers-btn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => this.loadServers());
+            }
             document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') this.sendCommand();
             });
@@ -170,7 +170,7 @@ class GPortalConnector {
 
     async addServer(e) {
         const btn = e.currentTarget;
-        btn.disabled = true; // prevent double submission
+        btn.disabled = true;
         const name = document.getElementById('server-name').value.trim();
         const ip = document.getElementById('server-ip').value.trim();
         const port = parseInt(document.getElementById('server-port').value);
@@ -196,7 +196,8 @@ class GPortalConnector {
             if (data.success) {
                 this.logMessage('✅ Server added');
                 document.getElementById('server-name').value = ''; // clear name
-                await this.loadServers();
+                // Wait a tiny bit for the database to commit, then refresh
+                setTimeout(() => this.loadServers(), 300);
             } else {
                 this.logMessage(`❌ Failed: ${data.error}`);
                 this.tablet.showError(data.error || 'Failed to add server');
@@ -213,12 +214,20 @@ class GPortalConnector {
         if (!this.discordId) return;
         try {
             const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`);
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
             const servers = await res.json();
+            console.log('Loaded servers:', servers); // for debugging
             this.servers = servers;
             this.renderServers();
         } catch (err) {
             console.error('Failed to load servers:', err);
             this.logMessage(`❌ Failed to load servers: ${err.message}`);
+            const container = document.getElementById('servers-list');
+            if (container) {
+                container.innerHTML = `<p class="error">Error loading servers: ${err.message}</p>`;
+            }
         }
     }
 
@@ -243,12 +252,17 @@ class GPortalConnector {
         });
         container.innerHTML = html;
 
+        // Attach delete events (they need to be reattached after innerHTML update)
         container.querySelectorAll('.delete-server').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.dataset.id;
                 if (confirm('Delete this server?')) {
-                    await fetch(`${this.bridgeUrl}/api/user/servers/${id}?discord_id=${this.discordId}`, { method: 'DELETE' });
-                    this.loadServers();
+                    try {
+                        await fetch(`${this.bridgeUrl}/api/user/servers/${id}?discord_id=${this.discordId}`, { method: 'DELETE' });
+                        this.loadServers();
+                    } catch (err) {
+                        this.tablet.showError('Delete failed');
+                    }
                 }
             });
         });
