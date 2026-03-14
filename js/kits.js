@@ -1,4 +1,5 @@
-// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (KaosBot style – final with command logging)
+// kits.js – DRAINED TABLET ULTIMATE v7.0.0
+// Full integration with KITMANAGER plugin (auto‑create kits on server)
 
 class Kits {
     constructor() {
@@ -69,6 +70,7 @@ class Kits {
                         <div style="display: flex; gap: 10px; margin-bottom: 25px;">
                             <button id="copy-kit" class="kit-btn" style="padding: 8px 16px;">📋 Copy</button>
                             <button id="reset-kit" class="kit-btn" style="padding: 8px 16px;">↺ Reset</button>
+                            <button id="sync-kit" class="kit-btn" style="padding: 8px 16px;">🔄 Sync to Server</button>
                         </div>
 
                         <!-- Category filter and search -->
@@ -139,7 +141,7 @@ class Kits {
                 </div>
             </div>
 
-            <!-- View Kit Modal (simple alert-style) – kept for simplicity, but you can style it -->
+            <!-- View Kit Modal -->
             <div id="view-kit-modal" class="modal hidden">
                 <div class="modal-content">
                     <h3 id="view-kit-title"></h3>
@@ -179,28 +181,24 @@ class Kits {
             </div>
         `).join('');
 
-        // Edit on click (excluding buttons)
         list.querySelectorAll('.kit-item').forEach(el => {
             el.addEventListener('click', (e) => {
                 if (e.target.classList.contains('small-btn')) return;
                 this.loadKit(el.dataset.id);
             });
         });
-        // View
         list.querySelectorAll('.view-kit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.viewKit(btn.dataset.id);
             });
         });
-        // Give
         list.querySelectorAll('.give-kit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.openGiveModal(btn.dataset.id);
             });
         });
-        // Delete
         list.querySelectorAll('.delete-kit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -242,7 +240,7 @@ class Kits {
     loadKit(id) {
         const kit = this.kits.find(k => k.id == id);
         if (!kit) return;
-        this.currentKit = JSON.parse(JSON.stringify(kit)); // deep copy
+        this.currentKit = JSON.parse(JSON.stringify(kit));
         this.selectedSlot = null;
         document.getElementById('kit-editor').style.display = 'block';
         document.getElementById('no-kit-selected').style.display = 'none';
@@ -327,6 +325,7 @@ class Kits {
         document.getElementById('cancel-edit')?.addEventListener('click', () => this.cancelEdit());
         document.getElementById('copy-kit')?.addEventListener('click', () => this.copyKit());
         document.getElementById('reset-kit')?.addEventListener('click', () => this.resetKit());
+        document.getElementById('sync-kit')?.addEventListener('click', () => this.syncKitToServer(this.currentKit));
         document.getElementById('export-kits')?.addEventListener('click', () => this.exportKits());
         document.getElementById('import-kits')?.addEventListener('click', () => this.importKits());
         document.getElementById('item-category-filter')?.addEventListener('change', (e) => {
@@ -522,29 +521,92 @@ class Kits {
         const kit = this.kits.find(k => k.id === kitId);
         if (!kit) return;
 
-        // Try different command formats (adjust based on your server's plugin)
-        const commands = [
-            `kit.give "${target}" "${kit.name}"`,
-            `kit give "${target}" "${kit.name}"`,
-            `givekit "${target}" "${kit.name}"`,
-            `kit.giveplayer "${target}" "${kit.name}"`
-        ];
+        // Try to give the kit (most common command format)
+        const giveCommand = `kit give "${target}" "${kit.name}"`;
+        console.log('Attempting give command:', giveCommand);
 
-        for (const cmd of commands) {
-            console.log('Trying command:', cmd);
-            try {
-                const result = await ConnectionManager.executeCommand(cmd);
-                console.log('Command result:', result);
+        try {
+            const result = await ConnectionManager.executeCommand(giveCommand);
+            console.log('Give command result:', result);
+
+            // If the result indicates the kit doesn't exist, create it and retry
+            if (result && (result.toLowerCase().includes('not found') || result.toLowerCase().includes('does not exist'))) {
+                toast.info(`Kit "${kit.name}" not found on server. Creating it now...`);
+                await this.createKitOnServer(kit);
+                // Retry the give command
+                const retryResult = await ConnectionManager.executeCommand(giveCommand);
                 toast.success(`Gave kit ${kit.name} to ${target}`);
-                document.getElementById('give-kit-modal').classList.add('hidden');
-                document.getElementById('give-player-manual').value = '';
-                return; // exit on success
+            } else {
+                // Success (or unknown response) – assume it worked
+                toast.success(`Gave kit ${kit.name} to ${target}`);
+            }
+            document.getElementById('give-kit-modal').classList.add('hidden');
+            document.getElementById('give-player-manual').value = '';
+        } catch (err) {
+            // If the command itself threw an error, try alternative formats (maybe the plugin uses a different subcommand)
+            console.warn('Primary give command failed, trying alternatives...', err);
+            const alternatives = [
+                `kit.give "${target}" "${kit.name}"`,
+                `givekit "${target}" "${kit.name}"`,
+                `kit.giveplayer "${target}" "${kit.name}"`
+            ];
+            for (const altCmd of alternatives) {
+                try {
+                    const altResult = await ConnectionManager.executeCommand(altCmd);
+                    if (altResult && (altResult.toLowerCase().includes('not found') || altResult.toLowerCase().includes('does not exist'))) {
+                        toast.info(`Kit "${kit.name}" not found on server. Creating it now...`);
+                        await this.createKitOnServer(kit);
+                        // Retry with the same alternative command
+                        const retryAlt = await ConnectionManager.executeCommand(altCmd);
+                        toast.success(`Gave kit ${kit.name} to ${target}`);
+                        document.getElementById('give-kit-modal').classList.add('hidden');
+                        document.getElementById('give-player-manual').value = '';
+                        return;
+                    } else {
+                        toast.success(`Gave kit ${kit.name} to ${target}`);
+                        document.getElementById('give-kit-modal').classList.add('hidden');
+                        document.getElementById('give-player-manual').value = '';
+                        return;
+                    }
+                } catch (altErr) {
+                    // Continue trying next alternative
+                }
+            }
+            toast.error('All command attempts failed. Check server plugin.');
+        }
+    }
+
+    // Public method to sync a kit to the server (used by manual sync button)
+    async syncKitToServer(kit) {
+        if (!kit) { toast.error('No kit selected'); return; }
+        toast.info(`Syncing kit "${kit.name}" to server...`);
+        await this.createKitOnServer(kit);
+        toast.success(`Kit "${kit.name}" synced to server`);
+    }
+
+    async createKitOnServer(kit) {
+        // Optionally remove the kit first (if the plugin supports it)
+        try {
+            await ConnectionManager.executeCommand(`kit remove "${kit.name}"`);
+        } catch (e) {
+            // Ignore if removal fails – kit might not exist or command not supported
+        }
+
+        // Add each item in the kit
+        for (const item of kit.items || []) {
+            // Convert container to lowercase as expected by the plugin (belt, main, wear)
+            const container = item.container.toLowerCase();
+            const addCmd = `kit add "${kit.name}" "${item.shortname}" ${item.amount} ${item.condition} ${container}`;
+            console.log('Sending kit add:', addCmd);
+            try {
+                await ConnectionManager.executeCommand(addCmd);
+                // Small delay to avoid flooding the server
+                await new Promise(resolve => setTimeout(resolve, 100));
             } catch (err) {
-                console.log('Command failed:', err.message);
-                // continue to next command
+                console.error(`Failed to add item ${item.shortname} to kit:`, err);
+                // Continue with other items? Probably yes.
             }
         }
-        toast.error('All command attempts failed. Check server plugin.');
     }
 
     refresh() {
