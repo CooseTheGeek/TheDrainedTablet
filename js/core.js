@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 DRAINED TABLET core loaded');
 });
 
-// ========================= GPortal Player List Polling (Reliable) =========================
+// ========================= GPortal Player List Polling (Fixed) =========================
 setInterval(async () => {
     if (window.gportalConnector && window.gportalConnector.apiReady) {
         try {
@@ -285,17 +285,29 @@ setInterval(async () => {
 
             if (data.success && data.result) {
                 const raw = data.result;
-                console.log('Raw playerlist response:', raw); // for debugging
+                console.log('Raw playerlist response:', raw);
 
-                // If it's a string, assume one name per line
-                if (typeof raw === 'string') {
-                    const lines = raw.split('\n').filter(l => l.trim() && !l.includes('ID') && !l.includes('connected'));
-                    players = lines.map(name => ({
-                        name: name.trim(),
-                        online: true,
-                        playtime: 'N/A',
-                        position: null
-                    }));
+                // Try to parse as JSON if it starts with [
+                if (typeof raw === 'string' && raw.trim().startsWith('[')) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) {
+                            players = parsed.map(p => ({
+                                name: String(p.name || p.displayName || p),
+                                online: true,
+                                playtime: p.playtime || 'N/A',
+                                position: p.position || null
+                            }));
+                        }
+                    } catch (e) {
+                        // fallback to line-by-line
+                        const lines = raw.split('\n').filter(l => l.trim());
+                        players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
+                    }
+                } else if (typeof raw === 'string') {
+                    // Assume one name per line
+                    const lines = raw.split('\n').filter(l => l.trim());
+                    players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
                 } else if (Array.isArray(raw)) {
                     players = raw.map(p => ({
                         name: String(p.name || p.displayName || p),

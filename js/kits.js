@@ -1,4 +1,4 @@
-// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (KaosBot style – final)
+// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (KaosBot style – final with command logging)
 
 class Kits {
     constructor() {
@@ -522,19 +522,29 @@ class Kits {
         const kit = this.kits.find(k => k.id === kitId);
         if (!kit) return;
 
-        const command = `kit.give "${target}" "${kit.name}"`;
-        console.log('Executing command:', command);
+        // Try different command formats (adjust based on your server's plugin)
+        const commands = [
+            `kit.give "${target}" "${kit.name}"`,
+            `kit give "${target}" "${kit.name}"`,
+            `givekit "${target}" "${kit.name}"`,
+            `kit.giveplayer "${target}" "${kit.name}"`
+        ];
 
-        try {
-            const result = await ConnectionManager.executeCommand(command);
-            console.log('Command result:', result);
-            toast.success(`Gave kit ${kit.name} to ${target}`);
-            document.getElementById('give-kit-modal').classList.add('hidden');
-            document.getElementById('give-player-manual').value = '';
-        } catch (err) {
-            console.error('Give kit error:', err);
-            toast.error(`Failed: ${err.message}`);
+        for (const cmd of commands) {
+            console.log('Trying command:', cmd);
+            try {
+                const result = await ConnectionManager.executeCommand(cmd);
+                console.log('Command result:', result);
+                toast.success(`Gave kit ${kit.name} to ${target}`);
+                document.getElementById('give-kit-modal').classList.add('hidden');
+                document.getElementById('give-player-manual').value = '';
+                return; // exit on success
+            } catch (err) {
+                console.log('Command failed:', err.message);
+                // continue to next command
+            }
         }
+        toast.error('All command attempts failed. Check server plugin.');
     }
 
     refresh() {
