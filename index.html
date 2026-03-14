@@ -6,6 +6,11 @@
     <title>DRAINED TABLET · 3UNKS</title>
     <link rel="stylesheet" href="global.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Cropper.js for avatar cropping -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <!-- html2canvas for ID card download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/otpauth@9.1.0/dist/otpauth.min.js"></script>
     <style>
         .hidden { display: none !important; }
@@ -136,7 +141,7 @@
                     <a href="#" class="nav-item" data-tab="deepseek"><span class="nav-icon">🤖</span> <span class="nav-text">DeepSeek AI</span></a>
                     <a href="#" class="nav-item" data-tab="profile"><span class="nav-icon">👤</span> <span class="nav-text">Profile</span></a>
                     <a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>
-                    <!-- New Knowledge Base tab (placed above More Tools) -->
+                    <!-- Knowledge Base tab (above More Tools) -->
                     <a href="#" class="nav-item" data-tab="resources"><span class="nav-icon">📚</span> <span class="nav-text">Knowledge Base</span></a>
                     <a href="#" class="nav-item" data-tab="more"><span class="nav-icon">📊</span> <span class="nav-text">More Tools</span></a>
                 </nav>
@@ -292,6 +297,20 @@
             <button id="forgot-discord-dm-btn" class="modal-btn">DM Master on Discord</button>
             <div class="modal-actions" style="margin-top: 1rem;">
                 <button id="discord-cancel-btn" class="modal-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avatar Crop Modal -->
+    <div id="crop-modal" class="modal hidden">
+        <div class="modal-content avatar-crop-modal">
+            <h3>Crop Your Avatar</h3>
+            <div class="crop-container">
+                <img id="crop-image" src="" alt="Avatar to crop">
+            </div>
+            <div class="modal-actions">
+                <button id="crop-save" class="modal-btn primary">Save</button>
+                <button id="crop-cancel" class="modal-btn">Cancel</button>
             </div>
         </div>
     </div>

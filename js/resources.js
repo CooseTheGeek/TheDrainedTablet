@@ -5,7 +5,7 @@
 class Resources {
     constructor() {
         this.access = window.accessControl;
-        this.db = window.database; // for future use
+        this.db = window.database;
         this.currentCommandCategory = 'banitem';
         this.commandSearchTerm = '';
         this.itemSearchTerm = '';
@@ -272,7 +272,6 @@ class Resources {
         "Large rechargeable battery": "24,000/100"
     };
 
-    // Command categories with syntax and description
     commandCategories = {
         banitem: {
             name: "Item Banning",
@@ -637,6 +636,13 @@ class Resources {
     init() {
         this.createHTML();
         this.attachEvents();
+        // Activate the first tab by default
+        setTimeout(() => {
+            const firstTab = document.querySelector('.resources-tab');
+            if (firstTab) {
+                firstTab.click();
+            }
+        }, 100);
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'resources') {
                 this.refresh();
@@ -769,6 +775,7 @@ class Resources {
             </div>
         `;
 
+        // Render all tabs initially
         this.renderBuildCosts();
         this.renderRaidCosts();
         this.renderMonuments();
@@ -784,7 +791,30 @@ class Resources {
                 document.querySelectorAll('.resources-tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.resources-tab-content').forEach(c => c.classList.remove('active'));
                 e.target.classList.add('active');
-                document.getElementById(`resources-${e.target.dataset.tab}`).classList.add('active');
+                const targetId = `resources-${e.target.dataset.tab}`;
+                const target = document.getElementById(targetId);
+                if (target) {
+                    target.classList.add('active');
+                    // Re-render the tab content to ensure it's fresh
+                    switch (e.target.dataset.tab) {
+                        case 'build':
+                            this.renderBuildCosts();
+                            this.renderRaidCosts();
+                            break;
+                        case 'monuments':
+                            this.renderMonuments();
+                            break;
+                        case 'items':
+                            this.renderItems();
+                            break;
+                        case 'commands':
+                            this.renderCommands();
+                            break;
+                        case 'utilities':
+                            this.renderUtilities();
+                            break;
+                    }
+                }
             });
         });
 
@@ -806,12 +836,6 @@ class Resources {
         // Commands category change / search
         document.getElementById('commands-category')?.addEventListener('change', () => this.renderCommands());
         document.getElementById('commands-search')?.addEventListener('input', () => this.renderCommands());
-
-        // Global search (simplified – just switch to appropriate tab? We'll implement later)
-        document.getElementById('resources-global-search')?.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            // For now, just filter visible content? Not trivial. We'll leave as placeholder.
-        });
 
         // Modal buttons
         document.getElementById('exec-modal-cancel')?.addEventListener('click', () => {
@@ -1097,17 +1121,23 @@ class Resources {
 
     refresh() {
         const activeTab = document.querySelector('.resources-tab.active')?.dataset.tab || 'build';
-        if (activeTab === 'build') {
-            this.renderBuildCosts();
-            this.renderRaidCosts();
-        } else if (activeTab === 'monuments') {
-            this.renderMonuments();
-        } else if (activeTab === 'items') {
-            this.renderItems();
-        } else if (activeTab === 'commands') {
-            this.renderCommands();
-        } else if (activeTab === 'utilities') {
-            this.renderUtilities();
+        switch (activeTab) {
+            case 'build':
+                this.renderBuildCosts();
+                this.renderRaidCosts();
+                break;
+            case 'monuments':
+                this.renderMonuments();
+                break;
+            case 'items':
+                this.renderItems();
+                break;
+            case 'commands':
+                this.renderCommands();
+                break;
+            case 'utilities':
+                this.renderUtilities();
+                break;
         }
     }
 }
