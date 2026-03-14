@@ -1,5 +1,5 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Enhanced debugging for server list issue.
+// Enhanced logging for server list debugging.
 
 class GPortalConnector {
     constructor() {
@@ -213,11 +213,17 @@ class GPortalConnector {
         console.log('Loading servers for discordId:', this.discordId);
         try {
             const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`);
+            console.log('Response status:', res.status);
             if (!res.ok) {
-                throw new Error(`HTTP ${res.status}`);
+                throw new Error(`HTTP ${res.status}: ${await res.text()}`);
             }
             const servers = await res.json();
-            console.log('Loaded servers:', servers);
+            console.log('Loaded servers (raw):', servers);
+            // Ensure servers is an array
+            if (!Array.isArray(servers)) {
+                console.error('Server response is not an array:', servers);
+                throw new Error('Invalid response format');
+            }
             this.servers = servers;
             this.renderServers();
         } catch (err) {
