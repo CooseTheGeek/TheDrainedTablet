@@ -1,4 +1,4 @@
-// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (KaosBot‑style kit manager)
+// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (KaosBot style + advanced settings)
 
 class Kits {
     constructor() {
@@ -117,6 +117,50 @@ class Kits {
                             </div>
                         </div>
 
+                        <!-- Advanced Settings (collapsible) -->
+                        <details style="margin-top: 20px;">
+                            <summary style="cursor: pointer; font-weight: bold;">Advanced Settings</summary>
+                            <div style="padding: 15px; background: #222; border-radius: 8px; margin-top: 10px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <label>Cooldown (seconds)</label>
+                                        <input type="number" id="kit-cooldown" class="form-control" value="300" min="0">
+                                    </div>
+                                    <div>
+                                        <label>Max Uses (0 = unlimited)</label>
+                                        <input type="number" id="kit-max-uses" class="form-control" value="0" min="0">
+                                    </div>
+                                    <div>
+                                        <label>Automation Level</label>
+                                        <select id="kit-automation" class="form-control">
+                                            <option value="0">None</option>
+                                            <option value="1">Low</option>
+                                            <option value="2">Medium</option>
+                                            <option value="3">High</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label>Auto‑Grant on spawn</label>
+                                        <input type="checkbox" id="kit-auto-grant">
+                                    </div>
+                                </div>
+                                <div style="margin-top: 15px;">
+                                    <label>Allowed Groups</label>
+                                    <div id="kit-groups" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        <label><input type="checkbox" class="group-checkbox" value="User"> User</label>
+                                        <label><input type="checkbox" class="group-checkbox" value="VIP"> VIP</label>
+                                        <label><input type="checkbox" class="group-checkbox" value="Moderator"> Moderator</label>
+                                        <label><input type="checkbox" class="group-checkbox" value="Admin"> Admin</label>
+                                        <label><input type="checkbox" class="group-checkbox" value="Owner"> Owner</label>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 15px;">
+                                    <label>Hidden Kit</label>
+                                    <input type="checkbox" id="kit-hidden">
+                                </div>
+                            </div>
+                        </details>
+
                         <!-- Save/Cancel -->
                         <div style="display: flex; gap: 10px; margin-top: 30px;">
                             <button id="save-kit" class="kit-btn primary">Save Kit</button>
@@ -141,7 +185,6 @@ class Kits {
                         <label>Player:</label>
                         <select id="give-player-select" class="form-control">
                             <option value="">Select player...</option>
-                            ${(AppState.players || []).map(p => `<option value="${p.name}">${p.name}</option>`).join('')}
                         </select>
                         <input type="text" id="give-player-manual" class="form-control" placeholder="Or type player name" style="margin-top:5px;">
                     </div>
@@ -170,16 +213,26 @@ class Kits {
             html += `
                 <div class="kit-list-item" data-id="${kit.id}" style="padding: 10px; margin-bottom: 5px; background: var(--bg-tertiary); border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                     <span><strong>${kit.name}</strong> <small>v${kit.version || '1.0'}</small></span>
-                    <button class="small-btn give-kit-btn" data-id="${kit.id}" title="Give kit">🎁</button>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="small-btn view-kit-btn" data-id="${kit.id}" title="View kit">👁️</button>
+                        <button class="small-btn give-kit-btn" data-id="${kit.id}" title="Give kit">🎁</button>
+                    </div>
                 </div>
             `;
         });
         listDiv.innerHTML = html;
-        // Kit selection
+        // Kit selection (click on the item itself, not the buttons)
         listDiv.querySelectorAll('.kit-list-item').forEach(el => {
             el.addEventListener('click', (e) => {
-                if (e.target.classList.contains('give-kit-btn')) return;
+                if (e.target.classList.contains('view-kit-btn') || e.target.classList.contains('give-kit-btn')) return;
                 this.loadKit(el.dataset.id);
+            });
+        });
+        // View buttons
+        listDiv.querySelectorAll('.view-kit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.viewKit(btn.dataset.id);
             });
         });
         // Give buttons
@@ -191,6 +244,16 @@ class Kits {
         });
     }
 
+    viewKit(id) {
+        const kit = this.kits.find(k => k.id === id);
+        if (!kit) return;
+        let itemsList = '';
+        (kit.items || []).forEach(item => {
+            itemsList += `${item.shortname} x${item.amount} (${item.container})\n`;
+        });
+        alert(`Kit: ${kit.name}\n\nItems:\n${itemsList || 'No items'}`);
+    }
+
     loadKit(id) {
         const kit = this.kits.find(k => k.id === id);
         if (!kit) return;
@@ -199,6 +262,14 @@ class Kits {
         document.getElementById('kit-editor').style.display = 'block';
         document.getElementById('no-kit-selected').style.display = 'none';
         document.getElementById('kit-name').value = kit.name || '';
+        document.getElementById('kit-cooldown').value = kit.cooldown || 300;
+        document.getElementById('kit-max-uses').value = kit.maxUses || 0;
+        document.getElementById('kit-automation').value = kit.automation || 0;
+        document.getElementById('kit-auto-grant').checked = kit.autoGrant || false;
+        document.getElementById('kit-hidden').checked = kit.hidden || false;
+        document.querySelectorAll('.group-checkbox').forEach(cb => {
+            cb.checked = (kit.groups || []).includes(cb.value);
+        });
         document.getElementById('item-category-filter').value = this.filterCategory;
         document.getElementById('item-search').value = this.searchQuery;
         this.renderEquipmentSlots(kit.items || []);
@@ -214,7 +285,6 @@ class Kits {
         main.innerHTML = '';
         wear.innerHTML = '';
 
-        // Helper to create a slot element
         const createSlot = (container, index, item) => {
             const slotDiv = document.createElement('div');
             slotDiv.className = `slot ${item ? 'filled' : 'empty'}`;
@@ -237,12 +307,10 @@ class Kits {
             } else {
                 slotDiv.innerHTML = '&nbsp;';
             }
-            // Click to select slot
             slotDiv.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.selectSlot(container, index);
             });
-            // Right‑click to remove item
             slotDiv.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 if (item) {
@@ -252,7 +320,6 @@ class Kits {
             return slotDiv;
         };
 
-        // Populate slots
         for (let i = 0; i < 6; i++) {
             const item = items.find(it => it.container === 'belt' && it.slot === i);
             belt.appendChild(createSlot('belt', i, item));
@@ -268,11 +335,9 @@ class Kits {
     }
 
     selectSlot(container, index) {
-        // Clear previous selection highlight
         document.querySelectorAll('.slot').forEach(slot => {
             slot.style.borderColor = '#666';
         });
-        // Highlight new selection
         const selectedEl = document.querySelector(`[data-container="${container}"][data-index="${index}"]`);
         if (selectedEl) {
             selectedEl.style.borderColor = '#D4AF37';
@@ -316,10 +381,10 @@ class Kits {
             cooldown: 300,
             maxUses: 0,
             automation: 0,
-            inventorySizes: '',
-            headerItems: '',
-            general: {},
-            teams: []
+            autoGrant: false,
+            hidden: false,
+            groups: [],
+            general: {}
         };
         this.kits.push(newKit);
         this.saveKits();
@@ -330,7 +395,12 @@ class Kits {
     saveCurrentKit() {
         if (!this.currentKit) return;
         this.currentKit.name = document.getElementById('kit-name').value;
-        // Additional fields like version, cooldown etc. could be added later
+        this.currentKit.cooldown = parseInt(document.getElementById('kit-cooldown').value) || 300;
+        this.currentKit.maxUses = parseInt(document.getElementById('kit-max-uses').value) || 0;
+        this.currentKit.automation = parseInt(document.getElementById('kit-automation').value) || 0;
+        this.currentKit.autoGrant = document.getElementById('kit-auto-grant').checked;
+        this.currentKit.hidden = document.getElementById('kit-hidden').checked;
+        this.currentKit.groups = Array.from(document.querySelectorAll('.group-checkbox:checked')).map(cb => cb.value);
         this.saveKits();
         this.renderKitList();
         toast.success('Kit saved');
@@ -359,18 +429,24 @@ class Kits {
     resetKit() {
         if (!this.currentKit) return;
         if (confirm('Reset kit to last saved version?')) {
-            // Reload from storage
             const original = this.kits.find(k => k.id === this.currentKit.id);
             this.currentKit = { ...original };
             this.renderEquipmentSlots(this.currentKit.items || []);
             document.getElementById('kit-name').value = this.currentKit.name;
+            document.getElementById('kit-cooldown').value = this.currentKit.cooldown || 300;
+            document.getElementById('kit-max-uses').value = this.currentKit.maxUses || 0;
+            document.getElementById('kit-automation').value = this.currentKit.automation || 0;
+            document.getElementById('kit-auto-grant').checked = this.currentKit.autoGrant || false;
+            document.getElementById('kit-hidden').checked = this.currentKit.hidden || false;
+            document.querySelectorAll('.group-checkbox').forEach(cb => {
+                cb.checked = (this.currentKit.groups || []).includes(cb.value);
+            });
             toast.info('Kit reset');
         }
     }
 
     importKit() {
         toast.info('Import not implemented yet');
-        // Could prompt for JSON and merge
     }
 
     updateItemGallery() {
@@ -378,11 +454,9 @@ class Kits {
         if (!gallery || !window.itemsDatabase) return;
 
         let items = window.itemsDatabase;
-        // Filter by category
         if (this.filterCategory !== 'all') {
             items = items.filter(item => item.category === this.filterCategory);
         }
-        // Filter by search
         if (this.searchQuery) {
             const query = this.searchQuery.toLowerCase();
             items = items.filter(item => 
@@ -390,7 +464,6 @@ class Kits {
                 item.shortname.toLowerCase().includes(query)
             );
         }
-        // Limit to first 100 for performance
         items = items.slice(0, 100);
 
         gallery.innerHTML = items.map(item => `
@@ -415,7 +488,6 @@ class Kits {
             return;
         }
         const { container, index } = this.selectedSlot;
-        // Check if slot is already occupied
         if (this.currentKit.items.find(item => item.container === container && item.slot === index)) {
             toast.error('Slot already occupied');
             return;
@@ -431,7 +503,6 @@ class Kits {
             condition: parseInt(condition) || 100
         });
         this.renderEquipmentSlots(this.currentKit.items);
-        // Clear selection after adding
         this.selectedSlot = null;
         document.querySelectorAll('.slot').forEach(slot => slot.style.borderColor = '#666');
     }
@@ -441,10 +512,14 @@ class Kits {
         select.innerHTML = this.kits.map(k => 
             `<option value="${k.id}" ${k.id === kitId ? 'selected' : ''}>${k.name}</option>`
         ).join('');
-        // Refresh player dropdown
+        
         const playerSelect = document.getElementById('give-player-select');
-        playerSelect.innerHTML = '<option value="">Select player...</option>' +
-            (AppState.players || []).map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+        playerSelect.innerHTML = '<option value="">Select player...</option>';
+        (AppState.players || []).forEach(p => {
+            // Ensure p.name is a string
+            const playerName = p.name ? String(p.name) : 'Unknown';
+            playerSelect.innerHTML += `<option value="${playerName}">${playerName}</option>`;
+        });
         document.getElementById('give-kit-modal').classList.remove('hidden');
     }
 

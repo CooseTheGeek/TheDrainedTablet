@@ -292,12 +292,17 @@ setInterval(async () => {
                         try {
                             const parsed = JSON.parse(raw);
                             if (Array.isArray(parsed)) {
-                                players = parsed.map(p => ({
-                                    name: p.name || p.displayName || p,
-                                    online: true,
-                                    playtime: p.playtime || 'N/A',
-                                    position: p.position || null
-                                }));
+                                players = parsed.map(p => {
+                                    // Ensure we extract a string name
+                                    let name = p.name || p.displayName || p;
+                                    if (typeof name !== 'string') name = String(name);
+                                    return {
+                                        name: name,
+                                        online: true,
+                                        playtime: p.playtime || 'N/A',
+                                        position: p.position || null
+                                    };
+                                });
                             }
                         } catch {
                             const lines = raw.split('\n').filter(l => l.trim());
@@ -320,11 +325,9 @@ setInterval(async () => {
                 data = await res.json();
                 if (data.success && data.result) {
                     const statusText = data.result;
-                    // Look for a line like "players: 10" or "players (10 max)"
                     const match = statusText.match(/players:?\s*(\d+)/i) || statusText.match(/players\s*\((\d+)/i);
                     if (match) {
                         const count = parseInt(match[1]);
-                        // We don't have names, so create placeholder players
                         for (let i = 0; i < count; i++) {
                             players.push({ name: `Player ${i+1}`, online: true, playtime: 'N/A', position: null });
                         }
