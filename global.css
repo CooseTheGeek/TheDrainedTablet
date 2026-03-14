@@ -304,7 +304,9 @@ code, pre {
     font-size: 0.9rem;
     color: var(--text-secondary);
     z-index: 10;
-}/* ========== SECURITY DOOR ========== */
+}
+
+/* ========== SECURITY DOOR ========== */
 .security-door {
     position: fixed;
     top: 0;
@@ -653,7 +655,9 @@ tr:hover {
 .quick-action:hover {
     background: var(--accent-primary);
     color: #000;
-}/* ========== PLAYERS PAGE ========== */
+}
+
+/* ========== PLAYERS PAGE ========== */
 .players-container {
     padding: 1rem;
 }
@@ -1175,7 +1179,9 @@ tr:hover {
     background: var(--bg-tertiary);
     border-radius: 6px;
     margin: 0.3rem 0;
-}/* ========== PROFILE PAGE ========== */
+}
+
+/* ========== PROFILE PAGE ========== */
 .profile-container {
     padding: 1rem;
 }
@@ -2000,7 +2006,6 @@ input:checked + .slider:before {
 .role-badge.owner { background: #B7410E; color: #fff; }
 
 /* ========== LEGACY PAGE STYLES (animals, autoMod, etc.) ========== */
-/* Many legacy pages reuse cards and tables; these base styles ensure they look consistent. */
 .animals-container,
 .automod-container,
 .defense-container,
@@ -2057,4 +2062,124 @@ input:checked + .slider:before {
     padding: 3rem;
     color: var(--error);
     font-size: 1.5rem;
+}
+
+/* ========== RESOURCES PAGE STYLES ========== */
+.resources-container {
+    padding: 1rem;
+}
+.resources-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+.resources-tab {
+    padding: 0.8rem 1.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+.resources-tab.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+}
+.build-subtabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.build-subtab {
+    padding: 0.4rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    cursor: pointer;
+}
+.build-subtab.active {
+    background: var(--accent-primary);
+    color: #000;
+}
+.build-subcontent {
+    display: none;
+}
+.build-subcontent.active {
+    display: block;
+}
+.costs-table, .monuments-table, .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.costs-table th, .monuments-table th, .items-table th {
+    background: var(--bg-tertiary);
+    color: var(--accent-primary);
+    padding: 0.75rem;
+    text-align: left;
+}
+.costs-table td, .monuments-table td, .items-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+.commands-list .command-item {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.command-item code {
+    background: var(--bg-tertiary);
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    min-width: 300px;
+    font-size: 0.9rem;
+}
+.command-item .cmd-desc {
+    flex: 1;
+    color: var(--text-secondary);
+}
+.utilities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+.utility-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+.utility-card h3 {
+    margin-bottom: 1rem;
+    color: var(--accent-primary);
+}
+.utility-card table {
+    width: 100%;
+    font-size: 0.9rem;
+}
+.utility-card td {
+    padding: 0.2rem 0;
+}
+#exec-modal-params input {
+    display: block;
+    width: 100%;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    color: var(--text-primary);
 }

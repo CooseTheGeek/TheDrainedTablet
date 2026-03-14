@@ -124,7 +124,6 @@
                     <a href="#" class="nav-item" data-tab="teleport"><span class="nav-icon">📍</span> <span class="nav-text">Teleport</span></a>
                     <a href="#" class="nav-item" data-tab="events"><span class="nav-icon">🎉</span> <span class="nav-text">Events</span></a>
                     <a href="#" class="nav-item" data-tab="items"><span class="nav-icon">📦</span> <span class="nav-text">Items</span></a>
-                    <!-- Kits tab added -->
                     <a href="#" class="nav-item" data-tab="kits"><span class="nav-icon">🧰</span> <span class="nav-text">Kits</span></a>
                     <a href="#" class="nav-item" data-tab="world"><span class="nav-icon">🌍</span> <span class="nav-text">World</span></a>
                     <a href="#" class="nav-item" data-tab="backups"><span class="nav-icon">💾</span> <span class="nav-text">Backups</span></a>
@@ -138,6 +137,8 @@
                     <a href="#" class="nav-item" data-tab="profile"><span class="nav-icon">👤</span> <span class="nav-text">Profile</span></a>
                     <a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>
                     <a href="#" class="nav-item" data-tab="more"><span class="nav-icon">📊</span> <span class="nav-text">More Tools</span></a>
+                    <!-- New Knowledge Base tab -->
+                    <a href="#" class="nav-item" data-tab="resources"><span class="nav-icon">📚</span> <span class="nav-text">Knowledge Base</span></a>
                 </nav>
                 <div class="sidebar-footer">
                     <div class="role-indicator" id="role-indicator"></div>
@@ -155,7 +156,6 @@
                 <div id="tab-teleport" class="tab-pane"></div>
                 <div id="tab-events" class="tab-pane"></div>
                 <div id="tab-items" class="tab-pane"></div>
-                <!-- Kits pane added -->
                 <div id="tab-kits" class="tab-pane"></div>
                 <div id="tab-world" class="tab-pane"></div>
                 <div id="tab-backups" class="tab-pane"></div>
@@ -169,6 +169,8 @@
                 <div id="tab-profile" class="tab-pane"></div>
                 <div id="tab-settings" class="tab-pane"></div>
                 <div id="tab-more" class="tab-pane"></div>
+                <!-- New Knowledge Base pane -->
+                <div id="tab-resources" class="tab-pane"></div>
                 <!-- Additional tabs (all existing) -->
                 <div id="tab-animals" class="tab-pane"></div>
                 <div id="tab-autoMod" class="tab-pane"></div>
@@ -295,7 +297,7 @@
         </div>
     </div>
 
-    <!-- ========== SCRIPT LOADING (correct order: toast.js before UI modules) ========== -->
+    <!-- ========== SCRIPT LOADING ========== -->
     <script src="js/core.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
@@ -383,6 +385,9 @@
     <script src="js/voiceCommands.js"></script>
     <script src="js/zones.js"></script>
     <script src="js/zorp.js"></script>
+
+    <!-- New Knowledge Base module -->
+    <script src="js/resources.js"></script>
 
     <!-- Global navigation and header handlers -->
     <script>
