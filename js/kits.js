@@ -1,4 +1,4 @@
-// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (Server‑ready kit manager)
+// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (KaosBot style with images)
 
 class Kits {
     constructor() {
@@ -42,7 +42,7 @@ class Kits {
         tab.innerHTML = `
             <div class="kits-container" style="display: flex; gap: 20px; padding: 20px; height: 100%;">
                 <!-- Left panel: Kit list -->
-                <div class="kits-left" style="width: 280px; background: var(--glass-bg); border-radius: 12px; padding: 15px; display: flex; flex-direction: column;">
+                <div class="kits-left" style="width: 300px; background: var(--glass-bg); border-radius: 12px; padding: 15px; display: flex; flex-direction: column;">
                     <h3 style="margin-bottom: 15px;">My Kits</h3>
                     <button id="create-kit" class="kit-btn primary" style="margin-bottom: 15px;">+ New Kit</button>
                     <div id="kits-list" class="kits-list" style="flex: 1; overflow-y: auto;"></div>
@@ -74,15 +74,34 @@ class Kits {
                             <button id="reset-kit" class="kit-btn">Reset</button>
                         </div>
 
-                        <!-- Search bar -->
-                        <div style="margin-bottom: 15px;">
-                            <label>Search items or use format: '5 stone'</label>
-                            <input type="text" id="item-search" class="form-control" placeholder="Search items..." style="width:100%;">
+                        <!-- Category filter and search -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <select id="item-category-filter" class="form-control" style="width: 200px;">
+                                <option value="all">All Categories</option>
+                                <option value="Ammo">Ammo</option>
+                                <option value="Weapons">Weapons</option>
+                                <option value="Construction">Construction</option>
+                                <option value="Items">Items</option>
+                                <option value="Resources">Resources</option>
+                                <option value="Attire">Attire</option>
+                                <option value="Tools">Tools</option>
+                                <option value="Medical">Medical</option>
+                                <option value="Food">Food</option>
+                                <option value="Traps">Traps</option>
+                                <option value="Misc">Misc</option>
+                                <option value="Components">Components</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Animals">Animals</option>
+                                <option value="Vehicles">Vehicles</option>
+                                <option value="Vehicle Parts">Vehicle Parts</option>
+                                <option value="Seasonal">Seasonal</option>
+                            </select>
+                            <input type="text" id="item-search" class="form-control" placeholder="Search items..." style="flex: 1;">
                         </div>
 
                         <!-- Item Gallery -->
                         <h4>Item Gallery</h4>
-                        <div id="item-gallery" class="item-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; max-height: 250px; overflow-y: auto; border: 1px solid #444; padding: 10px; margin-bottom: 20px;"></div>
+                        <div id="item-gallery" class="item-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; max-height: 250px; overflow-y: auto; border: 1px solid #444; padding: 10px; margin-bottom: 20px;"></div>
 
                         <!-- Equipment slots -->
                         <h3>Equipment</h3>
@@ -167,6 +186,7 @@ class Kits {
                     <div style="display: flex; gap: 5px;">
                         <button class="small-btn view-kit-btn" data-id="${kit.id}" title="View kit">👁️</button>
                         <button class="small-btn give-kit-btn" data-id="${kit.id}" title="Give kit">🎁</button>
+                        <button class="small-btn delete-kit-btn" data-id="${kit.id}" title="Delete kit">🗑️</button>
                     </div>
                 </div>
             `;
@@ -175,7 +195,7 @@ class Kits {
         // Kit selection (click on the item itself, not the buttons)
         listDiv.querySelectorAll('.kit-list-item').forEach(el => {
             el.addEventListener('click', (e) => {
-                if (e.target.classList.contains('view-kit-btn') || e.target.classList.contains('give-kit-btn')) return;
+                if (e.target.classList.contains('view-kit-btn') || e.target.classList.contains('give-kit-btn') || e.target.classList.contains('delete-kit-btn')) return;
                 this.loadKit(el.dataset.id);
             });
         });
@@ -193,10 +213,30 @@ class Kits {
                 this.openGiveModal(btn.dataset.id);
             });
         });
+        // Delete buttons
+        listDiv.querySelectorAll('.delete-kit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteKit(btn.dataset.id);
+            });
+        });
+    }
+
+    deleteKit(id) {
+        if (!confirm('Are you sure you want to delete this kit?')) return;
+        this.kits = this.kits.filter(k => k.id !== parseInt(id));
+        this.saveKits();
+        if (this.currentKit && this.currentKit.id === parseInt(id)) {
+            this.currentKit = null;
+            document.getElementById('kit-editor').style.display = 'none';
+            document.getElementById('no-kit-selected').style.display = 'block';
+        }
+        this.renderKitList();
+        toast.info('Kit deleted');
     }
 
     viewKit(id) {
-        const kit = this.kits.find(k => k.id === id);
+        const kit = this.kits.find(k => k.id === parseInt(id));
         if (!kit) return;
         let itemsHtml = '<table style="width:100%;"><tr><th>Shortname</th><th>Amount</th><th>Container</th><th>Condition</th></tr>';
         (kit.items || []).forEach((item, idx) => {
@@ -209,17 +249,17 @@ class Kits {
     }
 
     loadKit(id) {
-        const kit = this.kits.find(k => k.id === id);
+        const kit = this.kits.find(k => k.id === parseInt(id));
         if (!kit) return;
-        this.currentKit = kit;
+        this.currentKit = { ...kit, items: kit.items.map(item => ({ ...item })) }; // deep copy
         this.selectedSlot = null;
         document.getElementById('kit-editor').style.display = 'block';
         document.getElementById('no-kit-selected').style.display = 'none';
-        document.getElementById('kit-name').value = kit.name || '';
-        document.getElementById('kit-auth-level').value = kit.auth_level !== undefined ? kit.auth_level : 0;
+        document.getElementById('kit-name').value = this.currentKit.name || '';
+        document.getElementById('kit-auth-level').value = this.currentKit.auth_level !== undefined ? this.currentKit.auth_level : 0;
         document.getElementById('item-category-filter').value = this.filterCategory;
         document.getElementById('item-search').value = this.searchQuery;
-        this.renderEquipmentSlots(kit.items || []);
+        this.renderEquipmentSlots(this.currentKit.items || []);
         this.updateItemGallery();
     }
 
@@ -237,17 +277,27 @@ class Kits {
             slotDiv.className = `slot ${item ? 'filled' : 'empty'}`;
             slotDiv.dataset.container = container;
             slotDiv.dataset.index = index;
-            slotDiv.style.width = '50px';
-            slotDiv.style.height = '50px';
+            slotDiv.style.width = '60px';
+            slotDiv.style.height = '60px';
             slotDiv.style.background = '#333';
             slotDiv.style.border = '2px solid #666';
             slotDiv.style.display = 'flex';
+            slotDiv.style.flexDirection = 'column';
             slotDiv.style.alignItems = 'center';
             slotDiv.style.justifyContent = 'center';
             slotDiv.style.borderRadius = '4px';
             slotDiv.style.cursor = 'pointer';
+            slotDiv.style.padding = '2px';
+            slotDiv.style.fontSize = '10px';
             if (item) {
-                slotDiv.innerHTML = `${item.shortname}<br><small>x${item.amount}</small>`;
+                // Use a placeholder image; you could use a CDN like https://static.rustworkshop.xyz/icons/
+                const imgUrl = `https://static.rustworkshop.xyz/icons/${item.shortname.replace(/\./g, '-')}.png`;
+                slotDiv.innerHTML = `
+                    <img src="${imgUrl}" style="width: 30px; height: 30px; object-fit: contain;" 
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/30?text=?'">
+                    <span>${item.shortname}</span>
+                    <small>x${item.amount}</small>
+                `;
                 slotDiv.dataset.shortname = item.shortname;
                 slotDiv.dataset.amount = item.amount;
                 slotDiv.dataset.condition = item.condition;
@@ -295,7 +345,8 @@ class Kits {
     removeItemFromSlot(container, index) {
         if (!this.currentKit) return;
         this.currentKit.items = this.currentKit.items.filter(item => !(item.container === container && item.slot === index));
-        // Re-index items? The server uses an 'id' field that seems to be an index. We'll keep them as is and let the server handle it.
+        // Re-index items (server expects id to be sequential)
+        this.currentKit.items.forEach((item, idx) => { item.id = idx; });
         this.renderEquipmentSlots(this.currentKit.items);
     }
 
@@ -338,7 +389,6 @@ class Kits {
     }
 
     generateId() {
-        // Simple numeric ID based on timestamp
         return Math.floor(Date.now() / 1000);
     }
 
@@ -346,7 +396,12 @@ class Kits {
         if (!this.currentKit) return;
         this.currentKit.name = document.getElementById('kit-name').value;
         this.currentKit.auth_level = parseInt(document.getElementById('kit-auth-level').value) || 0;
-        // Items are already in this.currentKit.items
+        // Items are already in this.currentKit.items with proper ids
+        // Ensure ids are sequential (0..n-1)
+        this.currentKit.items.forEach((item, idx) => { item.id = idx; });
+        // Find original kit and replace
+        const index = this.kits.findIndex(k => k.id === this.currentKit.id);
+        if (index !== -1) this.kits[index] = this.currentKit;
         this.saveKits();
         this.renderKitList();
         toast.success('Kit saved');
@@ -364,10 +419,9 @@ class Kits {
         const newKit = {
             ...this.currentKit,
             id: this.generateId(),
-            name: this.currentKit.name + ' (Copy)'
+            name: this.currentKit.name + ' (Copy)',
+            items: this.currentKit.items.map(item => ({ ...item }))
         };
-        // Deep copy items to avoid reference issues
-        newKit.items = this.currentKit.items.map(item => ({ ...item }));
         this.kits.push(newKit);
         this.saveKits();
         this.renderKitList();
@@ -378,11 +432,13 @@ class Kits {
         if (!this.currentKit) return;
         if (confirm('Reset kit to last saved version?')) {
             const original = this.kits.find(k => k.id === this.currentKit.id);
-            this.currentKit = { ...original, items: original.items.map(item => ({ ...item })) };
-            this.renderEquipmentSlots(this.currentKit.items);
-            document.getElementById('kit-name').value = this.currentKit.name;
-            document.getElementById('kit-auth-level').value = this.currentKit.auth_level || 0;
-            toast.info('Kit reset');
+            if (original) {
+                this.currentKit = { ...original, items: original.items.map(item => ({ ...item })) };
+                this.renderEquipmentSlots(this.currentKit.items);
+                document.getElementById('kit-name').value = this.currentKit.name;
+                document.getElementById('kit-auth-level').value = this.currentKit.auth_level || 0;
+                toast.info('Kit reset');
+            }
         }
     }
 
@@ -416,11 +472,10 @@ class Kits {
                         toast.error('Invalid format: expected array or object with kits array');
                         return;
                     }
-                    // Merge with existing kits, avoiding duplicate IDs (overwrite)
                     const existingIds = new Set(this.kits.map(k => k.id));
                     importedKits.forEach(kit => {
                         if (existingIds.has(kit.id)) {
-                            // Overwrite existing
+                            // Overwrite
                             const index = this.kits.findIndex(k => k.id === kit.id);
                             if (index !== -1) this.kits[index] = kit;
                         } else {
@@ -455,14 +510,18 @@ class Kits {
                 item.shortname.toLowerCase().includes(query)
             );
         }
-        items = items.slice(0, 100);
+        items = items.slice(0, 200); // limit for performance
 
-        gallery.innerHTML = items.map(item => `
-            <div class="gallery-item" data-shortname="${item.shortname}" style="padding: 8px; background: #2a2a2a; border-radius: 4px; cursor: pointer; text-align: center; border: 1px solid #444;">
-                <div>${item.name}</div>
-                <small>${item.shortname}</small>
-            </div>
-        `).join('');
+        gallery.innerHTML = items.map(item => {
+            const imgUrl = `https://static.rustworkshop.xyz/icons/${item.shortname.replace(/\./g, '-')}.png`;
+            return `
+                <div class="gallery-item" data-shortname="${item.shortname}" style="padding: 5px; background: #2a2a2a; border-radius: 4px; cursor: pointer; text-align: center; border: 1px solid #444;">
+                    <img src="${imgUrl}" style="width: 40px; height: 40px; object-fit: contain;" 
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/40?text=?'">
+                    <div style="font-size: 10px;">${item.name}</div>
+                </div>
+            `;
+        }).join('');
 
         gallery.querySelectorAll('.gallery-item').forEach(el => {
             el.addEventListener('click', () => this.addItemToSelectedSlot(el.dataset.shortname));
@@ -486,9 +545,8 @@ class Kits {
         const amount = prompt('Quantity:', '1');
         if (!amount) return;
         const condition = prompt('Condition (0-100):', '100');
-        // Determine next item id (just use index in array)
         const newItem = {
-            id: this.currentKit.items.length,  // temporary; will be recalculated on server side
+            id: this.currentKit.items.length,
             shortname,
             amount: parseInt(amount),
             container,
@@ -496,8 +554,6 @@ class Kits {
             condition: parseInt(condition) || 100
         };
         this.currentKit.items.push(newItem);
-        // Re-index items (optional, but server expects id to be 0..n-1)
-        this.currentKit.items.forEach((item, idx) => { item.id = idx; });
         this.renderEquipmentSlots(this.currentKit.items);
         this.selectedSlot = null;
         document.querySelectorAll('.slot').forEach(slot => slot.style.borderColor = '#666');
@@ -506,7 +562,7 @@ class Kits {
     openGiveModal(kitId) {
         const select = document.getElementById('give-kit-select');
         select.innerHTML = this.kits.map(k => 
-            `<option value="${k.id}" ${k.id === kitId ? 'selected' : ''}>${k.name}</option>`
+            `<option value="${k.id}" ${k.id === parseInt(kitId) ? 'selected' : ''}>${k.name}</option>`
         ).join('');
         
         const playerSelect = document.getElementById('give-player-select');
@@ -534,6 +590,7 @@ class Kits {
             await ConnectionManager.executeCommand(`kit.give "${target}" "${kit.name}"`);
             toast.success(`Gave kit ${kit.name} to ${target}`);
             document.getElementById('give-kit-modal').classList.add('hidden');
+            document.getElementById('give-player-manual').value = '';
         } catch (err) {
             toast.error(`Failed: ${err.message}`);
         }
