@@ -1,5 +1,6 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Complete GPortal connector with Discord linking, server storage, and command execution via rce.js.
+// Complete GPortal connector with Discord linking, server storage, command execution,
+// and global connection status integration.
 
 class GPortalConnector {
     constructor() {
@@ -10,7 +11,7 @@ class GPortalConnector {
         this.discordId = localStorage.getItem('discord_id');
         this.servers = [];
         this.serverIdentifier = 'main-server'; // matches the identifier used in the bridge
-        this.apiReady = false;
+        this.apiReady = false; // will be set after first successful command/status
         this.init();
     }
 
@@ -27,6 +28,35 @@ class GPortalConnector {
                 this.refresh();
             }
         });
+    }
+
+    // Update global connection status based on API readiness
+    updateGlobalConnectionStatus() {
+        if (this.apiReady) {
+            AppState.connection.status = 'connected';
+            AppState.connection.server = { 
+                ip: 'GPortal API', 
+                port: 0, 
+                password: '',
+                name: 'GPortal' // optional
+            };
+            // Update header elements
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="dot online"></span> CONNECTED (GPortal)';
+            }
+        } else {
+            AppState.connection.status = 'disconnected';
+            AppState.connection.server = null;
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="dot offline"></span> DISCONNECTED';
+            }
+        }
+        // Notify any listeners (though header updates directly)
+        if (window.ConnectionManager) {
+            window.ConnectionManager.notify();
+        }
     }
 
     createHTML() {
@@ -165,9 +195,7 @@ class GPortalConnector {
             const data = await res.json();
             if (data.success) {
                 this.logMessage('✅ Server added');
-                // Clear form? Optional
-                document.getElementById('server-name').value = '';
-                // Reload list
+                document.getElementById('server-name').value = ''; // clear name
                 await this.loadServers();
             } else {
                 this.logMessage(`❌ Failed: ${data.error}`);
@@ -238,6 +266,7 @@ class GPortalConnector {
             this.apiReady = false;
         }
         this.updateApiStatusBadge();
+        this.updateGlobalConnectionStatus();
     }
 
     updateApiStatusBadge() {
@@ -270,6 +299,7 @@ class GPortalConnector {
                 if (!this.apiReady) {
                     this.apiReady = true;
                     this.updateApiStatusBadge();
+                    this.updateGlobalConnectionStatus();
                 }
             } else {
                 document.getElementById('gportal-command-output').innerText = `Error: ${data.error}`;
@@ -293,6 +323,7 @@ class GPortalConnector {
                 if (!this.apiReady) {
                     this.apiReady = true;
                     this.updateApiStatusBadge();
+                    this.updateGlobalConnectionStatus();
                 }
             } else {
                 statusDiv.innerText = `Error: ${data.error}`;
@@ -316,7 +347,6 @@ class GPortalConnector {
                 toast.success('Discord linked successfully!');
                 window.history.replaceState({}, '', window.location.pathname);
                 this.refresh();
-                // Load servers automatically
                 this.loadServers();
             } else {
                 toast.error('Discord linking failed: no ID received');
