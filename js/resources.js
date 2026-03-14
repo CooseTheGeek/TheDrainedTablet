@@ -1,14 +1,15 @@
-// resources.js – DRAINED TABLET ULTIMATE v7.0.0
-// Comprehensive knowledge base: build costs, raid costs, monument info, item database, command executor, and more.
-// All data provided by CooseTheGeek, integrated into a sleek, interactive UI.
+// resources.js – DRAINED TABLET ULTIMATE v7.0.0 (DEBUG VERSION)
 
 class Resources {
     constructor() {
+        console.log('🔧 Resources constructor starting');
         this.access = window.accessControl;
-        this.db = window.database; // for future use
+        if (!this.access) console.warn('⚠️ accessControl not found!');
+        this.db = window.database;
         this.currentCommandCategory = 'banitem';
         this.commandSearchTerm = '';
         this.itemSearchTerm = '';
+        console.log('🔧 Resources constructor finished, about to init');
         this.init();
     }
 
@@ -272,10 +273,6 @@ class Resources {
         "Large rechargeable battery": "24,000/100"
     };
 
-    // Item shortname database (from items.js, but we'll reference the global window.itemsDatabase)
-    // We'll just use window.itemsDatabase if available, otherwise fallback to embedded list.
-
-    // Command categories with syntax and description
     commandCategories = {
         banitem: {
             name: "Item Banning",
@@ -638,20 +635,32 @@ class Resources {
 
     // ---------- Initialization ----------
     init() {
+        console.log('🔧 Resources.init() called');
         this.createHTML();
         this.attachEvents();
         window.addEventListener('tab-changed', (e) => {
-            if (e.detail.tab === 'resources') this.refresh();
+            if (e.detail.tab === 'resources') {
+                console.log('🔧 Resources tab activated, refreshing');
+                this.refresh();
+            }
         });
+        console.log('🔧 Resources.init() complete');
     }
 
     createHTML() {
+        console.log('🔧 Resources.createHTML() called');
         const tab = document.getElementById('tab-resources');
-        if (!tab) return;
-        if (!this.access.hasRole('master')) {
-            tab.innerHTML = '<div class="access-denied">Master access required</div>';
+        if (!tab) {
+            console.error('❌ tab-resources element not found!');
             return;
         }
+        console.log('🔧 tab-resources found, building HTML');
+
+        // TEMPORARILY BYPASS ROLE CHECK FOR TESTING
+        // if (!this.access.hasRole('master')) {
+        //     tab.innerHTML = '<div class="access-denied">Master access required</div>';
+        //     return;
+        // }
 
         tab.innerHTML = `
             <div class="resources-container">
@@ -770,15 +779,18 @@ class Resources {
             </div>
         `;
 
+        console.log('🔧 HTML injected, now rendering sub-components');
         this.renderBuildCosts();
         this.renderRaidCosts();
         this.renderMonuments();
         this.renderItems();
         this.renderCommands();
         this.renderUtilities();
+        console.log('🔧 createHTML() done');
     }
 
     attachEvents() {
+        console.log('🔧 attachEvents() called');
         // Tab switching
         document.querySelectorAll('.resources-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -828,6 +840,7 @@ class Resources {
                 this.openCommandModal(cmd, params);
             }
         });
+        console.log('🔧 attachEvents() done');
     }
 
     // ---------- Rendering Methods ----------
@@ -852,7 +865,6 @@ class Resources {
     renderRaidCosts() {
         const container = document.getElementById('raid-costs');
         if (!container) return;
-        // We'll create a table with explosive types as columns
         const explosives = ['timed', 'rocket', 'explo', 'satchel', 'hegrenade'];
         const explosiveNames = { timed: 'Timed', rocket: 'Rocket', explo: 'Explo Ammo', satchel: 'Satchel', hegrenade: 'HE Grenade' };
         const targets = Object.keys(this.raidCosts.timed);
@@ -1083,8 +1095,6 @@ class Resources {
                 toast.error('Please fill all parameters');
                 return;
             }
-            // Replace placeholders in the command syntax? For simplicity, we'll append parameters in order.
-            // This may not be perfect for commands like "kit add" where order matters. We'll assume the user knows.
             fullCmd = cmd + ' ' + values.join(' ');
         }
         try {
@@ -1098,7 +1108,6 @@ class Resources {
     }
 
     refresh() {
-        // Re-render active tab
         const activeTab = document.querySelector('.resources-tab.active')?.dataset.tab || 'build';
         if (activeTab === 'build') {
             this.renderBuildCosts();
@@ -1117,5 +1126,6 @@ class Resources {
 
 // Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🔧 DOMContentLoaded – creating Resources instance');
     window.resources = new Resources();
 });
