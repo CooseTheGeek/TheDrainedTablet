@@ -1,4 +1,4 @@
-// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (with temporary master override)
+// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (with final master override)
 
 class AccessControl {
     constructor() {
@@ -16,14 +16,13 @@ class AccessControl {
         console.log('AccessControl initialized');
     }
 
-    // Temporary override for CooseTheGeek
+    // Final override for CooseTheGeek
     isMasterUser() {
-        return AppState.user && AppState.user.username === 'CooseTheGeek';
+        const username = AppState.user?.username || localStorage.getItem('tdl_username');
+        return username === 'CooseTheGeek';
     }
 
-    // Check if current user has at least the required role
     hasRole(requiredRole) {
-        // Override: if user is CooseTheGeek, always return true for any role
         if (this.isMasterUser()) {
             return true;
         }
@@ -31,7 +30,6 @@ class AccessControl {
         return this.roleHierarchy[currentRole] >= this.roleHierarchy[requiredRole];
     }
 
-    // Check if current user is specifically a master
     isMaster() {
         if (this.isMasterUser()) {
             return true;
@@ -46,14 +44,12 @@ class AccessControl {
         return AppState.user.role === 'owner';
     }
 
-    // Guard function: throw error if insufficient role
     guard(requiredRole) {
         if (!this.hasRole(requiredRole)) {
             throw new Error(`Access denied: ${requiredRole} role required`);
         }
     }
 
-    // Decorate a function with role check
     protect(fn, requiredRole) {
         return (...args) => {
             if (!this.hasRole(requiredRole)) {
@@ -64,9 +60,7 @@ class AccessControl {
         };
     }
 
-    // Hide/show UI elements based on role
     applyUIPermissions() {
-        // This can be called after login to hide elements the user shouldn't see.
         if (!this.hasRole('master')) {
             document.querySelectorAll('.master-only').forEach(el => el.style.display = 'none');
         }
@@ -76,7 +70,6 @@ class AccessControl {
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.accessControl = new AccessControl();
 });
