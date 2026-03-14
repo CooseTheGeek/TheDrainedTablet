@@ -1,16 +1,10 @@
-// kits.js – DRAINED TABLET ULTIMATE v7.0.0
-// Complete kit management: create, edit, delete, give, preview, permissions, cooldowns.
-// All original features preserved, now with RCON integration and enhanced UI.
+// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (Overhauled to match screenshot)
 
 class Kits {
     constructor() {
-        this.tablet = window.drainedTablet;
         this.access = window.accessControl;
         this.kits = this.loadKits();
-        this.categories = ['All', 'Starter', 'VIP', 'Admin', 'Event', 'PvP', 'Raid', 'Building'];
-        this.groups = ['User', 'VIP', 'Moderator', 'Admin', 'Owner'];
-        this.currentKitItems = [];
-        this.editingKitId = null;
+        this.currentKit = null; // the kit being edited
         this.init();
     }
 
@@ -43,448 +37,307 @@ class Kits {
         }
 
         tab.innerHTML = `
-            <div class="kits-container">
-                <div class="kits-header">
-                    <h2>🧰 KIT MANAGER</h2>
-                    <div class="kits-controls">
-                        <button id="create-kit" class="kit-btn primary">+ NEW KIT</button>
-                        <button id="refresh-kits" class="kit-btn">🔄 REFRESH</button>
-                    </div>
+            <div class="kits-container" style="display: flex; gap: 20px; padding: 20px;">
+                <!-- Left panel: Kit list -->
+                <div class="kits-left" style="width: 300px; background: var(--glass-bg); border-radius: 12px; padding: 15px;">
+                    <h3>Build Kits</h3>
+                    <button id="create-kit" class="kit-btn primary" style="width:100%; margin-bottom:15px;">+ New Kit</button>
+                    <div id="kits-list" class="kits-list"></div>
                 </div>
 
-                <div class="kits-toolbar">
-                    <div class="filter-group">
-                        <label>Category:</label>
-                        <select id="kit-category-filter">
-                            ${this.categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Search:</label>
-                        <input type="text" id="kit-search" placeholder="Search kits...">
-                    </div>
-                    <div class="filter-group">
-                        <label>Show Hidden:</label>
-                        <input type="checkbox" id="show-hidden">
-                    </div>
-                </div>
-
-                <div class="kits-grid" id="kits-grid"></div>
-
-                <!-- Kit Editor Modal -->
-                <div id="kit-modal" class="modal hidden">
-                    <div class="modal-content kit-modal">
-                        <h2 id="kit-modal-title">CREATE KIT</h2>
-                        
-                        <div class="kit-form">
-                            <div class="form-column">
-                                <h3>Kit Details</h3>
-                                
+                <!-- Right panel: Kit editor -->
+                <div class="kits-right" style="flex: 1; background: var(--glass-bg); border-radius: 12px; padding: 20px;">
+                    <h2 id="kit-editor-title">Kit Editor</h2>
+                    <div id="kit-editor" style="${this.currentKit ? 'display:block' : 'display:none'}">
+                        <div class="kit-editor-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <!-- Left column -->
+                            <div>
                                 <div class="form-group">
-                                    <label>Kit Name:</label>
+                                    <label>Kit Name</label>
                                     <input type="text" id="kit-name" placeholder="e.g., Starter Kit">
                                 </div>
-                                
                                 <div class="form-group">
-                                    <label>Description:</label>
-                                    <input type="text" id="kit-desc" placeholder="Brief description">
+                                    <label>Version</label>
+                                    <input type="text" id="kit-version" placeholder="1.0">
                                 </div>
-                                
                                 <div class="form-group">
-                                    <label>Icon:</label>
-                                    <select id="kit-icon">
-                                        <option value="📦">📦 Box</option>
-                                        <option value="👑">👑 Crown</option>
-                                        <option value="⚔️">⚔️ Swords</option>
-                                        <option value="🛡️">🛡️ Shield</option>
-                                        <option value="🔫">🔫 Gun</option>
-                                        <option value="💊">💊 Medical</option>
-                                        <option value="🏗️">🏗️ Building</option>
-                                        <option value="🎁">🎁 Gift</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>Category:</label>
-                                    <select id="kit-category">
-                                        ${this.categories.slice(1).map(cat => `<option value="${cat}">${cat}</option>`).join('')}
-                                    </select>
-                                </div>
-                                
-                                <h3>Access Settings</h3>
-                                
-                                <div class="checkbox-group">
-                                    ${this.groups.map(group => `
-                                        <label>
-                                            <input type="checkbox" class="kit-group" value="${group}"> ${group}
-                                        </label>
-                                    `).join('')}
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>Cooldown (seconds):</label>
+                                    <label>Cooldown (seconds)</label>
                                     <input type="number" id="kit-cooldown" value="300" min="0">
                                 </div>
-                                
                                 <div class="form-group">
-                                    <label>Max Uses (0 = unlimited):</label>
+                                    <label>Max Uses (0 = unlimited)</label>
                                     <input type="number" id="kit-max-uses" value="0" min="0">
                                 </div>
-                                
-                                <div class="checkbox-group">
-                                    <label>
-                                        <input type="checkbox" id="kit-auto-grant"> Auto‑grant on spawn
-                                    </label>
-                                    <label>
-                                        <input type="checkbox" id="kit-hidden"> Hidden kit
-                                    </label>
+                                <div class="form-group">
+                                    <label>Automation Level</label>
+                                    <select id="kit-automation">
+                                        <option value="0">None</option>
+                                        <option value="1">Low</option>
+                                        <option value="2">Medium</option>
+                                        <option value="3">High</option>
+                                    </select>
                                 </div>
                             </div>
-                            
-                            <div class="form-column">
-                                <h3>Items</h3>
-                                
-                                <div class="item-add-form">
-                                    <input type="text" id="item-shortname" placeholder="Item shortname">
-                                    <input type="number" id="item-amount" placeholder="Amount" value="1" min="1">
-                                    <select id="item-container">
-                                        <option value="belt">Belt</option>
-                                        <option value="main">Main</option>
-                                        <option value="wear">Wear</option>
-                                    </select>
-                                    <input type="number" id="item-condition" placeholder="Condition" value="100" min="0" max="100">
-                                    <button id="add-item" class="small-btn">+ ADD</button>
+                            <!-- Right column -->
+                            <div>
+                                <div class="form-group">
+                                    <label>Inventory Sizes</label>
+                                    <input type="text" id="kit-inventory-sizes" placeholder="e.g., belt=6, main=24, wear=5">
                                 </div>
-                                
-                                <div id="kit-items-list" class="kit-items-list"></div>
+                                <div class="form-group">
+                                    <label>Header Items</label>
+                                    <textarea id="kit-header-items" placeholder="One item per line: shortname,amount,container"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>General Customization</label>
+                                    <textarea id="kit-general" placeholder="Any other settings as JSON"></textarea>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="modal-actions">
-                            <button id="save-kit" class="kit-btn primary">SAVE KIT</button>
-                            <button id="cancel-kit" class="kit-btn">CANCEL</button>
+
+                        <!-- Player Equipment -->
+                        <h3>Player Equipment</h3>
+                        <div class="equipment-slots" style="display: flex; gap: 20px; margin: 15px 0;">
+                            <div class="belt-slots">
+                                <h4>Belt</h4>
+                                <div id="belt-slots" class="slot-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;"></div>
+                            </div>
+                            <div class="main-slots">
+                                <h4>Main</h4>
+                                <div id="main-slots" class="slot-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;"></div>
+                            </div>
+                            <div class="wear-slots">
+                                <h4>Wear</h4>
+                                <div id="wear-slots" class="slot-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Item Search -->
+                        <div class="item-search-area" style="margin: 15px 0;">
+                            <h4>Add Item</h4>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="item-search" placeholder="Search items..." style="flex: 1;">
+                                <button id="search-items-btn" class="kit-btn">Search</button>
+                            </div>
+                            <div id="item-search-results" class="item-search-results" style="max-height: 200px; overflow-y: auto; margin-top: 10px;"></div>
+                        </div>
+
+                        <!-- Team Selection -->
+                        <h3>Team Selection</h3>
+                        <div id="team-selection" class="team-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin: 10px 0;"></div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button id="save-kit" class="kit-btn primary">Save & Continue</button>
+                            <button id="cancel-edit" class="kit-btn">Cancel</button>
                         </div>
                     </div>
-                </div>
-
-                <!-- Give Kit Modal -->
-                <div id="give-kit-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <h3>GIVE KIT</h3>
-                        
-                        <div class="form-group">
-                            <label>Kit:</label>
-                            <select id="give-kit-select"></select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Player/Group:</label>
-                            <input type="text" id="give-target" placeholder="Player name or @group">
-                        </div>
-                        
-                        <div class="modal-actions">
-                            <button id="execute-give" class="kit-btn primary">GIVE</button>
-                            <button id="cancel-give" class="kit-btn">CANCEL</button>
-                        </div>
+                    <div id="no-kit-selected" style="${this.currentKit ? 'display:none' : 'display:block'}; text-align: center; padding: 50px;">
+                        <p>Select a kit or create a new one</p>
                     </div>
                 </div>
             </div>
         `;
 
-        this.renderKits();
+        this.renderKitList();
+        this.initTeamSelection();
     }
 
-    attachEvents() {
-        document.getElementById('create-kit')?.addEventListener('click', () => this.openKitModal());
-        document.getElementById('refresh-kits')?.addEventListener('click', () => this.refresh());
-        document.getElementById('save-kit')?.addEventListener('click', () => this.saveKit());
-        document.getElementById('cancel-kit')?.addEventListener('click', () => {
-            document.getElementById('kit-modal').classList.add('hidden');
-        });
-
-        document.getElementById('kit-category-filter')?.addEventListener('change', () => this.renderKits());
-        document.getElementById('kit-search')?.addEventListener('input', () => this.renderKits());
-        document.getElementById('show-hidden')?.addEventListener('change', () => this.renderKits());
-
-        document.getElementById('add-item')?.addEventListener('click', () => this.addKitItem());
-
-        document.getElementById('cancel-give')?.addEventListener('click', () => {
-            document.getElementById('give-kit-modal').classList.add('hidden');
-        });
-        document.getElementById('execute-give')?.addEventListener('click', () => this.giveKit());
-
-        // Delegate for kit actions
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('edit-kit')) {
-                const id = e.target.dataset.id;
-                this.openKitModal(id);
-            }
-            if (e.target.classList.contains('delete-kit')) {
-                const id = e.target.dataset.id;
-                this.deleteKit(id);
-            }
-            if (e.target.classList.contains('duplicate-kit')) {
-                const id = e.target.dataset.id;
-                this.duplicateKit(id);
-            }
-            if (e.target.classList.contains('give-kit')) {
-                const id = e.target.dataset.id;
-                this.openGiveModal(id);
-            }
-            if (e.target.classList.contains('preview-kit')) {
-                const id = e.target.dataset.id;
-                this.previewKit(id);
-            }
-            if (e.target.classList.contains('remove-item')) {
-                const index = e.target.dataset.index;
-                this.removeKitItem(index);
-            }
-        });
+    initTeamSelection() {
+        // Generate 30 teams (A1 to A30)
+        const container = document.getElementById('team-selection');
+        if (!container) return;
+        let html = '';
+        for (let i = 1; i <= 30; i++) {
+            html += `<label><input type="checkbox" class="team-checkbox" value="A${i}"> A${i}</label>`;
+        }
+        container.innerHTML = html;
     }
 
-    renderKits() {
-        const grid = document.getElementById('kits-grid');
-        if (!grid) return;
-
-        const category = document.getElementById('kit-category-filter')?.value || 'All';
-        const search = document.getElementById('kit-search')?.value.toLowerCase() || '';
-        const showHidden = document.getElementById('show-hidden')?.checked || false;
-
-        let filtered = this.kits;
-        if (category !== 'All') {
-            filtered = filtered.filter(k => k.category === category);
-        }
-        if (search) {
-            filtered = filtered.filter(k => 
-                k.name.toLowerCase().includes(search) || 
-                k.description.toLowerCase().includes(search)
-            );
-        }
-        if (!showHidden) {
-            filtered = filtered.filter(k => !k.hidden);
-        }
-
-        if (filtered.length === 0) {
-            grid.innerHTML = '<div class="no-kits">No kits found</div>';
+    renderKitList() {
+        const listDiv = document.getElementById('kits-list');
+        if (!listDiv) return;
+        if (this.kits.length === 0) {
+            listDiv.innerHTML = '<p>No kits created.</p>';
             return;
         }
-
         let html = '';
-        filtered.forEach(kit => {
-            const groups = (kit.groups || []).join(', ');
+        this.kits.forEach(kit => {
             html += `
-                <div class="kit-card ${kit.hidden ? 'hidden' : ''}">
-                    <div class="kit-header">
-                        <span class="kit-icon">${kit.icon || '📦'}</span>
-                        <span class="kit-name">${kit.name}</span>
-                        ${kit.autoGrant ? '<span class="kit-badge">AUTO</span>' : ''}
-                    </div>
-                    <div class="kit-body">
-                        <div class="kit-desc">${kit.description}</div>
-                        <div class="kit-meta">
-                            <span>📦 ${kit.items.length} items</span>
-                            <span>⏱️ ${kit.cooldown}s</span>
-                            <span>🎯 ${kit.maxUses || '∞'} uses</span>
-                        </div>
-                        <div class="kit-groups">${groups}</div>
-                    </div>
-                    <div class="kit-actions">
-                        <button class="kit-btn small edit-kit" data-id="${kit.id}">✏️</button>
-                        <button class="kit-btn small duplicate-kit" data-id="${kit.id}">📋</button>
-                        <button class="kit-btn small give-kit" data-id="${kit.id}">🎁</button>
-                        <button class="kit-btn small preview-kit" data-id="${kit.id}">👁️</button>
-                        <button class="kit-btn small delete-kit" data-id="${kit.id}">🗑️</button>
-                    </div>
+                <div class="kit-list-item" data-id="${kit.id}" style="padding: 10px; margin-bottom: 5px; background: var(--bg-tertiary); border-radius: 5px; cursor: pointer;">
+                    <strong>${kit.name}</strong> <span style="float:right;">v${kit.version || '1.0'}</span>
                 </div>
             `;
         });
-        grid.innerHTML = html;
+        listDiv.innerHTML = html;
+        // Add click events
+        listDiv.querySelectorAll('.kit-list-item').forEach(el => {
+            el.addEventListener('click', () => this.loadKit(el.dataset.id));
+        });
     }
 
-    openKitModal(kitId = null) {
-        const modal = document.getElementById('kit-modal');
-        const title = document.getElementById('kit-modal-title');
-        if (kitId) {
-            title.innerText = 'EDIT KIT';
-            const kit = this.kits.find(k => k.id === kitId);
-            if (kit) this.populateKitForm(kit);
-        } else {
-            title.innerText = 'CREATE KIT';
-            this.clearKitForm();
-        }
-        modal.classList.remove('hidden');
-    }
-
-    populateKitForm(kit) {
+    loadKit(id) {
+        const kit = this.kits.find(k => k.id === id);
+        if (!kit) return;
+        this.currentKit = kit;
+        document.getElementById('kit-editor').style.display = 'block';
+        document.getElementById('no-kit-selected').style.display = 'none';
         document.getElementById('kit-name').value = kit.name || '';
-        document.getElementById('kit-desc').value = kit.description || '';
-        document.getElementById('kit-icon').value = kit.icon || '📦';
-        document.getElementById('kit-category').value = kit.category || 'Starter';
+        document.getElementById('kit-version').value = kit.version || '1.0';
         document.getElementById('kit-cooldown').value = kit.cooldown || 300;
         document.getElementById('kit-max-uses').value = kit.maxUses || 0;
-        document.getElementById('kit-auto-grant').checked = kit.autoGrant || false;
-        document.getElementById('kit-hidden').checked = kit.hidden || false;
+        document.getElementById('kit-automation').value = kit.automation || 0;
+        document.getElementById('kit-inventory-sizes').value = kit.inventorySizes || '';
+        document.getElementById('kit-header-items').value = kit.headerItems || '';
+        document.getElementById('kit-general').value = kit.general ? JSON.stringify(kit.general, null, 2) : '';
 
-        document.querySelectorAll('.kit-group').forEach(cb => {
-            cb.checked = (kit.groups || []).includes(cb.value);
+        // Populate equipment slots
+        this.renderEquipmentSlots(kit.items || []);
+        // Check teams
+        document.querySelectorAll('.team-checkbox').forEach(cb => {
+            cb.checked = (kit.teams || []).includes(cb.value);
         });
-
-        this.currentKitItems = kit.items || [];
-        this.renderKitItems();
-        this.editingKitId = kit.id;
     }
 
-    clearKitForm() {
-        document.getElementById('kit-name').value = '';
-        document.getElementById('kit-desc').value = '';
-        document.getElementById('kit-icon').value = '📦';
-        document.getElementById('kit-category').value = 'Starter';
-        document.getElementById('kit-cooldown').value = '300';
-        document.getElementById('kit-max-uses').value = '0';
-        document.getElementById('kit-auto-grant').checked = false;
-        document.getElementById('kit-hidden').checked = false;
-        document.querySelectorAll('.kit-group').forEach(cb => cb.checked = false);
-        this.currentKitItems = [];
-        this.renderKitItems();
-        this.editingKitId = null;
-    }
+    renderEquipmentSlots(items) {
+        const belt = document.getElementById('belt-slots');
+        const main = document.getElementById('main-slots');
+        const wear = document.getElementById('wear-slots');
+        if (!belt || !main || !wear) return;
+        belt.innerHTML = '';
+        main.innerHTML = '';
+        wear.innerHTML = '';
 
-    addKitItem() {
-        const shortname = document.getElementById('item-shortname').value;
-        const amount = parseInt(document.getElementById('item-amount').value);
-        const container = document.getElementById('item-container').value;
-        const condition = parseInt(document.getElementById('item-condition').value);
-        if (!shortname) {
-            this.tablet.showError('Enter item shortname');
-            return;
-        }
-        this.currentKitItems.push({ shortname, amount, container, condition });
-        this.renderKitItems();
-        document.getElementById('item-shortname').value = '';
-        document.getElementById('item-amount').value = '1';
-        document.getElementById('item-condition').value = '100';
-    }
+        // Create empty slots
+        for (let i = 0; i < 6; i++) belt.innerHTML += '<div class="slot empty" data-slot="belt" data-index="'+i+'"></div>';
+        for (let i = 0; i < 24; i++) main.innerHTML += '<div class="slot empty" data-slot="main" data-index="'+i+'"></div>';
+        for (let i = 0; i < 5; i++) wear.innerHTML += '<div class="slot empty" data-slot="wear" data-index="'+i+'"></div>';
 
-    removeKitItem(index) {
-        this.currentKitItems.splice(index, 1);
-        this.renderKitItems();
-    }
-
-    renderKitItems() {
-        const container = document.getElementById('kit-items-list');
-        if (!container) return;
-        if (this.currentKitItems.length === 0) {
-            container.innerHTML = '<div class="no-items">No items added</div>';
-            return;
-        }
-        container.innerHTML = this.currentKitItems.map((item, index) => `
-            <div class="kit-item">
-                <span>${item.shortname} x${item.amount}</span>
-                <span>(${item.container})</span>
-                <span>${item.condition}%</span>
-                <button class="remove-item small-btn" data-index="${index}">✕</button>
-            </div>
-        `).join('');
-    }
-
-    saveKit() {
-        const name = document.getElementById('kit-name').value;
-        if (!name) {
-            this.tablet.showError('Kit name required');
-            return;
-        }
-
-        const kit = {
-            id: this.editingKitId || 'kit_' + Date.now(),
-            name,
-            description: document.getElementById('kit-desc').value,
-            icon: document.getElementById('kit-icon').value,
-            category: document.getElementById('kit-category').value,
-            cooldown: parseInt(document.getElementById('kit-cooldown').value),
-            maxUses: parseInt(document.getElementById('kit-max-uses').value),
-            autoGrant: document.getElementById('kit-auto-grant').checked,
-            hidden: document.getElementById('kit-hidden').checked,
-            groups: Array.from(document.querySelectorAll('.kit-group:checked')).map(cb => cb.value),
-            items: this.currentKitItems,
-            updated: new Date().toISOString()
-        };
-
-        if (this.editingKitId) {
-            const index = this.kits.findIndex(k => k.id === this.editingKitId);
-            if (index !== -1) {
-                this.kits[index] = { ...this.kits[index], ...kit };
+        // Fill with items
+        items.forEach(item => {
+            const slotEl = document.querySelector(`[data-slot="${item.container}"][data-index="${item.slot}"]`);
+            if (slotEl) {
+                slotEl.innerHTML = `${item.shortname}<br><small>x${item.amount}</small>`;
+                slotEl.classList.remove('empty');
+                slotEl.dataset.shortname = item.shortname;
+                slotEl.dataset.amount = item.amount;
+                slotEl.dataset.condition = item.condition;
             }
-        } else {
-            kit.created = new Date().toISOString();
-            this.kits.push(kit);
-        }
+        });
+    }
 
+    attachEvents() {
+        document.getElementById('create-kit')?.addEventListener('click', () => this.createNewKit());
+        document.getElementById('save-kit')?.addEventListener('click', () => this.saveCurrentKit());
+        document.getElementById('cancel-edit')?.addEventListener('click', () => this.cancelEdit());
+        document.getElementById('search-items-btn')?.addEventListener('click', () => this.searchItems());
+        document.getElementById('item-search')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.searchItems();
+        });
+    }
+
+    createNewKit() {
+        const newKit = {
+            id: 'kit_' + Date.now(),
+            name: 'New Kit',
+            version: '1.0',
+            items: [],
+            cooldown: 300,
+            maxUses: 0,
+            automation: 0,
+            inventorySizes: '',
+            headerItems: '',
+            general: {},
+            teams: []
+        };
+        this.kits.push(newKit);
         this.saveKits();
-        this.renderKits();
-        document.getElementById('kit-modal').classList.add('hidden');
-        this.tablet.showToast(`Kit ${name} saved`, 'success');
+        this.renderKitList();
+        this.loadKit(newKit.id);
     }
 
-    deleteKit(id) {
-        if (!confirm('Delete this kit?')) return;
-        this.kits = this.kits.filter(k => k.id !== id);
-        this.saveKits();
-        this.renderKits();
-        this.tablet.showToast('Kit deleted', 'info');
-    }
-
-    duplicateKit(id) {
-        const kit = this.kits.find(k => k.id === id);
-        if (kit) {
-            const newKit = {
-                ...kit,
-                id: 'kit_' + Date.now(),
-                name: kit.name + ' (Copy)',
-                created: new Date().toISOString()
-            };
-            this.kits.push(newKit);
-            this.saveKits();
-            this.renderKits();
-            this.tablet.showToast('Kit duplicated', 'success');
+    saveCurrentKit() {
+        if (!this.currentKit) return;
+        // Gather form data
+        this.currentKit.name = document.getElementById('kit-name').value;
+        this.currentKit.version = document.getElementById('kit-version').value;
+        this.currentKit.cooldown = parseInt(document.getElementById('kit-cooldown').value) || 300;
+        this.currentKit.maxUses = parseInt(document.getElementById('kit-max-uses').value) || 0;
+        this.currentKit.automation = parseInt(document.getElementById('kit-automation').value) || 0;
+        this.currentKit.inventorySizes = document.getElementById('kit-inventory-sizes').value;
+        this.currentKit.headerItems = document.getElementById('kit-header-items').value;
+        try {
+            this.currentKit.general = JSON.parse(document.getElementById('kit-general').value || '{}');
+        } catch {
+            this.currentKit.general = {};
         }
+        // Gather teams
+        this.currentKit.teams = Array.from(document.querySelectorAll('.team-checkbox:checked')).map(cb => cb.value);
+        // Items are already in this.currentKit.items (updated via add/remove)
+        this.saveKits();
+        this.renderKitList();
+        toast.success('Kit saved');
     }
 
-    openGiveModal(kitId) {
-        const select = document.getElementById('give-kit-select');
-        select.innerHTML = this.kits.map(k => 
-            `<option value="${k.id}" ${k.id === kitId ? 'selected' : ''}>${k.name}</option>`
-        ).join('');
-        document.getElementById('give-kit-modal').classList.remove('hidden');
+    cancelEdit() {
+        this.currentKit = null;
+        document.getElementById('kit-editor').style.display = 'none';
+        document.getElementById('no-kit-selected').style.display = 'block';
     }
 
-    giveKit() {
-        const kitId = document.getElementById('give-kit-select').value;
-        const target = document.getElementById('give-target').value;
-        if (!target) {
-            this.tablet.showError('Enter target player or group');
+    searchItems() {
+        const query = document.getElementById('item-search').value.toLowerCase();
+        const resultsDiv = document.getElementById('item-search-results');
+        if (!query || !window.itemsDatabase) {
+            resultsDiv.innerHTML = '';
             return;
         }
-        const kit = this.kits.find(k => k.id === kitId);
-        if (!kit) return;
-        // In a real implementation, you'd send an RCON command to give the kit.
-        // For now, simulate.
-        this.tablet.showToast(`Gave ${kit.name} to ${target} (simulated)`, 'success');
-        document.getElementById('give-kit-modal').classList.add('hidden');
+        // Assuming itemsDatabase is an array of { shortname, name, category }
+        const matches = window.itemsDatabase.filter(item => 
+            item.name.toLowerCase().includes(query) || 
+            item.shortname.toLowerCase().includes(query)
+        ).slice(0, 20);
+        resultsDiv.innerHTML = matches.map(item => 
+            `<div class="search-result" data-shortname="${item.shortname}" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #444;">${item.name} (${item.shortname})</div>`
+        ).join('');
+        resultsDiv.querySelectorAll('.search-result').forEach(el => {
+            el.addEventListener('click', () => this.addItemToCurrentKit(el.dataset.shortname));
+        });
     }
 
-    previewKit(id) {
-        const kit = this.kits.find(k => k.id === id);
-        if (!kit) return;
-        let items = '';
-        kit.items.forEach(item => {
-            items += `${item.shortname} x${item.amount} (${item.container})\n`;
+    addItemToCurrentKit(shortname) {
+        if (!this.currentKit) return;
+        const amount = prompt('Quantity:', '1');
+        if (!amount) return;
+        const container = prompt('Container (belt/main/wear):', 'belt');
+        if (!container) return;
+        const condition = prompt('Condition (0-100):', '100');
+        const slot = this.findEmptySlot(container);
+        if (slot === -1) {
+            toast.error('No empty slot in that container');
+            return;
+        }
+        this.currentKit.items.push({
+            shortname,
+            amount: parseInt(amount),
+            container,
+            slot,
+            condition: parseInt(condition) || 100
         });
-        alert(`Kit: ${kit.name}\n\nItems:\n${items}\nCooldown: ${kit.cooldown}s\nMax Uses: ${kit.maxUses || 'Unlimited'}`);
+        this.renderEquipmentSlots(this.currentKit.items);
+    }
+
+    findEmptySlot(container) {
+        const items = this.currentKit.items.filter(i => i.container === container);
+        const max = container === 'belt' ? 6 : container === 'main' ? 24 : 5;
+        for (let i = 0; i < max; i++) {
+            if (!items.find(item => item.slot === i)) return i;
+        }
+        return -1;
     }
 
     refresh() {
-        this.renderKits();
-        this.tablet.showToast('Kits refreshed', 'success');
+        this.renderKitList();
+        if (this.currentKit) this.loadKit(this.currentKit.id);
     }
 }
 

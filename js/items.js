@@ -1,6 +1,5 @@
 // items.js – DRAINED TABLET ULTIMATE v7.0.0
 // Complete item database for Rust Console Edition – all 553+ items.
-// NO MOCK DATA – this is a static reference list for admin use.
 
 class Items {
     constructor() {
@@ -736,7 +735,7 @@ class Items {
         }
 
         let html = '<table class="items-table"><tr><th>Name</th><th>Shortname</th><th>Category</th><th>Actions</th></tr>';
-        this.filtered.slice(0, 200).forEach(item => { // limit to 200 for performance
+        this.filtered.slice(0, 200).forEach(item => {
             html += `
                 <tr>
                     <td>${item.name}</td>
@@ -770,9 +769,9 @@ class Items {
             } else {
                 await this.cmd.give(shortname, parseInt(amount));
             }
-            this.tablet.showToast(`Gave ${amount}x ${shortname}`, 'success');
+            toast.success(`Gave ${amount}x ${shortname}`);
         } catch (err) {
-            this.tablet.showError(err.message);
+            toast.error(err.message);
         }
     }
 
@@ -784,15 +783,15 @@ class Items {
         if (!x || !y || !z || !amount) return;
         try {
             await this.cmd.spawn(shortname, parseFloat(x), parseFloat(y), parseFloat(z));
-            this.tablet.showToast(`Spawned ${amount}x ${shortname}`, 'success');
+            toast.success(`Spawned ${amount}x ${shortname}`);
         } catch (err) {
-            this.tablet.showError(err.message);
+            toast.error(err.message);
         }
     }
 
     refresh() {
         this.filterItems();
-        this.tablet.showToast('Items refreshed', 'success');
+        toast.success('Items refreshed');
     }
 }
 
@@ -800,3 +799,6 @@ class Items {
 document.addEventListener('DOMContentLoaded', () => {
     window.items = new Items();
 });
+
+// ===== EXPOSE THE ITEMS DATABASE GLOBALLY FOR OTHER MODULES =====
+window.itemsDatabase = window.items?.items || [];

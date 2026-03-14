@@ -1,4 +1,4 @@
-// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with GPortal player polling)
+// core.js – DRAINED TABLET ULTIMATE v7.0.0 (final with robust player list polling)
 
 // ========================= GLOBAL STATE =========================
 const AppState = {
@@ -271,26 +271,26 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 DRAINED TABLET core loaded');
 });
 
-// ========================= GPortal Player List Polling =========================
+// ========================= GPortal Player List Polling (Improved) =========================
 setInterval(async () => {
     if (window.gportalConnector && window.gportalConnector.apiReady) {
         try {
-            const res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
+            // Try playerlist first
+            let res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: 'playerlist' })
             });
-            const data = await res.json();
-            if (data.success && data.result) {
-                let players = [];
-                const raw = data.result;
+            let data = await res.json();
+            let players = [];
 
-                // Handle different response formats
-                if (typeof raw === 'string') {
-                    const trimmed = raw.trim();
-                    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+            if (data.success && data.result) {
+                const raw = data.result;
+                if (typeof raw === 'string' && raw.trim() && raw !== 'Command executed (no output)') {
+                    // Attempt to parse as JSON or split lines
+                    if (raw.trim().startsWith('[')) {
                         try {
-                            const parsed = JSON.parse(trimmed);
+                            const parsed = JSON.parse(raw);
                             if (Array.isArray(parsed)) {
                                 players = parsed.map(p => ({
                                     name: p.name || p.displayName || p,
@@ -300,29 +300,42 @@ setInterval(async () => {
                                 }));
                             }
                         } catch {
-                            // fallback: split by lines
-                            const lines = trimmed.split('\n').filter(l => l.trim());
+                            const lines = raw.split('\n').filter(l => l.trim());
                             players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
                         }
                     } else {
-                        // Assume plain text list, one name per line
-                        const lines = trimmed.split('\n').filter(l => l.trim());
+                        const lines = raw.split('\n').filter(l => l.trim());
                         players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
                     }
-                } else if (Array.isArray(raw)) {
-                    players = raw.map(p => ({
-                        name: p.name || p.displayName || p,
-                        online: true,
-                        playtime: p.playtime || 'N/A',
-                        position: p.position || null
-                    }));
                 }
-
-                AppState.players = players;
-                ConnectionManager.notify(); // Trigger UI updates
             }
+
+            // If no players from playerlist, try parsing status
+            if (players.length === 0) {
+                res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: 'status' })
+                });
+                data = await res.json();
+                if (data.success && data.result) {
+                    const statusText = data.result;
+                    // Look for a line like "players: 10" or "players (10 max)"
+                    const match = statusText.match(/players:?\s*(\d+)/i) || statusText.match(/players\s*\((\d+)/i);
+                    if (match) {
+                        const count = parseInt(match[1]);
+                        // We don't have names, so create placeholder players
+                        for (let i = 0; i < count; i++) {
+                            players.push({ name: `Player ${i+1}`, online: true, playtime: 'N/A', position: null });
+                        }
+                    }
+                }
+            }
+
+            AppState.players = players;
+            ConnectionManager.notify();
         } catch (err) {
             console.error('Error polling player list:', err);
         }
     }
-}, 15000); // Poll every 15 seconds
+}, 15000);
