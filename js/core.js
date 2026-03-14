@@ -271,67 +271,38 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 DRAINED TABLET core loaded');
 });
 
-// ========================= GPortal Player List Polling (Improved) =========================
+// ========================= GPortal Player List Polling (Reliable) =========================
 setInterval(async () => {
     if (window.gportalConnector && window.gportalConnector.apiReady) {
         try {
-            // Try playerlist first
-            let res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
+            const res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: 'playerlist' })
             });
-            let data = await res.json();
+            const data = await res.json();
             let players = [];
 
             if (data.success && data.result) {
                 const raw = data.result;
-                if (typeof raw === 'string' && raw.trim() && raw !== 'Command executed (no output)') {
-                    // Attempt to parse as JSON or split lines
-                    if (raw.trim().startsWith('[')) {
-                        try {
-                            const parsed = JSON.parse(raw);
-                            if (Array.isArray(parsed)) {
-                                players = parsed.map(p => {
-                                    // Ensure we extract a string name
-                                    let name = p.name || p.displayName || p;
-                                    if (typeof name !== 'string') name = String(name);
-                                    return {
-                                        name: name,
-                                        online: true,
-                                        playtime: p.playtime || 'N/A',
-                                        position: p.position || null
-                                    };
-                                });
-                            }
-                        } catch {
-                            const lines = raw.split('\n').filter(l => l.trim());
-                            players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
-                        }
-                    } else {
-                        const lines = raw.split('\n').filter(l => l.trim());
-                        players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
-                    }
-                }
-            }
+                console.log('Raw playerlist response:', raw); // for debugging
 
-            // If no players from playerlist, try parsing status
-            if (players.length === 0) {
-                res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: 'status' })
-                });
-                data = await res.json();
-                if (data.success && data.result) {
-                    const statusText = data.result;
-                    const match = statusText.match(/players:?\s*(\d+)/i) || statusText.match(/players\s*\((\d+)/i);
-                    if (match) {
-                        const count = parseInt(match[1]);
-                        for (let i = 0; i < count; i++) {
-                            players.push({ name: `Player ${i+1}`, online: true, playtime: 'N/A', position: null });
-                        }
-                    }
+                // If it's a string, assume one name per line
+                if (typeof raw === 'string') {
+                    const lines = raw.split('\n').filter(l => l.trim() && !l.includes('ID') && !l.includes('connected'));
+                    players = lines.map(name => ({
+                        name: name.trim(),
+                        online: true,
+                        playtime: 'N/A',
+                        position: null
+                    }));
+                } else if (Array.isArray(raw)) {
+                    players = raw.map(p => ({
+                        name: String(p.name || p.displayName || p),
+                        online: true,
+                        playtime: p.playtime || 'N/A',
+                        position: p.position || null
+                    }));
                 }
             }
 

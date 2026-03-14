@@ -1,13 +1,13 @@
-// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (KaosBot style with images)
+// kits.js – DRAINED TABLET ULTIMATE v7.0.0 (KaosBot style – final)
 
 class Kits {
     constructor() {
         this.access = window.accessControl;
         this.kits = this.loadKits();
-        this.currentKit = null;           // the kit being edited
-        this.selectedSlot = null;          // { container, index } of the currently selected slot
-        this.filterCategory = 'all';        // current category filter for item gallery
-        this.searchQuery = '';              // current search query
+        this.currentKit = null;
+        this.selectedSlot = null;
+        this.filterCategory = 'all';
+        this.searchQuery = '';
         this.init();
     }
 
@@ -24,137 +24,122 @@ class Kits {
         this.createHTML();
         this.attachEvents();
         window.addEventListener('tab-changed', (e) => {
-            if (e.detail.tab === 'kits') {
-                this.refresh();
-            }
+            if (e.detail.tab === 'kits') this.refresh();
         });
     }
 
     createHTML() {
         const tab = document.getElementById('tab-kits');
         if (!tab) return;
-
         if (!this.access.hasRole('master')) {
             tab.innerHTML = '<div class="access-denied">Master access required</div>';
             return;
         }
 
         tab.innerHTML = `
-            <div class="kits-container" style="display: flex; gap: 20px; padding: 20px; height: 100%;">
+            <div class="kits-container" style="display: flex; gap: 20px; padding: 20px; height: 100%; background: var(--bg-primary);">
                 <!-- Left panel: Kit list -->
-                <div class="kits-left" style="width: 300px; background: var(--glass-bg); border-radius: 12px; padding: 15px; display: flex; flex-direction: column;">
-                    <h3 style="margin-bottom: 15px;">My Kits</h3>
-                    <button id="create-kit" class="kit-btn primary" style="margin-bottom: 15px;">+ New Kit</button>
-                    <div id="kits-list" class="kits-list" style="flex: 1; overflow-y: auto;"></div>
-                    <div style="display: flex; gap: 5px; margin-top: 10px;">
-                        <button id="export-kits" class="kit-btn small">📤 Export</button>
-                        <button id="import-kits" class="kit-btn small">📥 Import</button>
+                <div class="kits-left" style="width: 300px; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 15px;">My Kits</h3>
+                    <button id="create-kit" class="kit-btn primary" style="width:100%; margin-bottom: 15px; padding: 12px; font-weight: 600;">+ New Kit</button>
+                    <div id="kits-list" class="kits-list" style="flex: 1; overflow-y: auto; min-height: 0;"></div>
+                    <div style="display: flex; gap: 8px; margin-top: 15px;">
+                        <button id="export-kits" class="kit-btn small" style="flex: 1;">📤 Export</button>
+                        <button id="import-kits" class="kit-btn small" style="flex: 1;">📥 Import</button>
                     </div>
                 </div>
 
                 <!-- Right panel: Kit editor -->
-                <div class="kits-right" style="flex: 1; background: var(--glass-bg); border-radius: 12px; padding: 20px; overflow-y: auto;">
-                    <h2 id="kit-editor-title">Kit Editor</h2>
-                    <div id="kit-editor" style="${this.currentKit ? 'display:block' : 'display:none'}">
-                        <!-- Top bar: Kit name and auth level -->
-                        <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                <div class="kits-right" style="flex: 1; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; overflow-y: auto;">
+                    <h2 id="kit-editor-title" style="color: var(--accent-primary); margin-bottom: 20px;">Kit Editor</h2>
+                    <div id="kit-editor" style="display: none;">
+                        <!-- Top bar: Name and Auth Level -->
+                        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
                             <div style="flex: 2;">
-                                <label>Kit Name</label>
-                                <input type="text" id="kit-name" class="form-control" placeholder="e.g., Starter Kit" style="width:100%;">
+                                <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Kit Name</label>
+                                <input type="text" id="kit-name" class="form-control" placeholder="e.g., Starter Kit" style="width:100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
                             </div>
                             <div style="flex: 1;">
-                                <label>Auth Level</label>
-                                <input type="number" id="kit-auth-level" class="form-control" placeholder="0" value="0" min="0">
+                                <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Auth Level</label>
+                                <input type="number" id="kit-auth-level" class="form-control" value="0" min="0" style="width:100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
                             </div>
                         </div>
 
                         <!-- Action buttons -->
-                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                            <button id="copy-kit" class="kit-btn">Copy</button>
-                            <button id="reset-kit" class="kit-btn">Reset</button>
+                        <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+                            <button id="copy-kit" class="kit-btn" style="padding: 8px 16px;">📋 Copy</button>
+                            <button id="reset-kit" class="kit-btn" style="padding: 8px 16px;">↺ Reset</button>
                         </div>
 
                         <!-- Category filter and search -->
-                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                            <select id="item-category-filter" class="form-control" style="width: 200px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Item Category</label>
+                            <select id="item-category-filter" class="form-control" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
                                 <option value="all">All Categories</option>
-                                <option value="Ammo">Ammo</option>
-                                <option value="Weapons">Weapons</option>
-                                <option value="Construction">Construction</option>
-                                <option value="Items">Items</option>
-                                <option value="Resources">Resources</option>
-                                <option value="Attire">Attire</option>
-                                <option value="Tools">Tools</option>
-                                <option value="Medical">Medical</option>
-                                <option value="Food">Food</option>
-                                <option value="Traps">Traps</option>
-                                <option value="Misc">Misc</option>
-                                <option value="Components">Components</option>
-                                <option value="Electrical">Electrical</option>
-                                <option value="Animals">Animals</option>
-                                <option value="Vehicles">Vehicles</option>
-                                <option value="Vehicle Parts">Vehicle Parts</option>
-                                <option value="Seasonal">Seasonal</option>
+                                ${this.getCategoryOptions()}
                             </select>
-                            <input type="text" id="item-search" class="form-control" placeholder="Search items..." style="flex: 1;">
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Search Items</label>
+                            <input type="text" id="item-search" class="form-control" placeholder="e.g., 5 stone" style="width:100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
                         </div>
 
                         <!-- Item Gallery -->
-                        <h4>Item Gallery</h4>
-                        <div id="item-gallery" class="item-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; max-height: 250px; overflow-y: auto; border: 1px solid #444; padding: 10px; margin-bottom: 20px;"></div>
+                        <h4 style="color: var(--text-primary); margin-bottom: 10px;">Item Gallery</h4>
+                        <div id="item-gallery" class="item-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; max-height: 250px; overflow-y: auto; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 12px; padding: 15px; margin-bottom: 25px;"></div>
 
                         <!-- Equipment slots -->
-                        <h3>Equipment</h3>
-                        <div style="display: flex; gap: 30px; justify-content: space-around;">
-                            <div class="slot-section">
-                                <h4>WEAR</h4>
-                                <div id="wear-slots" class="slot-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;"></div>
+                        <h4 style="color: var(--text-primary); margin-bottom: 15px;">Equipment</h4>
+                        <div style="display: flex; gap: 30px; justify-content: space-between; margin-bottom: 30px;">
+                            <div class="slot-section" style="text-align: center;">
+                                <h5 style="color: var(--accent-primary); margin-bottom: 10px;">WEAR</h5>
+                                <div id="wear-slots" class="slot-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
                             </div>
-                            <div class="slot-section">
-                                <h4>MAIN</h4>
-                                <div id="main-slots" class="slot-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;"></div>
+                            <div class="slot-section" style="text-align: center;">
+                                <h5 style="color: var(--accent-primary); margin-bottom: 10px;">MAIN</h5>
+                                <div id="main-slots" class="slot-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;"></div>
                             </div>
-                            <div class="slot-section">
-                                <h4>BELT</h4>
-                                <div id="belt-slots" class="slot-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;"></div>
+                            <div class="slot-section" style="text-align: center;">
+                                <h5 style="color: var(--accent-primary); margin-bottom: 10px;">BELT</h5>
+                                <div id="belt-slots" class="slot-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
                             </div>
                         </div>
 
                         <!-- Save/Cancel -->
-                        <div style="display: flex; gap: 10px; margin-top: 30px;">
-                            <button id="save-kit" class="kit-btn primary">Save Kit</button>
-                            <button id="cancel-edit" class="kit-btn">Cancel</button>
+                        <div style="display: flex; gap: 15px; justify-content: flex-end;">
+                            <button id="save-kit" class="kit-btn primary" style="padding: 12px 24px;">💾 Save Kit</button>
+                            <button id="cancel-edit" class="kit-btn" style="padding: 12px 24px;">✕ Cancel</button>
                         </div>
                     </div>
-                    <div id="no-kit-selected" style="${this.currentKit ? 'display:none' : 'display:block'}; text-align: center; padding: 50px;">
-                        <p>Select a kit or create a new one</p>
+                    <div id="no-kit-selected" style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                        <p>Select a kit from the left panel or create a new one.</p>
                     </div>
                 </div>
             </div>
 
             <!-- Give Kit Modal -->
             <div id="give-kit-modal" class="modal hidden">
-                <div class="modal-content">
-                    <h3>Give Kit</h3>
-                    <div class="form-group">
-                        <label>Kit:</label>
-                        <select id="give-kit-select" class="form-control"></select>
+                <div class="modal-content" style="max-width: 400px;">
+                    <h3 style="margin-bottom: 20px;">🎁 Give Kit</h3>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px;">Kit</label>
+                        <select id="give-kit-select" class="form-control" style="width:100%; padding: 8px;"></select>
                     </div>
-                    <div class="form-group">
-                        <label>Player:</label>
-                        <select id="give-player-select" class="form-control">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px;">Player</label>
+                        <select id="give-player-select" class="form-control" style="width:100%; padding: 8px;">
                             <option value="">Select player...</option>
                         </select>
-                        <input type="text" id="give-player-manual" class="form-control" placeholder="Or type player name" style="margin-top:5px;">
+                        <input type="text" id="give-player-manual" class="form-control" placeholder="Or type player name" style="width:100%; padding: 8px; margin-top: 8px;">
                     </div>
-                    <div class="modal-actions">
-                        <button id="execute-give" class="kit-btn primary">Give Kit</button>
+                    <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button id="execute-give" class="kit-btn primary">Give</button>
                         <button id="cancel-give" class="kit-btn">Cancel</button>
                     </div>
                 </div>
             </div>
 
-            <!-- View Kit Modal -->
+            <!-- View Kit Modal (simple alert-style) – kept for simplicity, but you can style it -->
             <div id="view-kit-modal" class="modal hidden">
                 <div class="modal-content">
                     <h3 id="view-kit-title"></h3>
@@ -171,50 +156,52 @@ class Kits {
         this.updateItemGallery();
     }
 
+    getCategoryOptions() {
+        const categories = ['Ammo','Weapons','Construction','Items','Resources','Attire','Tools','Medical','Food','Traps','Misc','Components','Electrical','Animals','Vehicles','Vehicle Parts','Seasonal'];
+        return categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
     renderKitList() {
-        const listDiv = document.getElementById('kits-list');
-        if (!listDiv) return;
+        const list = document.getElementById('kits-list');
+        if (!list) return;
         if (this.kits.length === 0) {
-            listDiv.innerHTML = '<p>No kits created.</p>';
+            list.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No kits created yet.</p>';
             return;
         }
-        let html = '';
-        this.kits.forEach(kit => {
-            html += `
-                <div class="kit-list-item" data-id="${kit.id}" style="padding: 10px; margin-bottom: 5px; background: var(--bg-tertiary); border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-                    <span><strong>${kit.name}</strong> <small>ID: ${kit.id}</small></span>
-                    <div style="display: flex; gap: 5px;">
-                        <button class="small-btn view-kit-btn" data-id="${kit.id}" title="View kit">👁️</button>
-                        <button class="small-btn give-kit-btn" data-id="${kit.id}" title="Give kit">🎁</button>
-                        <button class="small-btn delete-kit-btn" data-id="${kit.id}" title="Delete kit">🗑️</button>
-                    </div>
+        list.innerHTML = this.kits.map(kit => `
+            <div class="kit-item" data-id="${kit.id}" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s;">
+                <span style="font-weight: 600; color: var(--text-primary);">${kit.name}</span>
+                <div style="display: flex; gap: 8px;">
+                    <button class="small-btn view-kit" data-id="${kit.id}" style="background: var(--bg-secondary); border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;" title="View">👁️</button>
+                    <button class="small-btn give-kit" data-id="${kit.id}" style="background: var(--bg-secondary); border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;" title="Give">🎁</button>
+                    <button class="small-btn delete-kit" data-id="${kit.id}" style="background: var(--bg-secondary); border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;" title="Delete">🗑️</button>
                 </div>
-            `;
-        });
-        listDiv.innerHTML = html;
-        // Kit selection (click on the item itself, not the buttons)
-        listDiv.querySelectorAll('.kit-list-item').forEach(el => {
+            </div>
+        `).join('');
+
+        // Edit on click (excluding buttons)
+        list.querySelectorAll('.kit-item').forEach(el => {
             el.addEventListener('click', (e) => {
-                if (e.target.classList.contains('view-kit-btn') || e.target.classList.contains('give-kit-btn') || e.target.classList.contains('delete-kit-btn')) return;
+                if (e.target.classList.contains('small-btn')) return;
                 this.loadKit(el.dataset.id);
             });
         });
-        // View buttons
-        listDiv.querySelectorAll('.view-kit-btn').forEach(btn => {
+        // View
+        list.querySelectorAll('.view-kit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.viewKit(btn.dataset.id);
             });
         });
-        // Give buttons
-        listDiv.querySelectorAll('.give-kit-btn').forEach(btn => {
+        // Give
+        list.querySelectorAll('.give-kit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.openGiveModal(btn.dataset.id);
             });
         });
-        // Delete buttons
-        listDiv.querySelectorAll('.delete-kit-btn').forEach(btn => {
+        // Delete
+        list.querySelectorAll('.delete-kit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.deleteKit(btn.dataset.id);
@@ -222,11 +209,28 @@ class Kits {
         });
     }
 
+    viewKit(id) {
+        const kit = this.kits.find(k => k.id == id);
+        if (!kit) return;
+        let html = '<table style="width:100%; border-collapse: collapse;"><tr><th>Shortname</th><th>Amount</th><th>Container</th><th>Condition</th></tr>';
+        (kit.items || []).forEach(item => {
+            html += `<tr><td>${item.shortname}</td><td>${item.amount}</td><td>${item.container}</td><td>${item.condition}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('view-kit-title').innerText = kit.name;
+        document.getElementById('view-kit-items').innerHTML = html;
+        document.getElementById('view-kit-modal').classList.remove('hidden');
+        document.getElementById('close-view').onclick = () => {
+            document.getElementById('view-kit-modal').classList.add('hidden');
+        };
+    }
+
     deleteKit(id) {
         if (!confirm('Are you sure you want to delete this kit?')) return;
-        this.kits = this.kits.filter(k => k.id !== parseInt(id));
+        console.log('Deleting kit ID:', id);
+        this.kits = this.kits.filter(k => k.id != id);
         this.saveKits();
-        if (this.currentKit && this.currentKit.id === parseInt(id)) {
+        if (this.currentKit && this.currentKit.id == id) {
             this.currentKit = null;
             document.getElementById('kit-editor').style.display = 'none';
             document.getElementById('no-kit-selected').style.display = 'block';
@@ -235,30 +239,15 @@ class Kits {
         toast.info('Kit deleted');
     }
 
-    viewKit(id) {
-        const kit = this.kits.find(k => k.id === parseInt(id));
-        if (!kit) return;
-        let itemsHtml = '<table style="width:100%;"><tr><th>Shortname</th><th>Amount</th><th>Container</th><th>Condition</th></tr>';
-        (kit.items || []).forEach((item, idx) => {
-            itemsHtml += `<tr><td>${item.shortname}</td><td>${item.amount}</td><td>${item.container}</td><td>${item.condition}</td></tr>`;
-        });
-        itemsHtml += '</table>';
-        document.getElementById('view-kit-title').innerText = kit.name;
-        document.getElementById('view-kit-items').innerHTML = itemsHtml;
-        document.getElementById('view-kit-modal').classList.remove('hidden');
-    }
-
     loadKit(id) {
-        const kit = this.kits.find(k => k.id === parseInt(id));
+        const kit = this.kits.find(k => k.id == id);
         if (!kit) return;
-        this.currentKit = { ...kit, items: kit.items.map(item => ({ ...item })) }; // deep copy
+        this.currentKit = JSON.parse(JSON.stringify(kit)); // deep copy
         this.selectedSlot = null;
         document.getElementById('kit-editor').style.display = 'block';
         document.getElementById('no-kit-selected').style.display = 'none';
         document.getElementById('kit-name').value = this.currentKit.name || '';
-        document.getElementById('kit-auth-level').value = this.currentKit.auth_level !== undefined ? this.currentKit.auth_level : 0;
-        document.getElementById('item-category-filter').value = this.filterCategory;
-        document.getElementById('item-search').value = this.searchQuery;
+        document.getElementById('kit-auth-level').value = this.currentKit.auth_level || 0;
         this.renderEquipmentSlots(this.currentKit.items || []);
         this.updateItemGallery();
     }
@@ -268,53 +257,39 @@ class Kits {
         const main = document.getElementById('main-slots');
         const wear = document.getElementById('wear-slots');
         if (!belt || !main || !wear) return;
-        belt.innerHTML = '';
-        main.innerHTML = '';
-        wear.innerHTML = '';
+
+        [belt, main, wear].forEach(grid => grid.innerHTML = '');
 
         const createSlot = (container, index, item) => {
-            const slotDiv = document.createElement('div');
-            slotDiv.className = `slot ${item ? 'filled' : 'empty'}`;
-            slotDiv.dataset.container = container;
-            slotDiv.dataset.index = index;
-            slotDiv.style.width = '60px';
-            slotDiv.style.height = '60px';
-            slotDiv.style.background = '#333';
-            slotDiv.style.border = '2px solid #666';
-            slotDiv.style.display = 'flex';
-            slotDiv.style.flexDirection = 'column';
-            slotDiv.style.alignItems = 'center';
-            slotDiv.style.justifyContent = 'center';
-            slotDiv.style.borderRadius = '4px';
-            slotDiv.style.cursor = 'pointer';
-            slotDiv.style.padding = '2px';
-            slotDiv.style.fontSize = '10px';
+            const div = document.createElement('div');
+            div.style.width = '60px';
+            div.style.height = '60px';
+            div.style.background = 'var(--bg-tertiary)';
+            div.style.border = '2px solid var(--glass-border)';
+            div.style.borderRadius = '8px';
+            div.style.display = 'flex';
+            div.style.flexDirection = 'column';
+            div.style.alignItems = 'center';
+            div.style.justifyContent = 'center';
+            div.style.cursor = 'pointer';
+            div.style.transition = '0.2s';
+            div.dataset.container = container;
+            div.dataset.index = index;
             if (item) {
-                // Use a placeholder image; you could use a CDN like https://static.rustworkshop.xyz/icons/
                 const imgUrl = `https://static.rustworkshop.xyz/icons/${item.shortname.replace(/\./g, '-')}.png`;
-                slotDiv.innerHTML = `
-                    <img src="${imgUrl}" style="width: 30px; height: 30px; object-fit: contain;" 
-                         onerror="this.onerror=null; this.src='https://via.placeholder.com/30?text=?'">
-                    <span>${item.shortname}</span>
-                    <small>x${item.amount}</small>
+                div.innerHTML = `
+                    <img src="${imgUrl}" style="width: 30px; height: 30px; object-fit: contain;" onerror="this.onerror=null; this.src='https://via.placeholder.com/30?text=?'">
+                    <span style="font-size: 9px;">x${item.amount}</span>
                 `;
-                slotDiv.dataset.shortname = item.shortname;
-                slotDiv.dataset.amount = item.amount;
-                slotDiv.dataset.condition = item.condition;
+                div.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    this.removeItem(container, index);
+                });
             } else {
-                slotDiv.innerHTML = '&nbsp;';
+                div.innerHTML = '<span style="opacity:0.3;">□</span>';
             }
-            slotDiv.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.selectSlot(container, index);
-            });
-            slotDiv.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                if (item) {
-                    this.removeItemFromSlot(container, index);
-                }
-            });
-            return slotDiv;
+            div.addEventListener('click', () => this.selectSlot(container, index));
+            return div;
         };
 
         for (let i = 0; i < 6; i++) {
@@ -332,21 +307,17 @@ class Kits {
     }
 
     selectSlot(container, index) {
-        document.querySelectorAll('.slot').forEach(slot => {
-            slot.style.borderColor = '#666';
-        });
-        const selectedEl = document.querySelector(`[data-container="${container}"][data-index="${index}"]`);
-        if (selectedEl) {
-            selectedEl.style.borderColor = '#D4AF37';
+        document.querySelectorAll('.slot-grid > div').forEach(div => div.style.borderColor = 'var(--glass-border)');
+        const sel = document.querySelector(`[data-container="${container}"][data-index="${index}"]`);
+        if (sel) {
+            sel.style.borderColor = 'var(--accent-primary)';
             this.selectedSlot = { container, index };
         }
     }
 
-    removeItemFromSlot(container, index) {
+    removeItem(container, index) {
         if (!this.currentKit) return;
-        this.currentKit.items = this.currentKit.items.filter(item => !(item.container === container && item.slot === index));
-        // Re-index items (server expects id to be sequential)
-        this.currentKit.items.forEach((item, idx) => { item.id = idx; });
+        this.currentKit.items = this.currentKit.items.filter(it => !(it.container === container && it.slot === index));
         this.renderEquipmentSlots(this.currentKit.items);
     }
 
@@ -370,14 +341,11 @@ class Kits {
         document.getElementById('cancel-give')?.addEventListener('click', () => {
             document.getElementById('give-kit-modal').classList.add('hidden');
         });
-        document.getElementById('close-view')?.addEventListener('click', () => {
-            document.getElementById('view-kit-modal').classList.add('hidden');
-        });
     }
 
     createNewKit() {
         const newKit = {
-            id: this.generateId(),
+            id: Date.now(),
             name: 'New Kit',
             items: [],
             auth_level: 0
@@ -388,18 +356,10 @@ class Kits {
         this.loadKit(newKit.id);
     }
 
-    generateId() {
-        return Math.floor(Date.now() / 1000);
-    }
-
     saveCurrentKit() {
         if (!this.currentKit) return;
         this.currentKit.name = document.getElementById('kit-name').value;
         this.currentKit.auth_level = parseInt(document.getElementById('kit-auth-level').value) || 0;
-        // Items are already in this.currentKit.items with proper ids
-        // Ensure ids are sequential (0..n-1)
-        this.currentKit.items.forEach((item, idx) => { item.id = idx; });
-        // Find original kit and replace
         const index = this.kits.findIndex(k => k.id === this.currentKit.id);
         if (index !== -1) this.kits[index] = this.currentKit;
         this.saveKits();
@@ -418,9 +378,9 @@ class Kits {
         if (!this.currentKit) return;
         const newKit = {
             ...this.currentKit,
-            id: this.generateId(),
+            id: Date.now(),
             name: this.currentKit.name + ' (Copy)',
-            items: this.currentKit.items.map(item => ({ ...item }))
+            items: this.currentKit.items.map(i => ({ ...i }))
         };
         this.kits.push(newKit);
         this.saveKits();
@@ -431,9 +391,9 @@ class Kits {
     resetKit() {
         if (!this.currentKit) return;
         if (confirm('Reset kit to last saved version?')) {
-            const original = this.kits.find(k => k.id === this.currentKit.id);
-            if (original) {
-                this.currentKit = { ...original, items: original.items.map(item => ({ ...item })) };
+            const orig = this.kits.find(k => k.id === this.currentKit.id);
+            if (orig) {
+                this.currentKit = JSON.parse(JSON.stringify(orig));
                 this.renderEquipmentSlots(this.currentKit.items);
                 document.getElementById('kit-name').value = this.currentKit.name;
                 document.getElementById('kit-auth-level').value = this.currentKit.auth_level || 0;
@@ -464,18 +424,12 @@ class Kits {
                 try {
                     const data = JSON.parse(event.target.result);
                     let importedKits = [];
-                    if (data.kits && Array.isArray(data.kits)) {
-                        importedKits = data.kits;
-                    } else if (Array.isArray(data)) {
-                        importedKits = data;
-                    } else {
-                        toast.error('Invalid format: expected array or object with kits array');
-                        return;
-                    }
+                    if (data.kits && Array.isArray(data.kits)) importedKits = data.kits;
+                    else if (Array.isArray(data)) importedKits = data;
+                    else { toast.error('Invalid format'); return; }
                     const existingIds = new Set(this.kits.map(k => k.id));
                     importedKits.forEach(kit => {
                         if (existingIds.has(kit.id)) {
-                            // Overwrite
                             const index = this.kits.findIndex(k => k.id === kit.id);
                             if (index !== -1) this.kits[index] = kit;
                         } else {
@@ -498,100 +452,87 @@ class Kits {
     updateItemGallery() {
         const gallery = document.getElementById('item-gallery');
         if (!gallery || !window.itemsDatabase) return;
-
         let items = window.itemsDatabase;
         if (this.filterCategory !== 'all') {
-            items = items.filter(item => item.category === this.filterCategory);
+            items = items.filter(i => i.category === this.filterCategory);
         }
         if (this.searchQuery) {
-            const query = this.searchQuery.toLowerCase();
-            items = items.filter(item => 
-                item.name.toLowerCase().includes(query) || 
-                item.shortname.toLowerCase().includes(query)
-            );
+            const q = this.searchQuery.toLowerCase();
+            items = items.filter(i => i.name.toLowerCase().includes(q) || i.shortname.toLowerCase().includes(q));
         }
-        items = items.slice(0, 200); // limit for performance
-
+        items = items.slice(0, 100);
         gallery.innerHTML = items.map(item => {
             const imgUrl = `https://static.rustworkshop.xyz/icons/${item.shortname.replace(/\./g, '-')}.png`;
             return `
-                <div class="gallery-item" data-shortname="${item.shortname}" style="padding: 5px; background: #2a2a2a; border-radius: 4px; cursor: pointer; text-align: center; border: 1px solid #444;">
-                    <img src="${imgUrl}" style="width: 40px; height: 40px; object-fit: contain;" 
-                         onerror="this.onerror=null; this.src='https://via.placeholder.com/40?text=?'">
-                    <div style="font-size: 10px;">${item.name}</div>
+                <div class="gallery-item" data-shortname="${item.shortname}" style="background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px; cursor: pointer; text-align: center; transition: 0.2s;">
+                    <img src="${imgUrl}" style="width: 40px; height: 40px; object-fit: contain;" onerror="this.onerror=null; this.src='https://via.placeholder.com/40?text=?'">
+                    <div style="font-size: 10px; margin-top: 4px; color: var(--text-primary);">${item.name}</div>
                 </div>
             `;
         }).join('');
-
         gallery.querySelectorAll('.gallery-item').forEach(el => {
-            el.addEventListener('click', () => this.addItemToSelectedSlot(el.dataset.shortname));
+            el.addEventListener('click', () => this.addItemToSlot(el.dataset.shortname));
         });
     }
 
-    addItemToSelectedSlot(shortname) {
-        if (!this.currentKit) {
-            toast.error('Select a kit first');
-            return;
-        }
-        if (!this.selectedSlot) {
-            toast.error('Select a slot first (click on an empty slot)');
-            return;
-        }
+    addItemToSlot(shortname) {
+        if (!this.currentKit) { toast.error('Select a kit first'); return; }
+        if (!this.selectedSlot) { toast.error('Select a slot first'); return; }
         const { container, index } = this.selectedSlot;
-        if (this.currentKit.items.find(item => item.container === container && item.slot === index)) {
+        if (this.currentKit.items.find(it => it.container === container && it.slot === index)) {
             toast.error('Slot already occupied');
             return;
         }
         const amount = prompt('Quantity:', '1');
         if (!amount) return;
         const condition = prompt('Condition (0-100):', '100');
-        const newItem = {
+        this.currentKit.items.push({
             id: this.currentKit.items.length,
             shortname,
             amount: parseInt(amount),
             container,
             slot: index,
             condition: parseInt(condition) || 100
-        };
-        this.currentKit.items.push(newItem);
+        });
         this.renderEquipmentSlots(this.currentKit.items);
         this.selectedSlot = null;
-        document.querySelectorAll('.slot').forEach(slot => slot.style.borderColor = '#666');
+        document.querySelectorAll('.slot-grid > div').forEach(div => div.style.borderColor = 'var(--glass-border)');
     }
 
     openGiveModal(kitId) {
         const select = document.getElementById('give-kit-select');
-        select.innerHTML = this.kits.map(k => 
-            `<option value="${k.id}" ${k.id === parseInt(kitId) ? 'selected' : ''}>${k.name}</option>`
-        ).join('');
-        
+        select.innerHTML = this.kits.map(k => `<option value="${k.id}">${k.name}</option>`).join('');
+        select.value = kitId;
+
         const playerSelect = document.getElementById('give-player-select');
         playerSelect.innerHTML = '<option value="">Select player...</option>';
         (AppState.players || []).forEach(p => {
-            const playerName = p.name ? String(p.name) : 'Unknown';
-            playerSelect.innerHTML += `<option value="${playerName}">${playerName}</option>`;
+            const name = p.name ? String(p.name) : 'Unknown';
+            playerSelect.innerHTML += `<option value="${name}">${name}</option>`;
         });
+
         document.getElementById('give-kit-modal').classList.remove('hidden');
     }
 
     async giveKit() {
         const kitId = parseInt(document.getElementById('give-kit-select').value);
-        const playerSelect = document.getElementById('give-player-select');
-        const playerManual = document.getElementById('give-player-manual').value.trim();
-        let target = playerSelect.value;
-        if (!target && playerManual) target = playerManual;
-        if (!target) {
-            toast.error('Enter or select a player');
-            return;
-        }
+        const target = document.getElementById('give-player-select').value || document.getElementById('give-player-manual').value.trim();
+        if (!target) { toast.error('Enter a player name'); return; }
+
         const kit = this.kits.find(k => k.id === kitId);
         if (!kit) return;
+
+        const command = `kit.give "${target}" "${kit.name}"`;
+        console.log('Executing command:', command);
+
         try {
-            await ConnectionManager.executeCommand(`kit.give "${target}" "${kit.name}"`);
+            const result = await ConnectionManager.executeCommand(command);
+            console.log('Command result:', result);
             toast.success(`Gave kit ${kit.name} to ${target}`);
             document.getElementById('give-kit-modal').classList.add('hidden');
             document.getElementById('give-player-manual').value = '';
         } catch (err) {
+            console.error('Give kit error:', err);
             toast.error(`Failed: ${err.message}`);
         }
     }
@@ -603,7 +544,7 @@ class Kits {
     }
 }
 
-// Initialize when tablet is ready
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     window.kits = new Kits();
 });
