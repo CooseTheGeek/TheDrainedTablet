@@ -1,6 +1,5 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Complete GPortal connector with Discord linking, server storage, command execution,
-// and global connection status integration (fixed).
+// Enhanced debugging for server list issue.
 
 class GPortalConnector {
     constructor() {
@@ -8,7 +7,7 @@ class GPortalConnector {
         this.discordLinked = localStorage.getItem('discord_linked') === 'true';
         this.discordId = localStorage.getItem('discord_id');
         this.servers = [];
-        this.serverIdentifier = 'main-server'; // matches the identifier used in the bridge
+        this.serverIdentifier = 'main-server';
         this.apiReady = false;
         this.init();
     }
@@ -28,7 +27,6 @@ class GPortalConnector {
         });
     }
 
-    // Update the header's connection status without touching AppState.connection
     updateHeaderStatus() {
         const statusEl = document.getElementById('connection-status');
         if (!statusEl) return;
@@ -139,7 +137,10 @@ class GPortalConnector {
             document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
             const refreshBtn = document.getElementById('refresh-servers-btn');
             if (refreshBtn) {
-                refreshBtn.addEventListener('click', () => this.loadServers());
+                refreshBtn.addEventListener('click', () => {
+                    console.log('Refresh button clicked');
+                    this.loadServers();
+                });
             }
             document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') this.sendCommand();
@@ -179,9 +180,22 @@ class GPortalConnector {
             if (data.success) {
                 this.logMessage('✅ Server added');
                 document.getElementById('server-name').value = ''; // clear name
-                // Wait a tiny bit for the database to commit, then refresh
-                setTimeout(() => this.loadServers(), 300);
                 toast.success('Server added successfully');
+
+                // Immediately add a temporary server to the list for instant feedback
+                const tempServer = {
+                    id: data.id || 'temp-' + Date.now(),
+                    name,
+                    ip,
+                    port,
+                    server_id: serverId,
+                    region
+                };
+                this.servers.push(tempServer);
+                this.renderServers();
+
+                // Then fetch the real list from the bridge to ensure consistency
+                setTimeout(() => this.loadServers(), 500);
             } else {
                 this.logMessage(`❌ Failed: ${data.error}`);
                 toast.error(data.error || 'Failed to add server');
@@ -196,13 +210,14 @@ class GPortalConnector {
 
     async loadServers() {
         if (!this.discordId) return;
+        console.log('Loading servers for discordId:', this.discordId);
         try {
             const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`);
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
             }
             const servers = await res.json();
-            console.log('Loaded servers:', servers); // for debugging
+            console.log('Loaded servers:', servers);
             this.servers = servers;
             this.renderServers();
         } catch (err) {
