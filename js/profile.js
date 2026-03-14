@@ -1,5 +1,5 @@
 // profile.js – DRAINED TABLET ULTIMATE v7.0.0
-// User profile management, platform selection, ID card generation, and saved servers.
+// User profile with tabbed interface: ID Card, Customize ID Card, and Settings
 
 class Profile {
     constructor() {
@@ -41,76 +41,87 @@ class Profile {
                     <h2>👤 USER PROFILE</h2>
                 </div>
 
-                <div class="profile-grid">
-                    <!-- Left Column: Avatar & Basic Info -->
-                    <div class="profile-left">
-                        <div class="avatar-section">
-                            <div class="avatar-preview" id="avatar-preview">
-                                ${this.getAvatarHTML()}
+                <div class="profile-tabs">
+                    <button class="profile-tab active" data-tab="idcard">🪪 ID Card</button>
+                    <button class="profile-tab" data-tab="customize">🎨 Customize ID Card</button>
+                    <button class="profile-tab" data-tab="settings">⚙️ Settings</button>
+                </div>
+
+                <!-- ID Card Tab -->
+                <div id="profile-idcard" class="profile-tab-content active">
+                    <div class="id-card" id="id-card">
+                        <div class="id-card-inner">
+                            <div class="id-card-header">
+                                <span class="id-card-title">THE DRAINED LAND'S</span>
+                                <span class="id-card-badge">OFFICIAL</span>
                             </div>
+                            <div class="id-card-avatar" id="id-card-avatar">${this.getAvatarHTML()}</div>
+                            <div class="id-card-name" id="id-card-name">${AppState.user.username || 'SURVIVOR'}</div>
+                            <div class="id-card-role" id="id-card-role">${AppState.user.role ? AppState.user.role.toUpperCase() : 'PLAYER'}</div>
+                            <div class="id-card-platform" id="id-card-platform">${AppState.user.platform ? this.getPlatformDisplay(AppState.user.platform) : ''}</div>
+                            <div class="id-card-id" id="id-card-id">${AppState.user.platformId || ''}</div>
+                            <div class="id-card-footer">
+                                <span>⚡ 3UNKS ⚡</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="id-card-controls">
+                        <button id="download-id" class="profile-btn">⬇️ DOWNLOAD</button>
+                    </div>
+                </div>
+
+                <!-- Customize ID Card Tab -->
+                <div id="profile-customize" class="profile-tab-content">
+                    <div class="customize-card">
+                        <h3>Customize Your ID Card</h3>
+                        <div class="form-group">
+                            <label>Avatar</label>
                             <div class="avatar-controls">
                                 <button id="upload-avatar" class="profile-btn">📤 UPLOAD</button>
                                 <button id="remove-avatar" class="profile-btn">🗑️ REMOVE</button>
                             </div>
                         </div>
-
-                        <div class="basic-info">
-                            <div class="info-row">
-                                <span>Username:</span>
-                                <span id="profile-username">${AppState.user.username || 'Not logged in'}</span>
-                            </div>
-                            <div class="info-row">
-                                <span>Role:</span>
-                                <span id="profile-role">${AppState.user.role || 'user'}</span>
-                            </div>
-                            <div class="info-row">
-                                <span>Platform:</span>
-                                <select id="profile-platform">
-                                    <option value="">Select Platform</option>
-                                    <option value="ps5" ${AppState.user.platform === 'ps5' ? 'selected' : ''}>PlayStation 5</option>
-                                    <option value="ps4" ${AppState.user.platform === 'ps4' ? 'selected' : ''}>PlayStation 4</option>
-                                    <option value="xbox" ${AppState.user.platform === 'xbox' ? 'selected' : ''}>Xbox Series X|S</option>
-                                    <option value="xboxone" ${AppState.user.platform === 'xboxone' ? 'selected' : ''}>Xbox One</option>
-                                </select>
-                            </div>
-                            <div class="info-row">
-                                <span>Platform ID:</span>
-                                <input type="text" id="profile-platform-id" placeholder="PSN ID or Xbox Gamertag" value="${AppState.user.platformId || ''}">
-                            </div>
-                            <button id="save-profile" class="profile-btn primary">💾 SAVE PROFILE</button>
+                        <div class="form-group">
+                            <label>Platform</label>
+                            <select id="profile-platform">
+                                <option value="">Select Platform</option>
+                                <option value="ps5" ${AppState.user.platform === 'ps5' ? 'selected' : ''}>PlayStation 5</option>
+                                <option value="ps4" ${AppState.user.platform === 'ps4' ? 'selected' : ''}>PlayStation 4</option>
+                                <option value="xbox" ${AppState.user.platform === 'xbox' ? 'selected' : ''}>Xbox Series X|S</option>
+                                <option value="xboxone" ${AppState.user.platform === 'xboxone' ? 'selected' : ''}>Xbox One</option>
+                            </select>
                         </div>
+                        <div class="form-group">
+                            <label>Platform ID (PSN ID or Xbox Gamertag)</label>
+                            <input type="text" id="profile-platform-id" value="${AppState.user.platformId || ''}">
+                        </div>
+                        <button id="save-profile" class="profile-btn primary">💾 SAVE CHANGES</button>
                     </div>
+                </div>
 
-                    <!-- Right Column: ID Card -->
-                    <div class="profile-right">
-                        <h3>MY ID CARD</h3>
-                        <div class="id-card" id="id-card">
-                            <div class="id-card-inner">
-                                <div class="id-card-header">
-                                    <span class="id-card-title">THE DRAINED LAND'S</span>
-                                    <span class="id-card-badge">OFFICIAL</span>
-                                </div>
-                                <div class="id-card-avatar" id="id-card-avatar">${this.getAvatarHTML()}</div>
-                                <div class="id-card-name" id="id-card-name">${AppState.user.username || 'SURVIVOR'}</div>
-                                <div class="id-card-role" id="id-card-role">${AppState.user.role ? AppState.user.role.toUpperCase() : 'PLAYER'}</div>
-                                <div class="id-card-platform" id="id-card-platform">${AppState.user.platform ? this.getPlatformDisplay(AppState.user.platform) : ''}</div>
-                                <div class="id-card-id" id="id-card-id">${AppState.user.platformId || ''}</div>
-                                <div class="id-card-footer">
-                                    <span>⚡ 3UNKS ⚡</span>
-                                </div>
-                            </div>
+                <!-- Settings Tab -->
+                <div id="profile-settings" class="profile-tab-content">
+                    <div class="profile-settings">
+                        <h3>Connected Accounts</h3>
+                        <div class="connection-buttons">
+                            <button id="connect-discord" class="connection-btn ${localStorage.getItem('discord_linked') === 'true' ? 'linked' : ''}">
+                                <span>🔗</span> Discord ${localStorage.getItem('discord_linked') === 'true' ? '(Linked)' : ''}
+                            </button>
+                            <button id="connect-gportal" class="connection-btn">
+                                <span>🔌</span> GPortal
+                            </button>
                         </div>
-                        <div class="id-card-controls">
-                            <button id="download-id" class="profile-btn">⬇️ DOWNLOAD</button>
-                            <button id="customize-id" class="profile-btn">🎨 CUSTOMIZE</button>
-                        </div>
-                    </div>
 
-                    <!-- Saved Servers Section -->
-                    <div class="profile-servers">
-                        <h3>📋 SAVED SERVERS</h3>
+                        <h3>Saved Servers</h3>
                         <div id="servers-list" class="servers-list"></div>
                         <button id="add-server" class="profile-btn">➕ ADD SERVER</button>
+
+                        <h3>Account Actions</h3>
+                        <div class="connection-buttons">
+                            <button id="change-password" class="connection-btn">🔐 Change Password</button>
+                            <button id="enable-2fa" class="connection-btn">🔒 Enable 2FA</button>
+                            <button id="logout-all" class="connection-btn warning">🚪 Logout All Devices</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -118,16 +129,35 @@ class Profile {
     }
 
     attachEvents() {
+        // Tab switching
+        document.querySelectorAll('.profile-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                document.getElementById(`profile-${e.target.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // Avatar controls
         document.getElementById('upload-avatar')?.addEventListener('click', () => this.uploadAvatar());
         document.getElementById('remove-avatar')?.addEventListener('click', () => this.removeAvatar());
+
+        // Save profile changes
         document.getElementById('save-profile')?.addEventListener('click', () => this.saveProfile());
+
+        // ID card download
         document.getElementById('download-id')?.addEventListener('click', () => this.downloadID());
-        document.getElementById('customize-id')?.addEventListener('click', () => this.customizeID());
+
+        // Server management
         document.getElementById('add-server')?.addEventListener('click', () => this.addServer());
 
-        // Live preview when platform/ID changes
-        document.getElementById('profile-platform')?.addEventListener('change', () => this.updateIDPreview());
-        document.getElementById('profile-platform-id')?.addEventListener('input', () => this.updateIDPreview());
+        // Connection buttons
+        document.getElementById('connect-discord')?.addEventListener('click', () => this.connectDiscord());
+        document.getElementById('connect-gportal')?.addEventListener('click', () => this.connectGPortal());
+        document.getElementById('change-password')?.addEventListener('click', () => this.changePassword());
+        document.getElementById('enable-2fa')?.addEventListener('click', () => this.enable2FA());
+        document.getElementById('logout-all')?.addEventListener('click', () => this.logoutAll());
 
         // Delegate for server actions
         document.addEventListener('click', (e) => {
@@ -172,7 +202,7 @@ class Profile {
                 AppState.user.avatar = event.target.result;
                 localStorage.setItem('tdl_avatar', event.target.result);
                 this.updateIDPreview();
-                document.getElementById('avatar-preview').innerHTML = this.getAvatarHTML();
+                document.getElementById('id-card-avatar').innerHTML = this.getAvatarHTML();
             };
             reader.readAsDataURL(file);
         };
@@ -183,7 +213,7 @@ class Profile {
         AppState.user.avatar = null;
         localStorage.removeItem('tdl_avatar');
         this.updateIDPreview();
-        document.getElementById('avatar-preview').innerHTML = this.getAvatarHTML();
+        document.getElementById('id-card-avatar').innerHTML = this.getAvatarHTML();
     }
 
     saveProfile() {
@@ -202,13 +232,12 @@ class Profile {
     }
 
     updateIDPreview() {
-        const platform = document.getElementById('profile-platform').value;
-        const platformId = document.getElementById('profile-platform-id').value.trim();
+        const platform = AppState.user.platform;
+        const platformId = AppState.user.platformId;
         const username = AppState.user.username || 'SURVIVOR';
         const role = AppState.user.role || 'user';
-        const avatarHTML = this.getAvatarHTML();
 
-        document.getElementById('id-card-avatar').innerHTML = avatarHTML;
+        document.getElementById('id-card-avatar').innerHTML = this.getAvatarHTML();
         document.getElementById('id-card-name').innerText = username;
         document.getElementById('id-card-role').innerText = role.toUpperCase();
         document.getElementById('id-card-platform').innerText = platform ? this.getPlatformDisplay(platform) : '';
@@ -218,10 +247,6 @@ class Profile {
     downloadID() {
         // Simple screenshot using html2canvas? For now, just a placeholder.
         toast.info('ID card download feature coming soon');
-    }
-
-    customizeID() {
-        toast.info('ID card customization coming soon');
     }
 
     renderServers() {
@@ -274,10 +299,10 @@ class Profile {
     loadServer(id) {
         const server = this.savedServers.find(s => s.id === id);
         if (!server) return;
-        // Fill in the connection fields in the profile tab (or switch to connect)
+        // Fill in the connection fields in the GPortal tab
         const ipField = document.getElementById('server-ip');
-        const portField = document.getElementById('rcon-port');
-        const passField = document.getElementById('rcon-pass');
+        const portField = document.getElementById('server-port');
+        const passField = document.getElementById('server-password');
         if (ipField) ipField.value = server.ip;
         if (portField) portField.value = server.port;
         if (passField) passField.value = server.password;
@@ -292,16 +317,54 @@ class Profile {
         toast.info('Server deleted');
     }
 
+    connectDiscord() {
+        window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
+    }
+
+    connectGPortal() {
+        // Switch to GPortal tab and maybe auto-fill?
+        window.home?.switchToTab('gportal');
+        toast.info('Please connect your Discord first in the GPortal tab');
+    }
+
+    changePassword() {
+        toast.info('Password change feature coming soon');
+    }
+
+    enable2FA() {
+        if (!window.userManagement) {
+            toast.error('User management not available');
+            return;
+        }
+        window.userManagement.enableTotp(AppState.user.username);
+    }
+
+    logoutAll() {
+        if (!confirm('This will log you out of all devices. Continue?')) return;
+        // Clear session and reload
+        localStorage.removeItem('tdl_session');
+        location.reload();
+    }
+
     refresh() {
         this.renderServers();
         this.populateUserInfo();
+        // Update Discord button status
+        const discordBtn = document.getElementById('connect-discord');
+        if (discordBtn) {
+            if (localStorage.getItem('discord_linked') === 'true') {
+                discordBtn.classList.add('linked');
+                discordBtn.innerHTML = '<span>🔗</span> Discord (Linked)';
+            } else {
+                discordBtn.classList.remove('linked');
+                discordBtn.innerHTML = '<span>🔗</span> Discord';
+            }
+        }
     }
 
     populateUserInfo() {
-        const uname = document.getElementById('profile-username');
-        if (uname) uname.innerText = AppState.user.username || 'Not logged in';
-        const role = document.getElementById('profile-role');
-        if (role) role.innerText = AppState.user.role || 'user';
+        // This is handled by updateIDPreview on save, but we can call it on refresh
+        this.updateIDPreview();
     }
 }
 
