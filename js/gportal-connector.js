@@ -7,7 +7,7 @@ class GPortalConnector {
         this.access = window.accessControl;
         this.bridgeUrl = AppState.connection.bridgeUrl;
         this.discordLinked = localStorage.getItem('discord_linked') === 'true';
-        this.discordId = localStorage.getItem('discord_id'); // we'll store after OAuth
+        this.discordId = localStorage.getItem('discord_id');
         this.servers = [];
         this.init();
     }
@@ -184,7 +184,7 @@ class GPortalConnector {
             });
         });
 
-        // Delete buttons (optional)
+        // Delete buttons
         container.querySelectorAll('.delete-server').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
@@ -199,22 +199,21 @@ class GPortalConnector {
     checkDiscordReturn() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('discord') === 'linked') {
-            localStorage.setItem('discord_linked', 'true');
-            // In a real implementation, we'd also get the Discord ID from the bridge
-            // For now, we'll just set a dummy ID or fetch it from an endpoint
-            this.discordLinked = true;
-            // Optionally, call an endpoint to get the user's Discord ID
-            this.fetchDiscordId();
-            toast.success('Discord linked successfully!');
-            window.history.replaceState({}, '', window.location.pathname);
-            this.refresh();
+            const discordId = urlParams.get('id');
+            if (discordId) {
+                localStorage.setItem('discord_linked', 'true');
+                localStorage.setItem('discord_id', discordId);
+                this.discordLinked = true;
+                this.discordId = discordId;
+                toast.success('Discord linked successfully!');
+                // Remove query params
+                window.history.replaceState({}, '', window.location.pathname);
+                this.refresh();
+                this.loadServers();
+            } else {
+                toast.error('Discord linking failed: no ID received');
+            }
         }
-    }
-
-    async fetchDiscordId() {
-        // This would need a new endpoint like /api/user/me that returns the current user's info
-        // For now, we'll skip and just rely on the linked flag.
-        // In a real app, you'd store the Discord ID in localStorage after OAuth.
     }
 
     logMessage(msg) {
