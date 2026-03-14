@@ -1,10 +1,7 @@
-// players.js – DRAINED TABLET ULTIMATE v7.0.0
-// Player management: list, search, detail view, actions.
-// NO MOCK DATA – uses real players from AppState.players.
+// players.js – DRAINED TABLET ULTIMATE v7.0.0 (fixed toast usage)
 
 class Players {
     constructor() {
-        this.tablet = window.drainedTablet;
         this.cmd = window.serverCommands;
         this.access = window.accessControl;
         this.selectedPlayer = null;
@@ -16,9 +13,7 @@ class Players {
     init() {
         this.createHTML();
         this.attachEvents();
-        // Update player list when AppState changes
         const unsubscribe = ConnectionManager.subscribe(() => this.renderList());
-        // Listen for tab changes
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'players') {
                 this.refresh();
@@ -107,8 +102,8 @@ class Players {
                     <td>${p.playtime || 'N/A'}</td>
                     <td>
                         <button class="small-btn view-player" data-name="${p.name}">👁️</button>
-                        ${this.access.hasRole('master') ? `<button class="small-btn kick-player" data-name="${p.name}">👢</button>` : ''}
-                        ${this.access.hasRole('master') ? `<button class="small-btn ban-player" data-name="${p.name}">🔨</button>` : ''}
+                        ${this.access.hasRole('owner') ? `<button class="small-btn kick-player" data-name="${p.name}">👢</button>` : ''}
+                        ${this.access.hasRole('owner') ? `<button class="small-btn ban-player" data-name="${p.name}">🔨</button>` : ''}
                     </td>
                 </tr>
             `;
@@ -135,14 +130,13 @@ class Players {
         const panel = document.getElementById('player-detail-panel');
         document.getElementById('detail-name').innerText = player.name;
 
-        // Fetch additional info (playtime, kills, etc.) – could use RCON commands
         let details = `
             <div class="detail-row"><strong>Status:</strong> ${player.online ? 'Online' : 'Offline'}</div>
             <div class="detail-row"><strong>Position:</strong> ${player.position ? `(${player.position.x}, ${player.position.y}, ${player.position.z})` : 'Unknown'}</div>
             <div class="detail-row"><strong>Playtime:</strong> ${player.playtime || 'N/A'}</div>
         `;
 
-        if (this.access.hasRole('master')) {
+        if (this.access.hasRole('owner')) {
             details += `
                 <div class="action-buttons">
                     <button id="detail-kick" class="small-btn">Kick</button>
@@ -157,7 +151,7 @@ class Players {
 
         document.getElementById('detail-content').innerHTML = details;
 
-        if (this.access.hasRole('master')) {
+        if (this.access.hasRole('owner')) {
             document.getElementById('detail-kick')?.addEventListener('click', () => this.kickPlayer(player.name));
             document.getElementById('detail-ban')?.addEventListener('click', () => this.banPlayer(player.name));
             document.getElementById('detail-mute')?.addEventListener('click', () => this.mutePlayer(player.name));
@@ -174,9 +168,9 @@ class Players {
         if (!reason) return;
         try {
             await this.cmd.kick(name, reason);
-            this.tablet.showToast(`Kicked ${name}`, 'warning');
+            toast.warning(`Kicked ${name}`);
         } catch (err) {
-            this.tablet.showError(err.message);
+            toast.error(err.message);
         }
     }
 
@@ -185,9 +179,9 @@ class Players {
         if (!reason) return;
         try {
             await this.cmd.ban(name, reason);
-            this.tablet.showToast(`Banned ${name}`, 'error');
+            toast.error(`Banned ${name}`);
         } catch (err) {
-            this.tablet.showError(err.message);
+            toast.error(err.message);
         }
     }
 
@@ -196,32 +190,31 @@ class Players {
         if (!minutes) return;
         try {
             await this.cmd.mute(name, parseInt(minutes));
-            this.tablet.showToast(`Muted ${name} for ${minutes} minutes`, 'info');
+            toast.info(`Muted ${name} for ${minutes} minutes`);
         } catch (err) {
-            this.tablet.showError(err.message);
+            toast.error(err.message);
         }
     }
 
     async teleportTo(name) {
         try {
             await this.cmd.teleport(name);
-            this.tablet.showToast(`Teleported to ${name}`, 'success');
+            toast.success(`Teleported to ${name}`);
         } catch (err) {
-            this.tablet.showError(err.message);
+            toast.error(err.message);
         }
     }
 
     async bringPlayer(name) {
         try {
             await this.cmd.teleport2me(name);
-            this.tablet.showToast(`Brought ${name} to you`, 'success');
+            toast.success(`Brought ${name} to you`);
         } catch (err) {
-            this.tablet.showError(err.message);
+            toast.error(err.message);
         }
     }
 
     viewInventory(name) {
-        // Switch to inventory viewer tab and load player
         window.home?.switchToTab('inventoryViewer');
         setTimeout(() => {
             const invViewer = window.inventoryViewer;
@@ -233,7 +226,7 @@ class Players {
 
     refresh() {
         this.renderList();
-        this.tablet.showToast('Player list refreshed', 'success');
+        toast.success('Player list refreshed');
     }
 }
 
