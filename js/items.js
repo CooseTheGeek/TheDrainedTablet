@@ -1,5 +1,6 @@
 // items.js – DRAINED TABLET ULTIMATE v7.0.0
 // Complete item database for Rust Console Edition – all 553+ items.
+// Modern UI with search, categories, and quick actions.
 
 class Items {
     constructor() {
@@ -8,6 +9,8 @@ class Items {
         this.access = window.accessControl;
         this.items = this.loadAllItems();
         this.filtered = this.items;
+        this.currentCategory = 'all';
+        this.searchQuery = '';
         this.init();
     }
 
@@ -669,56 +672,105 @@ class Items {
         }
 
         tab.innerHTML = `
-            <div class="items-container">
-                <div class="items-header">
-                    <h2>📦 ITEMS DATABASE</h2>
-                    <button id="items-refresh" class="items-btn">🔄 REFRESH</button>
+            <div class="items-container" style="padding: 1rem;">
+                <div class="items-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="color: var(--accent-primary);">📦 Item List</h2>
+                    <button id="items-refresh" class="items-btn" style="background: var(--bg-tertiary); padding: 0.5rem 1rem; border-radius: 8px;">🔄 REFRESH</button>
                 </div>
-                <div class="items-controls">
-                    <input type="text" id="items-search" placeholder="Search items...">
-                    <select id="items-category">
-                        <option value="all">All Categories</option>
-                        <option value="Ammo">Ammo</option>
-                        <option value="Weapons">Weapons</option>
-                        <option value="Construction">Construction</option>
-                        <option value="Items">Items</option>
-                        <option value="Resources">Resources</option>
-                        <option value="Attire">Attire</option>
-                        <option value="Tools">Tools</option>
-                        <option value="Medical">Medical</option>
-                        <option value="Food">Food</option>
-                        <option value="Traps">Traps</option>
-                        <option value="Misc">Misc</option>
-                        <option value="Components">Components</option>
-                        <option value="Electrical">Electrical</option>
-                        <option value="Animals">Animals</option>
-                        <option value="Vehicles">Vehicles</option>
-                        <option value="Vehicle Parts">Vehicle Parts</option>
-                        <option value="Seasonal">Seasonal</option>
-                    </select>
+
+                <!-- Search and Categories -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <input type="text" id="items-search" placeholder="SEARCH" style="flex: 2; min-width: 200px; padding: 0.8rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 30px;">
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="items-cat-btn active" data-cat="all">All</button>
+                        <button class="items-cat-btn" data-cat="ammo">Ammunition</button>
+                        <button class="items-cat-btn" data-cat="weapons">Weapons</button>
+                        <button class="items-cat-btn" data-cat="construction">Construction</button>
+                        <button class="items-cat-btn" data-cat="attire">Armor</button>
+                        <button class="items-cat-btn" data-cat="medical">Medical</button>
+                        <button class="items-cat-btn" data-cat="resources">Resources</button>
+                        <button class="items-cat-btn" data-cat="tools">Tools</button>
+                        <button class="items-cat-btn" data-cat="traps">Traps</button>
+                        <button class="items-cat-btn" data-cat="electrical">Electrical</button>
+                        <button class="items-cat-btn" data-cat="vehicles">Vehicles</button>
+                    </div>
                 </div>
-                <div class="items-list" id="items-list">
-                    <div class="loading">Loading items...</div>
+
+                <!-- Item List -->
+                <div id="items-list" class="items-list" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1rem; max-height: 600px; overflow-y: auto;">
+                    <!-- Will be populated by JS -->
                 </div>
             </div>
         `;
+
+        // Add category button styles dynamically (or include in global.css)
+        const style = document.createElement('style');
+        style.textContent = `
+            .items-cat-btn {
+                padding: 0.5rem 1.2rem;
+                background: var(--bg-tertiary);
+                border: 1px solid var(--glass-border);
+                border-radius: 30px;
+                color: var(--text-secondary);
+                cursor: pointer;
+                transition: all 0.2s;
+                font-size: 0.9rem;
+            }
+            .items-cat-btn.active {
+                background: var(--accent-primary);
+                color: #000;
+                border-color: var(--accent-primary);
+            }
+            .items-cat-btn:hover {
+                background: var(--accent-primary);
+                color: #000;
+            }
+        `;
+        document.head.appendChild(style);
 
         this.renderItems();
     }
 
     attachEvents() {
         document.getElementById('items-refresh')?.addEventListener('click', () => this.refresh());
-        document.getElementById('items-search')?.addEventListener('input', () => this.filterItems());
-        document.getElementById('items-category')?.addEventListener('change', () => this.filterItems());
+        document.getElementById('items-search')?.addEventListener('input', (e) => {
+            this.searchQuery = e.target.value.toLowerCase();
+            this.filterItems();
+        });
+
+        document.querySelectorAll('.items-cat-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.items-cat-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentCategory = e.target.dataset.cat;
+                this.filterItems();
+            });
+        });
     }
 
     filterItems() {
-        const search = document.getElementById('items-search').value.toLowerCase();
-        const category = document.getElementById('items-category').value;
-
         this.filtered = this.items.filter(item => {
-            if (category !== 'all' && item.category !== category) return false;
-            if (search && !item.name.toLowerCase().includes(search) && !item.shortname.toLowerCase().includes(search)) return false;
+            // Category filter
+            if (this.currentCategory !== 'all') {
+                const catMap = {
+                    ammo: 'Ammo',
+                    weapons: 'Weapons',
+                    construction: 'Construction',
+                    attire: 'Attire',
+                    medical: 'Medical',
+                    resources: 'Resources',
+                    tools: 'Tools',
+                    traps: 'Traps',
+                    electrical: 'Electrical',
+                    vehicles: 'Vehicles'
+                };
+                if (item.category !== catMap[this.currentCategory]) return false;
+            }
+            // Search filter
+            if (this.searchQuery) {
+                return item.name.toLowerCase().includes(this.searchQuery) ||
+                       item.shortname.toLowerCase().includes(this.searchQuery);
+            }
             return true;
         });
 
@@ -730,27 +782,32 @@ class Items {
         if (!listDiv) return;
 
         if (this.filtered.length === 0) {
-            listDiv.innerHTML = '<div class="no-items">No items found</div>';
+            listDiv.innerHTML = '<div class="no-items" style="text-align: center; padding: 2rem; color: var(--text-secondary);">No items found</div>';
             return;
         }
 
-        let html = '<table class="items-table"><tr><th>Name</th><th>Shortname</th><th>Category</th><th>Actions</th></tr>';
-        this.filtered.slice(0, 200).forEach(item => {
+        let html = '';
+        this.filtered.slice(0, 500).forEach(item => {
             html += `
-                <tr>
-                    <td>${item.name}</td>
-                    <td><code>${item.shortname}</code></td>
-                    <td>${item.category}</td>
-                    <td>
+                <div class="item-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-bottom: 1px solid var(--glass-border); transition: background 0.2s;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <img src="https://static.rustworkshop.xyz/icons/${item.shortname.replace(/\./g, '-')}.png" style="width: 30px; height: 30px; object-fit: contain;" onerror="this.onerror=null; this.src='https://via.placeholder.com/30?text=?'">
+                        <div>
+                            <div style="font-weight: 500;">${item.name}</div>
+                            <code style="font-size: 0.8rem; color: var(--text-secondary);">${item.shortname}</code>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
                         <button class="small-btn give-item" data-shortname="${item.shortname}">Give</button>
                         <button class="small-btn spawn-item" data-shortname="${item.shortname}">Spawn</button>
-                    </td>
-                </tr>
+                    </div>
+                </div>
             `;
         });
-        html += '</table>';
+
         listDiv.innerHTML = html;
 
+        // Attach event listeners
         listDiv.querySelectorAll('.give-item').forEach(btn => {
             btn.addEventListener('click', (e) => this.giveItem(e.target.dataset.shortname));
         });
