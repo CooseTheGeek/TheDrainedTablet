@@ -41,7 +41,6 @@ class PlayerHub {
     }
 
     updateFromAppState() {
-        // Use real players from AppState
         const onlinePlayers = AppState.players.map(p => ({
             name: p.name,
             joinTime: p.joinTime || 'Just now',
@@ -121,7 +120,6 @@ class PlayerHub {
     attachEvents() {
         document.getElementById('hub-refresh')?.addEventListener('click', () => this.refresh());
         document.getElementById('hub-search')?.addEventListener('input', (e) => this.search(e.target.value));
-        // Delegate for player actions
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('view-player')) {
                 const player = e.target.dataset.player;
@@ -240,7 +238,7 @@ class PlayerHub {
         const joinedTodayEl = document.getElementById('joined-today');
         if (joinedTodayEl) joinedTodayEl.innerText = this.players.recent.length;
         const avgEl = document.getElementById('avg-playtime');
-        if (avgEl) avgEl.innerText = '12h'; // placeholder
+        if (avgEl) avgEl.innerText = '12h';
     }
 
     search(query) {
@@ -303,7 +301,6 @@ class PlayerHub {
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.playerHub = new PlayerHub();
 });

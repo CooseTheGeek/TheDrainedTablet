@@ -1,6 +1,6 @@
 // profile.js – DRAINED TABLET ULTIMATE v7.0.0
 // User profile with tabbed interface: ID Card, Customize ID Card, and Settings
-// Enhanced with avatar cropping using Cropper.js and live preview
+// Enhanced with avatar cropping using Cropper.js, live preview, and persistent storage.
 
 class Profile {
     constructor() {
@@ -22,7 +22,35 @@ class Profile {
         localStorage.setItem('tdl_saved_servers', JSON.stringify(this.savedServers));
     }
 
+    // Load profile data from localStorage (per user)
+    loadProfileData() {
+        const username = AppState.user?.username || 'default';
+        const saved = localStorage.getItem(`tdl_profile_${username}`);
+        if (saved) {
+            return JSON.parse(saved);
+        }
+        return {
+            expires: '05/24/2024',
+            portalId: '#523489',
+            region: 'North America',
+            serverName: 'Geek\'s Survival Base',
+            logoText: 'GEEK BASE',
+            discordId: 'Geek#1234',
+            discordConnected: true,
+            tagline: 'NEW GEN | US',
+            platform: AppState.user?.platform || '',
+            platformId: AppState.user?.platformId || ''
+        };
+    }
+
+    saveProfileData(data) {
+        const username = AppState.user?.username || 'default';
+        localStorage.setItem(`tdl_profile_${username}`, JSON.stringify(data));
+        // Also sync to bridge if needed (future)
+    }
+
     init() {
+        this.profileData = this.loadProfileData();
         this.createHTML();
         this.attachEvents();
         this.populateUserInfo();
@@ -61,31 +89,31 @@ class Profile {
                                 ${this.getAvatarHTML('large')}
                             </div>
                             <div class="card-username" id="card-username">${AppState.user.username || 'SURVIVOR'}</div>
-                            <div class="card-tagline" id="card-tagline">NEW GEN | US</div>
+                            <div class="card-tagline" id="card-tagline">${this.profileData.tagline}</div>
                             <div class="card-metadata">
                                 <div class="metadata-item">
                                     <span class="metadata-label">Expires</span>
-                                    <span class="metadata-value" id="card-expires">05/24/2024</span>
+                                    <span class="metadata-value" id="card-expires">${this.profileData.expires}</span>
                                 </div>
                                 <div class="metadata-item">
                                     <span class="metadata-label">Portal ID</span>
-                                    <span class="metadata-value" id="card-portal-id">#523489</span>
+                                    <span class="metadata-value" id="card-portal-id">${this.profileData.portalId}</span>
                                 </div>
                                 <div class="metadata-item">
                                     <span class="metadata-label">Region</span>
-                                    <span class="metadata-value" id="card-region">North America</span>
+                                    <span class="metadata-value" id="card-region">${this.profileData.region}</span>
                                 </div>
                                 <div class="metadata-item">
                                     <span class="metadata-label">Name</span>
-                                    <span class="metadata-value" id="card-server-name">Geek's Survival Base</span>
+                                    <span class="metadata-value" id="card-server-name">${this.profileData.serverName}</span>
                                 </div>
                             </div>
                             <div class="card-logo-block">
-                                <span class="logo-text" id="card-logo">GEEK BASE</span>
+                                <span class="logo-text" id="card-logo">${this.profileData.logoText}</span>
                             </div>
                             <div class="card-discord">
-                                <span class="discord-id" id="card-discord-id">Geek#1234</span>
-                                <span class="discord-badge">DISCORD CONNECTED</span>
+                                <span class="discord-id" id="card-discord-id">${this.profileData.discordId}</span>
+                                <span class="discord-badge" id="card-discord-badge">${this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED'}</span>
                             </div>
                             <div class="card-actions">
                                 <button id="manage-server" class="btn-manage">MANAGE SERVER</button>
@@ -120,43 +148,43 @@ class Profile {
                                 </div>
                                 <div class="form-group">
                                     <label>Tagline</label>
-                                    <input type="text" id="edit-tagline" value="NEW GEN | US">
+                                    <input type="text" id="edit-tagline" value="${this.profileData.tagline}">
                                 </div>
                             </div>
                             <div class="form-section">
                                 <h3>Server Metadata</h3>
                                 <div class="form-group">
                                     <label>Expires</label>
-                                    <input type="text" id="edit-expires" value="05/24/2024">
+                                    <input type="text" id="edit-expires" value="${this.profileData.expires}">
                                 </div>
                                 <div class="form-group">
                                     <label>Portal ID</label>
-                                    <input type="text" id="edit-portal-id" value="#523489">
+                                    <input type="text" id="edit-portal-id" value="${this.profileData.portalId}">
                                 </div>
                                 <div class="form-group">
                                     <label>Region</label>
-                                    <input type="text" id="edit-region" value="North America">
+                                    <input type="text" id="edit-region" value="${this.profileData.region}">
                                 </div>
                                 <div class="form-group">
                                     <label>Server Name</label>
-                                    <input type="text" id="edit-server-name" value="Geek's Survival Base">
+                                    <input type="text" id="edit-server-name" value="${this.profileData.serverName}">
                                 </div>
                             </div>
                             <div class="form-section">
                                 <h3>Logo Text</h3>
                                 <div class="form-group">
-                                    <input type="text" id="edit-logo" value="GEEK BASE">
+                                    <input type="text" id="edit-logo" value="${this.profileData.logoText}">
                                 </div>
                             </div>
                             <div class="form-section">
                                 <h3>Discord</h3>
                                 <div class="form-group">
                                     <label>Discord ID</label>
-                                    <input type="text" id="edit-discord-id" value="Geek#1234">
+                                    <input type="text" id="edit-discord-id" value="${this.profileData.discordId}">
                                 </div>
                                 <div class="checkbox-item">
                                     <label>
-                                        <input type="checkbox" id="edit-discord-connected" checked> Discord Connected
+                                        <input type="checkbox" id="edit-discord-connected" ${this.profileData.discordConnected ? 'checked' : ''}> Discord Connected
                                     </label>
                                 </div>
                             </div>
@@ -176,31 +204,31 @@ class Profile {
                                     ${this.getAvatarHTML('preview')}
                                 </div>
                                 <div class="card-username" id="preview-username">${AppState.user.username || 'SURVIVOR'}</div>
-                                <div class="card-tagline" id="preview-tagline">NEW GEN | US</div>
+                                <div class="card-tagline" id="preview-tagline">${this.profileData.tagline}</div>
                                 <div class="card-metadata">
                                     <div class="metadata-item">
                                         <span class="metadata-label">Expires</span>
-                                        <span class="metadata-value" id="preview-expires">05/24/2024</span>
+                                        <span class="metadata-value" id="preview-expires">${this.profileData.expires}</span>
                                     </div>
                                     <div class="metadata-item">
                                         <span class="metadata-label">Portal ID</span>
-                                        <span class="metadata-value" id="preview-portal-id">#523489</span>
+                                        <span class="metadata-value" id="preview-portal-id">${this.profileData.portalId}</span>
                                     </div>
                                     <div class="metadata-item">
                                         <span class="metadata-label">Region</span>
-                                        <span class="metadata-value" id="preview-region">North America</span>
+                                        <span class="metadata-value" id="preview-region">${this.profileData.region}</span>
                                     </div>
                                     <div class="metadata-item">
                                         <span class="metadata-label">Name</span>
-                                        <span class="metadata-value" id="preview-server-name">Geek's Survival Base</span>
+                                        <span class="metadata-value" id="preview-server-name">${this.profileData.serverName}</span>
                                     </div>
                                 </div>
                                 <div class="card-logo-block">
-                                    <span class="logo-text" id="preview-logo">GEEK BASE</span>
+                                    <span class="logo-text" id="preview-logo">${this.profileData.logoText}</span>
                                 </div>
                                 <div class="card-discord">
-                                    <span class="discord-id" id="preview-discord-id">Geek#1234</span>
-                                    <span class="discord-badge" id="preview-discord-badge">DISCORD CONNECTED</span>
+                                    <span class="discord-id" id="preview-discord-id">${this.profileData.discordId}</span>
+                                    <span class="discord-badge" id="preview-discord-badge">${this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED'}</span>
                                 </div>
                             </div>
                         </div>
@@ -268,7 +296,6 @@ class Profile {
         // Avatar upload & crop
         document.getElementById('upload-avatar')?.addEventListener('click', () => this.uploadAndCropAvatar());
         document.getElementById('remove-avatar')?.addEventListener('click', () => this.removeAvatar());
-        // Also allow clicking the main card avatar to upload
         document.getElementById('card-avatar')?.addEventListener('click', () => this.uploadAndCropAvatar());
 
         // Live preview updates
@@ -304,7 +331,6 @@ class Profile {
         // Save/Cancel in Customize tab
         document.getElementById('save-customize')?.addEventListener('click', () => this.saveCustomizations());
         document.getElementById('cancel-customize')?.addEventListener('click', () => {
-            // Switch back to ID Card tab
             document.querySelector('.profile-tab[data-tab="idcard"]').click();
         });
 
@@ -414,13 +440,10 @@ class Profile {
     }
 
     updateAllAvatars() {
-        // Update main card avatar
         const cardAvatar = document.getElementById('card-avatar');
         if (cardAvatar) cardAvatar.innerHTML = this.getAvatarHTML('large');
-        // Update preview card avatar
         const previewAvatar = document.querySelector('.preview-id-card .card-avatar');
         if (previewAvatar) previewAvatar.innerHTML = this.getAvatarHTML('preview');
-        // Update customize form preview
         const customPreview = document.getElementById('custom-avatar-preview');
         if (customPreview) {
             if (AppState.user.avatar) {
@@ -433,21 +456,42 @@ class Profile {
     }
 
     saveCustomizations() {
-        // In a real app, you'd save these to a database or localStorage
-        // For now, we just update the main card with preview values
-        document.getElementById('card-username').innerText = document.getElementById('preview-username').innerText;
-        document.getElementById('card-tagline').innerText = document.getElementById('preview-tagline').innerText;
-        document.getElementById('card-expires').innerText = document.getElementById('preview-expires').innerText;
-        document.getElementById('card-portal-id').innerText = document.getElementById('preview-portal-id').innerText;
-        document.getElementById('card-region').innerText = document.getElementById('preview-region').innerText;
-        document.getElementById('card-server-name').innerText = document.getElementById('preview-server-name').innerText;
-        document.getElementById('card-logo').innerText = document.getElementById('preview-logo').innerText;
-        document.getElementById('card-discord-id').innerText = document.getElementById('preview-discord-id').innerText;
-        const badge = document.getElementById('card-discord').querySelector('.discord-badge');
-        badge.innerText = document.getElementById('preview-discord-badge').innerText;
+        this.profileData = {
+            tagline: document.getElementById('edit-tagline').value,
+            expires: document.getElementById('edit-expires').value,
+            portalId: document.getElementById('edit-portal-id').value,
+            region: document.getElementById('edit-region').value,
+            serverName: document.getElementById('edit-server-name').value,
+            logoText: document.getElementById('edit-logo').value,
+            discordId: document.getElementById('edit-discord-id').value,
+            discordConnected: document.getElementById('edit-discord-connected').checked,
+            platform: document.getElementById('edit-platform')?.value || '',
+            platformId: document.getElementById('edit-platform-id')?.value || ''
+        };
+
+        // Also update AppState platform if those fields exist
+        const platformSelect = document.getElementById('edit-platform');
+        const platformIdInput = document.getElementById('edit-platform-id');
+        if (platformSelect && platformIdInput) {
+            AppState.user.platform = platformSelect.value;
+            AppState.user.platformId = platformIdInput.value;
+            localStorage.setItem('tdl_platform', platformSelect.value);
+            localStorage.setItem('tdl_platform_id', platformIdInput.value);
+        }
+
+        this.saveProfileData(this.profileData);
+
+        // Update main card
+        document.getElementById('card-tagline').innerText = this.profileData.tagline;
+        document.getElementById('card-expires').innerText = this.profileData.expires;
+        document.getElementById('card-portal-id').innerText = this.profileData.portalId;
+        document.getElementById('card-region').innerText = this.profileData.region;
+        document.getElementById('card-server-name').innerText = this.profileData.serverName;
+        document.getElementById('card-logo').innerText = this.profileData.logoText;
+        document.getElementById('card-discord-id').innerText = this.profileData.discordId;
+        document.getElementById('card-discord-badge').innerText = this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED';
 
         toast.success('ID Card updated');
-        // Switch back to ID Card tab
         document.querySelector('.profile-tab[data-tab="idcard"]').click();
     }
 
@@ -548,13 +592,9 @@ class Profile {
 
     populateUserInfo() {
         this.updateAllAvatars();
-        // Set initial values from AppState
-        const username = AppState.user.username || 'SURVIVOR';
-        document.getElementById('card-username').innerText = username;
-        document.getElementById('preview-username').innerText = username;
-        document.getElementById('edit-username').value = username;
-
-        // You could load other fields from a profile store if available
+        document.getElementById('card-username').innerText = AppState.user.username || 'SURVIVOR';
+        document.getElementById('preview-username').innerText = AppState.user.username || 'SURVIVOR';
+        document.getElementById('edit-username').value = AppState.user.username || '';
     }
 
     refresh() {

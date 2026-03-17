@@ -1,6 +1,7 @@
 // items.js – DRAINED TABLET ULTIMATE v7.0.0
 // Complete item database for Rust Console Edition – all 553+ items.
 // Modern UI with search, categories, and quick actions.
+// Now with reliable image loading from corrosionhour.com and fallback placeholders.
 
 class Items {
     constructor() {
@@ -666,8 +667,8 @@ class Items {
         const tab = document.getElementById('tab-items');
         if (!tab) return;
 
-        if (!this.access.hasRole('master')) {
-            tab.innerHTML = '<div class="access-denied">Master access required</div>';
+        if (!this.access.hasRole('owner')) {
+            tab.innerHTML = '<div class="access-denied">Owner access required</div>';
             return;
         }
 
@@ -703,7 +704,7 @@ class Items {
             </div>
         `;
 
-        // Add category button styles dynamically (or include in global.css)
+        // Add category button styles dynamically
         const style = document.createElement('style');
         style.textContent = `
             .items-cat-btn {
@@ -724,6 +725,22 @@ class Items {
             .items-cat-btn:hover {
                 background: var(--accent-primary);
                 color: #000;
+            }
+            .item-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.8rem;
+                border-bottom: 1px solid var(--glass-border);
+                transition: background 0.2s;
+            }
+            .item-row:hover {
+                background: var(--bg-secondary);
+            }
+            .item-row img {
+                width: 30px;
+                height: 30px;
+                object-fit: contain;
             }
         `;
         document.head.appendChild(style);
@@ -777,6 +794,19 @@ class Items {
         this.renderItems();
     }
 
+    // Helper to get image URL with fallback
+    getItemImageUrl(shortname) {
+        // Primary: corrosionhour.com CDN
+        const formattedShortname = shortname.replace(/\./g, '-');
+        return `https://www.corrosionhour.com/img/items/${formattedShortname}.png`;
+    }
+
+    // Ultimate fallback: data-URL placeholder with first letter
+    getFallbackImagePlaceholder(shortname) {
+        const firstLetter = shortname.charAt(0).toUpperCase();
+        return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Crect width='30' height='30' fill='%23333'/%3E%3Ctext x='15' y='20' font-size='16' text-anchor='middle' fill='%23D4AF37' font-family='Inter'%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
+    }
+
     renderItems() {
         const listDiv = document.getElementById('items-list');
         if (!listDiv) return;
@@ -788,10 +818,13 @@ class Items {
 
         let html = '';
         this.filtered.slice(0, 500).forEach(item => {
+            const imgUrl = this.getItemImageUrl(item.shortname);
+            const fallback = this.getFallbackImagePlaceholder(item.shortname);
             html += `
-                <div class="item-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-bottom: 1px solid var(--glass-border); transition: background 0.2s;">
+                <div class="item-row">
                     <div style="display: flex; align-items: center; gap: 1rem;">
-                        <img src="https://static.rustworkshop.xyz/icons/${item.shortname.replace(/\./g, '-')}.png" style="width: 30px; height: 30px; object-fit: contain;" onerror="this.onerror=null; this.src='https://via.placeholder.com/30?text=?'">
+                        <img src="${imgUrl}" alt="${item.name}" 
+                             onerror="this.onerror=null; this.src='${fallback}'">
                         <div>
                             <div style="font-weight: 500;">${item.name}</div>
                             <code style="font-size: 0.8rem; color: var(--text-secondary);">${item.shortname}</code>
@@ -857,5 +890,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.items = new Items();
 });
 
-// ===== EXPOSE THE ITEMS DATABASE GLOBALLY FOR OTHER MODULES =====
+// ===== EXPOSE ITEM DATABASE AND IMAGE HELPERS GLOBALLY =====
 window.itemsDatabase = window.items?.items || [];
+
+window.getItemImageUrl = (shortname) => {
+    if (window.items?.getItemImageUrl) {
+        return window.items.getItemImageUrl(shortname);
+    }
+    const formattedShortname = shortname.replace(/\./g, '-');
+    return `https://www.corrosionhour.com/img/items/${formattedShortname}.png`;
+};
+
+window.getFallbackImagePlaceholder = (shortname) => {
+    const firstLetter = shortname.charAt(0).toUpperCase();
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Crect width='30' height='30' fill='%23333'/%3E%3Ctext x='15' y='20' font-size='16' text-anchor='middle' fill='%23D4AF37' font-family='Inter'%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
+};

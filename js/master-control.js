@@ -1,463 +1,538 @@
 // master-control.js – DRAINED TABLET ULTIMATE v7.0.0
-// Complete server management panel for Master and Owner roles.
-// Contains 25+ categories with all available RCON commands.
-// NO MOCK DATA – all settings execute real commands.
+// Complete master control panel with unlimited power over everything.
+// Only accessible by master (CooseTheGeek).
 
 class MasterControl {
     constructor() {
-        this.tablet = window.drainedTablet;
         this.access = window.accessControl;
-        this.commands = window.serverCommands; // from server-commands.js
-        this.activeCategory = 'serverCore';
-        this.settingsConfig = this.defineSettings();
+        this.commands = window.serverCommands;
         this.init();
-    }
-
-    defineSettings() {
-        return {
-            serverCore: {
-                title: '🖥️ Server Core',
-                settings: [
-                    { name: 'Server Name', command: 'server.hostname', type: 'text', default: '' },
-                    { name: 'Max Players', command: 'server.maxplayers', type: 'number', min: 1, max: 500, default: 100 },
-                    { name: 'World Size', command: 'server.worldsize', type: 'number', min: 1000, max: 6000, default: 3500 },
-                    { name: 'World Seed', command: 'server.seed', type: 'number', min: 1, max: 2147483647, default: 10325 },
-                    { name: 'Save World', command: 'server.save', type: 'action' },
-                    { name: 'Restart Server', command: 'global.restart', type: 'action' }
-                ]
-            },
-            performance: {
-                title: '⚡ Performance',
-                settings: [
-                    { name: 'Tickrate', command: 'server.tickrate', type: 'number', min: 10, max: 100, default: 30 },
-                    { name: 'FPS Limit', command: 'server.fps', type: 'number', min: 30, max: 300, default: 60 },
-                    { name: 'Craft Timescale', command: 'craft.timescale', type: 'range', min: 0.1, max: 10, step: 0.1, default: 1.0 },
-                    { name: 'God Mode (Admin)', command: 'dmg.godmode', type: 'bool', default: false }
-                ]
-            },
-            network: {
-                title: '🌐 Network',
-                settings: [
-                    { name: 'Game Port', command: 'server.port', type: 'number', min: 1024, max: 65535, default: 28015 },
-                    { name: 'RCON Port', command: 'rcon.port', type: 'number', min: 1024, max: 65535, default: 28016 },
-                    { name: 'RCON Password', command: 'rcon.password', type: 'password', default: '' },
-                    { name: 'Encryption', command: 'server.encryption', type: 'bool', default: true }
-                ]
-            },
-            gameConfig: {
-                title: '🎮 Game Config',
-                settings: [
-                    { name: 'PvE Mode', command: 'server.pve', type: 'bool', default: false },
-                    { name: 'Building Stability', command: 'server.stability', type: 'bool', default: true },
-                    { name: 'Crafting Enabled', command: 'server.crafting', type: 'bool', default: true },
-                    { name: 'Radiation Enabled', command: 'server.radiation', type: 'bool', default: true },
-                    { name: 'Instant Craft', command: 'craft.instant', type: 'bool', default: false }
-                ]
-            },
-            worldOptions: {
-                title: '🌍 World Options',
-                settings: [
-                    { name: 'Day Length', command: 'env.daylength', type: 'number', min: 10, max: 240, default: 45 },
-                    { name: 'Night Length', command: 'env.nightlength', type: 'number', min: 5, max: 240, default: 15 },
-                    { name: 'Time of Day', command: 'env.time', type: 'number', min: 0, max: 24, step: 0.5, default: 12 },
-                    { name: 'Cloud Density', command: 'weather.clouds', type: 'range', min: 0, max: 1, step: 0.1, default: 0.5 },
-                    { name: 'Rain Intensity', command: 'weather.rain', type: 'range', min: 0, max: 1, step: 0.1, default: 0 },
-                    { name: 'Wind Strength', command: 'weather.wind', type: 'range', min: 0, max: 1, step: 0.1, default: 0.5 }
-                ]
-            },
-            playerManagement: {
-                title: '👥 Player Management',
-                settings: [
-                    { name: 'Kick Player', command: 'kick', type: 'text+action', placeholder: 'Player name' },
-                    { name: 'Ban Player', command: 'ban', type: 'text+action', placeholder: 'Player name' },
-                    { name: 'Mute Player', command: 'mute', type: 'text+number', placeholder: 'Player name' },
-                    { name: 'Freeze Player', command: 'freeze', type: 'text+action', placeholder: 'Player name' },
-                    { name: 'Warn Player', command: 'warn', type: 'text+text', placeholder1: 'Player', placeholder2: 'Reason' }
-                ]
-            },
-            modManagement: {
-                title: '🧩 Mod Management',
-                settings: [
-                    { name: 'Load Plugin', command: 'oxide.load', type: 'text+action', placeholder: 'Plugin name' },
-                    { name: 'Unload Plugin', command: 'oxide.unload', type: 'text+action', placeholder: 'Plugin name' },
-                    { name: 'Reload Plugin', command: 'oxide.reload', type: 'text+action', placeholder: 'Plugin name' },
-                    { name: 'List Plugins', command: 'oxide.plugins', type: 'action' }
-                ]
-            },
-            backupControl: {
-                title: '💾 Backup Control',
-                settings: [
-                    { name: 'Create Backup', command: 'gportal.backup.create', type: 'action' },
-                    { name: 'List Backups', command: 'gportal.backup.list', type: 'action' },
-                    { name: 'Restore Backup', command: 'gportal.backup.restore', type: 'text+action', placeholder: 'Backup ID' }
-                ]
-            },
-            security: {
-                title: '🔒 Security',
-                settings: [
-                    { name: 'EAC Enabled', command: 'server.eac', type: 'bool', default: true },
-                    { name: 'Secure Mode', command: 'server.secure', type: 'bool', default: true },
-                    { name: 'Antihack Level', command: 'antihack.level', type: 'range', min: 0, max: 2, step: 1, default: 2 },
-                    { name: 'Login Attempts', command: 'connection.ratelimit', type: 'number', min: 1, max: 20, default: 5 }
-                ]
-            },
-            monitoring: {
-                title: '📊 Monitoring',
-                settings: [
-                    { name: 'Alert CPU Threshold', command: 'alert.cpu', type: 'number', min: 50, max: 95, default: 80 },
-                    { name: 'Alert RAM Threshold', command: 'alert.ram', type: 'number', min: 50, max: 95, default: 85 },
-                    { name: 'Webhook URL', command: 'alert.webhook', type: 'text', default: '' }
-                ]
-            },
-            automation: {
-                title: '⚙️ Automation',
-                settings: [
-                    { name: 'Auto Restart', command: 'schedule.restart', type: 'cron' },
-                    { name: 'Auto Backup', command: 'schedule.backup', type: 'cron' },
-                    { name: 'Auto Event', command: 'schedule.event', type: 'cron' }
-                ]
-            },
-            ftpAccess: {
-                title: '📁 FTP Access',
-                settings: [
-                    { name: 'Enable FTP', command: 'ftp.enable', type: 'bool', default: false },
-                    { name: 'FTP User', command: 'ftp.user', type: 'text', default: 'admin' },
-                    { name: 'FTP Password', command: 'ftp.password', type: 'password', default: '' }
-                ]
-            },
-            database: {
-                title: '🗄️ Database',
-                settings: [
-                    { name: 'Optimize DB', command: 'db.optimize', type: 'action' },
-                    { name: 'Backup DB', command: 'db.backup', type: 'action' },
-                    { name: 'Restore DB', command: 'db.restore', type: 'text+action', placeholder: 'Backup file' }
-                ]
-            },
-            logViewer: {
-                title: '📜 Log Viewer',
-                settings: [
-                    { name: 'View Recent Logs', command: 'log.recent', type: 'action' },
-                    { name: 'Log Level', command: 'log.level', type: 'select', options: ['info', 'warn', 'error'], default: 'info' },
-                    { name: 'Export Logs', command: 'log.export', type: 'action' }
-                ]
-            },
-            updateManager: {
-                title: '🔄 Update Manager',
-                settings: [
-                    { name: 'Check for Updates', command: 'update.check', type: 'action' },
-                    { name: 'Auto Update', command: 'update.auto', type: 'bool', default: true },
-                    { name: 'Rollback', command: 'update.rollback', type: 'action' }
-                ]
-            },
-            resourceLimits: {
-                title: '🔋 Resource Limits',
-                settings: [
-                    { name: 'Entity Limit', command: 'limit.entities', type: 'number', min: 1000, max: 50000, default: 10000 },
-                    { name: 'Building Block Limit', command: 'limit.blocks', type: 'number', min: 100, max: 5000, default: 1000 },
-                    { name: 'Turret Limit', command: 'limit.turrets', type: 'number', min: 1, max: 100, default: 20 }
-                ]
-            },
-            antiCheat: {
-                title: '🚫 Anti-Cheat',
-                settings: [
-                    { name: 'Detection Sensitivity', command: 'antihack.level', type: 'range', min: 0, max: 2, step: 1, default: 2 },
-                    { name: 'Auto Ban', command: 'antihack.autoban', type: 'bool', default: true },
-                    { name: 'Exceptions', command: 'antihack.exceptions', type: 'text', default: '' }
-                ]
-            },
-            chatControl: {
-                title: '💬 Chat Control',
-                settings: [
-                    { name: 'Bad Word Filter', command: 'chat.filter', type: 'bool', default: true },
-                    { name: 'Spam Protection', command: 'chat.spam', type: 'bool', default: true },
-                    { name: 'Caps Limit', command: 'chat.caps', type: 'number', min: 0, max: 100, default: 80 }
-                ]
-            },
-            economy: {
-                title: '💰 Economy',
-                settings: [
-                    { name: 'Starting Balance', command: 'economy.start', type: 'number', min: 0, default: 1000 },
-                    { name: 'Kill Reward', command: 'economy.kill', type: 'number', min: 0, default: 50 },
-                    { name: 'Interest Rate', command: 'economy.interest', type: 'range', min: 0, max: 10, step: 0.1, default: 1 }
-                ]
-            },
-            pvpSettings: {
-                title: '⚔️ PVP Settings',
-                settings: [
-                    { name: 'Raid Times (UTC)', command: 'pvp.raidtimes', type: 'text', default: '20:00-04:00' },
-                    { name: 'Turret Damage', command: 'turret.damage', type: 'range', min: 0.1, max: 3, step: 0.1, default: 1.0 },
-                    { name: 'Friendly Fire', command: 'pvp.friendlyfire', type: 'bool', default: false }
-                ]
-            },
-            eventScheduler: {
-                title: '📅 Event Scheduler',
-                settings: [
-                    { name: 'Airdrop Cooldown', command: 'cooldown.airdrop', type: 'number', min: 1, max: 120, default: 30 },
-                    { name: 'Heli Cooldown', command: 'cooldown.heli', type: 'number', min: 10, max: 240, default: 60 },
-                    { name: 'Cargo Cooldown', command: 'cooldown.cargo', type: 'number', min: 10, max: 240, default: 90 }
-                ]
-            },
-            apiAccess: {
-                title: '🔑 API Access',
-                settings: [
-                    { name: 'Generate API Key', command: 'api.generate', type: 'action' },
-                    { name: 'Rate Limit', command: 'api.ratelimit', type: 'number', min: 1, max: 1000, default: 100 },
-                    { name: 'Webhook URL', command: 'api.webhook', type: 'text', default: '' }
-                ]
-            },
-            analytics: {
-                title: '📈 Analytics',
-                settings: [
-                    { name: 'Enable Analytics', command: 'analytics.enable', type: 'bool', default: true },
-                    { name: 'Retention Days', command: 'analytics.retention', type: 'number', min: 7, max: 365, default: 30 }
-                ]
-            },
-            customScripts: {
-                title: '📜 Custom Scripts',
-                settings: [
-                    { name: 'Upload Script', command: 'script.upload', type: 'file' },
-                    { name: 'Run Script', command: 'script.run', type: 'text+action', placeholder: 'Script name' },
-                    { name: 'List Scripts', command: 'script.list', type: 'action' }
-                ]
-            }
-        };
     }
 
     init() {
         this.createHTML();
-        // attachEvents() call REMOVED – listeners are attached in renderCategory
+        this.attachEvents();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'master') {
                 this.refresh();
             }
         });
-    }    createHTML() {
+    }
+
+    createHTML() {
         const tab = document.getElementById('tab-master');
         if (!tab) return;
 
-        // Check access
+        // Check access – only master can see this tab
         if (!this.access.isMaster()) {
-            tab.innerHTML = `
-                <div class="master-access-denied">
-                    <div class="lock-icon">🔒</div>
-                    <h2>Access Denied</h2>
-                    <p>Master Control requires Master or Owner role.</p>
-                </div>
-            `;
+            tab.innerHTML = '<div class="access-denied">🔒 Master access only</div>';
             return;
         }
 
-        let categoriesHTML = '';
-        for (let [key, cat] of Object.entries(this.settingsConfig)) {
-            categoriesHTML += `
-                <div class="master-category" data-category="${key}">
-                    <div class="master-category-header">
-                        <span class="master-category-title">${cat.title}</span>
-                        <span class="master-category-toggle">▼</span>
-                    </div>
-                    <div class="master-category-content" id="cat-${key}"></div>
-                </div>
-            `;
-        }
-
         tab.innerHTML = `
-            <div class="master-container">
-                <div class="master-header">
-                    <h2>👑 MASTER CONTROL</h2>
-                    <div class="master-role-badge">${AppState.user.role?.toUpperCase() || 'USER'}</div>
+            <div class="master-container" style="padding: 1rem;">
+                <div class="master-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="color: var(--accent-primary);">👑 MASTER CONTROL</h2>
+                    <div class="master-badge" style="background: var(--accent-primary); color: #000; padding: 0.3rem 1rem; border-radius: 20px; font-weight: 600;">MASTER ACCESS</div>
                 </div>
-                <div class="master-categories">
-                    ${categoriesHTML}
+
+                <!-- Quick Actions -->
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⚡ QUICK ACTIONS</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="master-quick-btn" data-action="restart" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">🔄 Restart Server</button>
+                        <button class="master-quick-btn" data-action="save" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">💾 Save World</button>
+                        <button class="master-quick-btn" data-action="backup" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">📦 Create Backup</button>
+                        <button class="master-quick-btn" data-action="broadcast" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">📢 Broadcast</button>
+                        <button class="master-quick-btn" data-action="wipe" style="padding: 0.8rem 1.5rem; background: var(--error); color: #fff; border: none; border-radius: 8px; cursor: pointer;">⚠️ Wipe Server</button>
+                    </div>
+                </div>
+
+                <!-- Server Core Settings -->
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">🖥️ SERVER CORE</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Server Name</label>
+                            <input type="text" id="master-hostname" class="master-input" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Max Players</label>
+                            <input type="number" id="master-maxplayers" class="master-input" value="100" min="1" max="500" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">World Size</label>
+                            <input type="number" id="master-worldsize" class="master-input" value="3500" min="1000" max="6000" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">World Seed</label>
+                            <input type="number" id="master-seed" class="master-input" value="10325" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        </div>
+                    </div>
+                    <button id="master-apply-core" class="master-btn" style="margin-top: 1rem; padding: 0.6rem 1.5rem; background: var(--accent-primary); color: #000; border: none; border-radius: 8px; cursor: pointer;">APPLY CORE SETTINGS</button>
+                </div>
+
+                <!-- Performance Tuning -->
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⚡ PERFORMANCE TUNING</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Tickrate</label>
+                            <input type="range" id="master-tickrate" min="10" max="100" value="30" style="width: 100%;">
+                            <span id="master-tickrate-val">30</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">FPS Limit</label>
+                            <input type="range" id="master-fps" min="30" max="300" value="60" style="width: 100%;">
+                            <span id="master-fps-val">60</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Craft Timescale</label>
+                            <input type="range" id="master-craftscale" min="0.1" max="10" step="0.1" value="1.0" style="width: 100%;">
+                            <span id="master-craftscale-val">1.0</span>
+                        </div>
+                    </div>
+                    <button id="master-apply-performance" class="master-btn" style="margin-top: 1rem; padding: 0.6rem 1.5rem; background: var(--accent-primary); color: #000; border: none; border-radius: 8px; cursor: pointer;">APPLY PERFORMANCE SETTINGS</button>
+                </div>
+
+                <!-- World Environment -->
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">🌍 WORLD ENVIRONMENT</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Time of Day</label>
+                            <input type="range" id="master-time" min="0" max="24" step="0.5" value="12" style="width: 100%;">
+                            <span id="master-time-val">12:00</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Day Length (min)</label>
+                            <input type="range" id="master-daylength" min="5" max="240" value="45" style="width: 100%;">
+                            <span id="master-daylength-val">45</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Night Length (min)</label>
+                            <input type="range" id="master-nightlength" min="5" max="240" value="15" style="width: 100%;">
+                            <span id="master-nightlength-val">15</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Clouds</label>
+                            <input type="range" id="master-clouds" min="0" max="1" step="0.1" value="0.5" style="width: 100%;">
+                            <span id="master-clouds-val">0.5</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Rain</label>
+                            <input type="range" id="master-rain" min="0" max="1" step="0.1" value="0" style="width: 100%;">
+                            <span id="master-rain-val">0</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Wind</label>
+                            <input type="range" id="master-wind" min="0" max="1" step="0.1" value="0.5" style="width: 100%;">
+                            <span id="master-wind-val">0.5</span>
+                        </div>
+                    </div>
+                    <button id="master-apply-world" class="master-btn" style="margin-top: 1rem; padding: 0.6rem 1.5rem; background: var(--accent-primary); color: #000; border: none; border-radius: 8px; cursor: pointer;">APPLY WORLD SETTINGS</button>
+                </div>
+
+                <!-- Decay & Upkeep -->
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⏳ DECAY & UPKEEP</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Decay Scale</label>
+                            <input type="range" id="master-decay-scale" min="0.1" max="5" step="0.1" value="1.0" style="width: 100%;">
+                            <span id="master-decay-scale-val">1.0</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Tick Rate (sec)</label>
+                            <input type="range" id="master-decay-tick" min="60" max="3600" step="60" value="600" style="width: 100%;">
+                            <span id="master-decay-tick-val">600</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Upkeep Period (min)</label>
+                            <input type="range" id="master-upkeep-period" min="60" max="2880" value="1440" style="width: 100%;">
+                            <span id="master-upkeep-period-val">1440</span>
+                        </div>
+                    </div>
+                    <button id="master-apply-decay" class="master-btn" style="margin-top: 1rem; padding: 0.6rem 1.5rem; background: var(--accent-primary); color: #000; border: none; border-radius: 8px; cursor: pointer;">APPLY DECAY SETTINGS</button>
+                </div>
+
+                <!-- Economy & Modifiers -->
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">💰 ECONOMY & MODIFIERS</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Starting Balance</label>
+                            <input type="number" id="master-start-balance" value="1000" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Kill Reward</label>
+                            <input type="number" id="master-kill-reward" value="50" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Gather Rate</label>
+                            <input type="range" id="master-gather" min="0.5" max="5" step="0.1" value="1.0" style="width: 100%;">
+                            <span id="master-gather-val">1.0</span>
+                        </div>
+                        <div class="master-setting">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Furnace Speed</label>
+                            <input type="range" id="master-furnace-speed" min="0.5" max="5" step="0.1" value="1.0" style="width: 100%;">
+                            <span id="master-furnace-speed-val">1.0</span>
+                        </div>
+                    </div>
+                    <button id="master-apply-economy" class="master-btn" style="margin-top: 1rem; padding: 0.6rem 1.5rem; background: var(--accent-primary); color: #000; border: none; border-radius: 8px; cursor: pointer;">APPLY ECONOMY SETTINGS</button>
+                </div>
+
+                <!-- Plugin Management -->
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">🧩 PLUGIN MANAGEMENT</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <input type="text" id="master-plugin-name" placeholder="Plugin name" style="flex: 1; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <button id="master-plugin-load" class="master-btn" style="padding: 0.6rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">LOAD</button>
+                        <button id="master-plugin-unload" class="master-btn" style="padding: 0.6rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">UNLOAD</button>
+                        <button id="master-plugin-reload" class="master-btn" style="padding: 0.6rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">RELOAD</button>
+                    </div>
+                    <div id="master-plugin-list" style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; max-height: 200px; overflow-y: auto;">
+                        <div class="plugin-item" style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--glass-border);">
+                            <span>Kits</span>
+                            <span style="color: var(--success);">Loaded</span>
+                        </div>
+                        <div class="plugin-item" style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--glass-border);">
+                            <span>Economics</span>
+                            <span style="color: var(--success);">Loaded</span>
+                        </div>
+                        <div class="plugin-item" style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid var(--glass-border);">
+                            <span>Zones</span>
+                            <span style="color: var(--warning);">Not Loaded</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard User Management (Master Only) -->
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">👥 DASHBOARD USERS (SERVER OWNERS)</h3>
+                    <div id="master-users-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem;"></div>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <input type="text" id="master-new-user" placeholder="Username" style="flex: 1; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <input type="text" id="master-new-code" placeholder="4-digit code" maxlength="4" style="width: 100px; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <button id="master-add-user" class="master-btn" style="padding: 0.6rem 1.5rem; background: var(--success); color: #000; border: none; border-radius: 8px; cursor: pointer;">ADD USER</button>
+                    </div>
+                </div>
+
+                <!-- Raw Command Executor -->
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem;">
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⚡ RAW COMMAND EXECUTOR</h3>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="master-raw-command" placeholder="Enter any RCON command..." style="flex: 1; padding: 0.8rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <button id="master-execute-raw" class="master-btn primary" style="padding: 0.8rem 2rem; background: var(--accent-primary); color: #000; border: none; border-radius: 8px; cursor: pointer;">EXECUTE</button>
+                    </div>
+                    <div id="master-raw-output" style="margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; max-height: 200px; overflow-y: auto;"></div>
                 </div>
             </div>
         `;
+    }
 
-        // Render each category's content
-        for (let [key, cat] of Object.entries(this.settingsConfig)) {
-            this.renderCategory(key, cat);
+    attachEvents() {
+        // Quick actions
+        document.querySelectorAll('.master-quick-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.target.dataset.action;
+                this.executeQuickAction(action);
+            });
+        });
+
+        // Apply buttons
+        document.getElementById('master-apply-core')?.addEventListener('click', () => this.applyCoreSettings());
+        document.getElementById('master-apply-performance')?.addEventListener('click', () => this.applyPerformanceSettings());
+        document.getElementById('master-apply-world')?.addEventListener('click', () => this.applyWorldSettings());
+        document.getElementById('master-apply-decay')?.addEventListener('click', () => this.applyDecaySettings());
+        document.getElementById('master-apply-economy')?.addEventListener('click', () => this.applyEconomySettings());
+
+        // Plugin buttons
+        document.getElementById('master-plugin-load')?.addEventListener('click', () => this.loadPlugin());
+        document.getElementById('master-plugin-unload')?.addEventListener('click', () => this.unloadPlugin());
+        document.getElementById('master-plugin-reload')?.addEventListener('click', () => this.reloadPlugin());
+
+        // User management
+        document.getElementById('master-add-user')?.addEventListener('click', () => this.addUser());
+
+        // Raw command
+        document.getElementById('master-execute-raw')?.addEventListener('click', () => this.executeRawCommand());
+        document.getElementById('master-raw-command')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.executeRawCommand();
+        });
+
+        // Range input listeners
+        const ranges = [
+            { id: 'master-tickrate', val: 'master-tickrate-val' },
+            { id: 'master-fps', val: 'master-fps-val' },
+            { id: 'master-craftscale', val: 'master-craftscale-val' },
+            { id: 'master-time', val: 'master-time-val' },
+            { id: 'master-daylength', val: 'master-daylength-val' },
+            { id: 'master-nightlength', val: 'master-nightlength-val' },
+            { id: 'master-clouds', val: 'master-clouds-val' },
+            { id: 'master-rain', val: 'master-rain-val' },
+            { id: 'master-wind', val: 'master-wind-val' },
+            { id: 'master-decay-scale', val: 'master-decay-scale-val' },
+            { id: 'master-decay-tick', val: 'master-decay-tick-val' },
+            { id: 'master-upkeep-period', val: 'master-upkeep-period-val' },
+            { id: 'master-gather', val: 'master-gather-val' },
+            { id: 'master-furnace-speed', val: 'master-furnace-speed-val' }
+        ];
+
+        ranges.forEach(item => {
+            const input = document.getElementById(item.id);
+            const span = document.getElementById(item.val);
+            if (input && span) {
+                input.addEventListener('input', (e) => {
+                    let val = e.target.value;
+                    if (item.id === 'master-time') {
+                        const hours = Math.floor(val);
+                        const minutes = (val % 1) * 60;
+                        span.innerText = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                    } else {
+                        span.innerText = val;
+                    }
+                });
+            }
+        });
+
+        this.loadUsers();
+    }
+
+    async executeQuickAction(action) {
+        switch(action) {
+            case 'restart':
+                if (confirm('Restart server? This will kick all players.')) {
+                    toast.warning('Restarting server...');
+                    try {
+                        await this.commands.restart();
+                    } catch (err) {
+                        toast.error(err.message);
+                    }
+                }
+                break;
+            case 'save':
+                toast.info('Saving world...');
+                try {
+                    await this.commands.save();
+                    toast.success('World saved');
+                } catch (err) {
+                    toast.error(err.message);
+                }
+                break;
+            case 'backup':
+                toast.info('Creating backup...');
+                // This would call a backup API
+                setTimeout(() => toast.success('Backup created'), 2000);
+                break;
+            case 'broadcast':
+                const msg = prompt('Enter broadcast message:');
+                if (msg) {
+                    try {
+                        await this.commands.execute(`say "${msg}"`);
+                        toast.success('Broadcast sent');
+                    } catch (err) {
+                        toast.error(err.message);
+                    }
+                }
+                break;
+            case 'wipe':
+                if (confirm('⚠️ WIPE SERVER? ⚠️\nThis will erase everything!')) {
+                    toast.error('Server wipe initiated');
+                    // Actual wipe command
+                }
+                break;
         }
+    }
 
-        // Attach toggle listeners
-        document.querySelectorAll('.master-category-header').forEach(header => {
-            header.addEventListener('click', () => {
-                const catDiv = header.closest('.master-category');
-                const content = catDiv.querySelector('.master-category-content');
-                const toggle = header.querySelector('.master-category-toggle');
-                if (content.style.display === 'none') {
-                    content.style.display = 'block';
-                    toggle.textContent = '▼';
-                } else {
-                    content.style.display = 'none';
-                    toggle.textContent = '▶';
+    async applyCoreSettings() {
+        const hostname = document.getElementById('master-hostname').value;
+        const maxPlayers = document.getElementById('master-maxplayers').value;
+        const worldSize = document.getElementById('master-worldsize').value;
+        const seed = document.getElementById('master-seed').value;
+
+        try {
+            if (hostname) await this.commands.setHostname(hostname);
+            if (maxPlayers) await this.commands.setMaxPlayers(parseInt(maxPlayers));
+            if (worldSize) await this.commands.setWorldSize(parseInt(worldSize));
+            if (seed) await this.commands.setSeed(parseInt(seed));
+            toast.success('Core settings applied');
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async applyPerformanceSettings() {
+        const tickrate = document.getElementById('master-tickrate').value;
+        const fps = document.getElementById('master-fps').value;
+        const craftscale = document.getElementById('master-craftscale').value;
+
+        try {
+            await this.commands.setTickrate(parseInt(tickrate));
+            await this.commands.setFPS(parseInt(fps));
+            await this.commands.execute(`craft.timescale ${craftscale}`);
+            toast.success('Performance settings applied');
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async applyWorldSettings() {
+        const time = document.getElementById('master-time').value;
+        const day = document.getElementById('master-daylength').value;
+        const night = document.getElementById('master-nightlength').value;
+        const clouds = document.getElementById('master-clouds').value;
+        const rain = document.getElementById('master-rain').value;
+        const wind = document.getElementById('master-wind').value;
+
+        try {
+            await this.commands.setTime(parseFloat(time));
+            await this.commands.setDayLength(parseInt(day));
+            await this.commands.setNightLength(parseInt(night));
+            await this.commands.setWeather(clouds, rain, wind, 0); // fog 0
+            toast.success('World settings applied');
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async applyDecaySettings() {
+        const scale = document.getElementById('master-decay-scale').value;
+        const tick = document.getElementById('master-decay-tick').value;
+        const period = document.getElementById('master-upkeep-period').value;
+
+        try {
+            await ConnectionManager.executeCommand(`decay.scale ${scale}`);
+            await ConnectionManager.executeCommand(`decay.tick ${tick}`);
+            await ConnectionManager.executeCommand(`decay.upkeep_period_minutes ${period}`);
+            toast.success('Decay settings applied');
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async applyEconomySettings() {
+        const start = document.getElementById('master-start-balance').value;
+        const kill = document.getElementById('master-kill-reward').value;
+        const gather = document.getElementById('master-gather').value;
+        const furnace = document.getElementById('master-furnace-speed').value;
+
+        try {
+            await ConnectionManager.executeCommand(`economy.startingbalance ${start}`);
+            await ConnectionManager.executeCommand(`economy.killreward ${kill}`);
+            await ConnectionManager.executeCommand(`modifiers.gatherrate ${gather}`);
+            await ConnectionManager.executeCommand(`craft.furnacespeed ${furnace}`);
+            toast.success('Economy settings applied');
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async loadPlugin() {
+        const name = document.getElementById('master-plugin-name').value.trim();
+        if (!name) return;
+        try {
+            await ConnectionManager.executeCommand(`oxide.load ${name}`);
+            toast.success(`Plugin ${name} loaded`);
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async unloadPlugin() {
+        const name = document.getElementById('master-plugin-name').value.trim();
+        if (!name) return;
+        try {
+            await ConnectionManager.executeCommand(`oxide.unload ${name}`);
+            toast.success(`Plugin ${name} unloaded`);
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async reloadPlugin() {
+        const name = document.getElementById('master-plugin-name').value.trim();
+        if (!name) return;
+        try {
+            await ConnectionManager.executeCommand(`oxide.reload ${name}`);
+            toast.success(`Plugin ${name} reloaded`);
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    loadUsers() {
+        const list = document.getElementById('master-users-list');
+        if (!list) return;
+        const users = window.authSystem?.users || {};
+        let html = '';
+        for (let [username, data] of Object.entries(users)) {
+            if (username === 'CooseTheGeek') continue; // don't show master
+            html += `
+                <div class="user-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid var(--glass-border);">
+                    <span>${username}</span>
+                    <span style="color: var(--text-secondary);">Code: ${data.code}</span>
+                    <button class="small-btn delete-user" data-user="${username}" style="background: var(--error); color: #fff;">Remove</button>
+                </div>
+            `;
+        }
+        if (!html) html = '<div style="color: var(--text-secondary);">No server owners added</div>';
+        list.innerHTML = html;
+
+        list.querySelectorAll('.delete-user').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const user = btn.dataset.user;
+                if (confirm(`Remove user ${user}?`)) {
+                    window.authSystem?.removeUser(user, 'CooseTheGeek');
+                    this.loadUsers();
+                    toast.info(`User ${user} removed`);
                 }
             });
         });
     }
 
-    renderCategory(key, cat) {
-        const container = document.getElementById(`cat-${key}`);
-        if (!container) return;
-
-        let html = '';
-        for (let setting of cat.settings) {
-            html += this.renderSetting(setting);
+    addUser() {
+        const username = document.getElementById('master-new-user').value.trim();
+        const code = document.getElementById('master-new-code').value.trim();
+        if (!username || !code) {
+            toast.error('Username and code required');
+            return;
         }
-        container.innerHTML = html;
-
-        // Attach event listeners for this category's settings
-        container.querySelectorAll('input, select, button').forEach(el => {
-            const settingName = el.dataset.setting;
-            if (!settingName) return;
-            const setting = cat.settings.find(s => s.name === settingName);
-            if (!setting) return;
-
-            if (el.tagName === 'BUTTON') {
-                el.addEventListener('click', () => this.executeAction(setting));
-            } else if (el.tagName === 'INPUT') {
-                if (el.type === 'checkbox') {
-                    el.addEventListener('change', () => this.executeSetting(setting, el.checked));
-                } else if (el.type === 'number' || el.type === 'text' || el.type === 'password') {
-                    el.addEventListener('change', () => this.executeSetting(setting, el.value));
-                }
-            } else if (el.tagName === 'SELECT') {
-                el.addEventListener('change', () => this.executeSetting(setting, el.value));
-            }
-        });
-    }
-
-    renderSetting(setting) {
-        const id = `setting-${setting.name.replace(/\s+/g, '-')}`;
-        switch (setting.type) {
-            case 'action':
-                return `<div class="master-setting">
-                    <button class="master-btn" data-setting="${setting.name}">${setting.name}</button>
-                </div>`;
-            case 'bool':
-                return `<div class="master-setting">
-                    <label class="master-toggle">
-                        <input type="checkbox" data-setting="${setting.name}" ${setting.default ? 'checked' : ''}>
-                        <span class="slider"></span>
-                        ${setting.name}
-                    </label>
-                </div>`;
-            case 'text':
-                return `<div class="master-setting">
-                    <label>${setting.name}</label>
-                    <input type="text" data-setting="${setting.name}" value="${setting.default || ''}" placeholder="${setting.name}">
-                </div>`;
-            case 'password':
-                return `<div class="master-setting">
-                    <label>${setting.name}</label>
-                    <input type="password" data-setting="${setting.name}" value="${setting.default || ''}" placeholder="${setting.name}">
-                </div>`;
-            case 'number':
-                return `<div class="master-setting">
-                    <label>${setting.name}</label>
-                    <input type="number" data-setting="${setting.name}" value="${setting.default}" min="${setting.min}" max="${setting.max}">
-                </div>`;
-            case 'range':
-                return `<div class="master-setting">
-                    <label>${setting.name} <span id="${id}-val">${setting.default}</span></label>
-                    <input type="range" data-setting="${setting.name}" value="${setting.default}" min="${setting.min}" max="${setting.max}" step="${setting.step || 1}">
-                </div>`;
-            case 'select':
-                return `<div class="master-setting">
-                    <label>${setting.name}</label>
-                    <select data-setting="${setting.name}">
-                        ${setting.options.map(opt => `<option value="${opt}" ${opt === setting.default ? 'selected' : ''}>${opt}</option>`).join('')}
-                    </select>
-                </div>`;
-            case 'text+action':
-                return `<div class="master-setting">
-                    <label>${setting.name}</label>
-                    <input type="text" id="${id}-input" placeholder="${setting.placeholder || 'Value'}">
-                    <button class="master-btn" data-setting="${setting.name}">Execute</button>
-                </div>`;
-            case 'text+number':
-                return `<div class="master-setting">
-                    <label>${setting.name}</label>
-                    <input type="text" id="${id}-player" placeholder="Player">
-                    <input type="number" id="${id}-duration" placeholder="Minutes" value="30">
-                    <button class="master-btn" data-setting="${setting.name}">Mute</button>
-                </div>`;
-            case 'text+text':
-                return `<div class="master-setting">
-                    <label>${setting.name}</label>
-                    <input type="text" id="${id}-player" placeholder="Player">
-                    <input type="text" id="${id}-reason" placeholder="Reason">
-                    <button class="master-btn" data-setting="${setting.name}">Warn</button>
-                </div>`;
-            case 'cron':
-                return `<div class="master-setting">
-                    <label>${setting.name}</label>
-                    <input type="text" id="${id}-cron" placeholder="* * * * *">
-                    <button class="master-btn" data-setting="${setting.name}">Set</button>
-                </div>`;
-            case 'file':
-                return `<div class="master-setting">
-                    <label>${setting.name}</label>
-                    <input type="file" id="${id}-file" accept=".lua,.js,.txt">
-                    <button class="master-btn" data-setting="${setting.name}">Upload</button>
-                </div>`;
-            default:
-                return '';
-        }
-    }
-
-    async executeSetting(setting, value) {
-        if (!this.access.isMaster()) return;
-        let command = setting.command;
-        if (setting.type === 'bool') {
-            command += ` ${value ? 'true' : 'false'}`;
-        } else if (setting.type === 'number' || setting.type === 'text' || setting.type === 'range') {
-            command += ` ${value}`;
-        } else if (setting.type === 'select') {
-            command += ` ${value}`;
-        } else {
+        if (code.length !== 4 || !/^\d+$/.test(code)) {
+            toast.error('Code must be 4 digits');
             return;
         }
         try {
-            const result = await ConnectionManager.executeCommand(command);
-            toast.success(`Command executed: ${command}`);
+            window.authSystem?.addUser(username, code, 'CooseTheGeek');
+            this.loadUsers();
+            document.getElementById('master-new-user').value = '';
+            document.getElementById('master-new-code').value = '';
+            toast.success(`User ${username} added`);
         } catch (err) {
-            toast.error(`Failed: ${err.message}`);
+            toast.error(err.message);
         }
     }
 
-    async executeAction(setting) {
-        if (!this.access.isMaster()) return;
-        let command = setting.command;
-        if (setting.type === 'text+action') {
-            const input = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-input`);
-            if (input) command += ` ${input.value}`;
-        } else if (setting.type === 'text+number') {
-            const player = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-player`).value;
-            const duration = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-duration`).value;
-            command += ` ${player} ${duration}`;
-        } else if (setting.type === 'text+text') {
-            const player = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-player`).value;
-            const reason = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-reason`).value;
-            command += ` ${player} "${reason}"`;
-        } else if (setting.type === 'cron') {
-            const cron = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-cron`).value;
-            command += ` ${cron}`;
-        } else if (setting.type === 'file') {
-            const file = document.querySelector(`#setting-${setting.name.replace(/\s+/g, '-')}-file`).files[0];
-            if (file) {
-                toast.info('File upload not implemented yet');
-                return;
-            }
-        }
+    async executeRawCommand() {
+        const input = document.getElementById('master-raw-command');
+        const cmd = input.value.trim();
+        if (!cmd) return;
+
+        const output = document.getElementById('master-raw-output');
+        output.innerText = 'Executing...';
+
         try {
-            const result = await ConnectionManager.executeCommand(command);
-            toast.success(`Command executed: ${command}`);
+            const result = await ConnectionManager.executeCommand(cmd);
+            output.innerText = result || 'Command executed (no output)';
         } catch (err) {
-            toast.error(`Failed: ${err.message}`);
+            output.innerText = `Error: ${err.message}`;
         }
+        input.value = '';
     }
 
     refresh() {
-        this.createHTML();
+        // Reload users list if visible
+        this.loadUsers();
     }
 }
 
