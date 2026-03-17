@@ -121,31 +121,11 @@
                 </div>
                 <nav class="sidebar-nav">
                     <a href="#" class="nav-item active" data-tab="home"><span class="nav-icon">🏠</span> <span class="nav-text">Home</span></a>
-                    <a href="#" class="nav-item" data-tab="players"><span class="nav-icon">👥</span> <span class="nav-text">Players</span></a>
-                    <a href="#" class="nav-item" data-tab="master"><span class="nav-icon">👑</span> <span class="nav-text">Master Control</span></a>
-                    <a href="#" class="nav-item" data-tab="economy"><span class="nav-icon">💰</span> <span class="nav-text">Economy</span></a>
-                    <a href="#" class="nav-item" data-tab="livemap"><span class="nav-icon">🗺️</span> <span class="nav-text">Live Map</span></a>
-                    <a href="#" class="nav-item" data-tab="vehicles"><span class="nav-icon">🚗</span> <span class="nav-text">Vehicles</span></a>
-                    <a href="#" class="nav-item" data-tab="teleport"><span class="nav-icon">📍</span> <span class="nav-text">Teleport</span></a>
-                    <a href="#" class="nav-item" data-tab="events"><span class="nav-icon">🎉</span> <span class="nav-text">Events</span></a>
-                    <a href="#" class="nav-item" data-tab="items"><span class="nav-icon">📦</span> <span class="nav-text">Items</span></a>
-                    <a href="#" class="nav-item" data-tab="kits"><span class="nav-icon">🧰</span> <span class="nav-text">Kits</span></a>
-                    <a href="#" class="nav-item" data-tab="world"><span class="nav-icon">🌍</span> <span class="nav-text">World</span></a>
-                    <a href="#" class="nav-item" data-tab="backups"><span class="nav-icon">💾</span> <span class="nav-text">Backups</span></a>
-                    <a href="#" class="nav-item" data-tab="logs"><span class="nav-icon">📜</span> <span class="nav-text">Logs</span></a>
-                    <a href="#" class="nav-item" data-tab="console"><span class="nav-icon">🖥️</span> <span class="nav-text">Console</span></a>
-                    <a href="#" class="nav-item" data-tab="gportal"><span class="nav-icon">🔌</span> <span class="nav-text">GPortal</span></a>
-                    <a href="#" class="nav-item" data-tab="health"><span class="nav-icon">📡</span> <span class="nav-text">Health</span></a>
-                    <a href="#" class="nav-item" data-tab="recovery"><span class="nav-icon">🔄</span> <span class="nav-text">Recovery</span></a>
-                    <a href="#" class="nav-item" data-tab="performance"><span class="nav-icon">📊</span> <span class="nav-text">Performance</span></a>
-                    <a href="#" class="nav-item" data-tab="deepseek"><span class="nav-icon">🤖</span> <span class="nav-text">DeepSeek AI</span></a>
+                    <a href="#" class="nav-item" data-tab="players-hub"><span class="nav-icon">👥</span> <span class="nav-text">Players Hub</span></a>
+                    <a href="#" class="nav-item" data-tab="server-management"><span class="nav-icon">🖥️</span> <span class="nav-text">Server Management</span></a>
+                    <a href="#" class="nav-item" data-tab="game-mechanics"><span class="nav-icon">⚙️</span> <span class="nav-text">Game Mechanics</span></a>
+                    <a href="#" class="nav-item" data-tab="tools-integration"><span class="nav-icon">🔧</span> <span class="nav-text">Tools & Integration</span></a>
                     <a href="#" class="nav-item" data-tab="profile"><span class="nav-icon">👤</span> <span class="nav-text">Profile</span></a>
-                    <a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>
-                    <!-- Knowledge Base tab -->
-                    <a href="#" class="nav-item" data-tab="resources"><span class="nav-icon">📚</span> <span class="nav-text">Knowledge Base</span></a>
-                    <!-- New Commands tab -->
-                    <a href="#" class="nav-item" data-tab="commands"><span class="nav-icon">⚡</span> <span class="nav-text">Commands</span></a>
-                    <a href="#" class="nav-item" data-tab="more"><span class="nav-icon">📊</span> <span class="nav-text">More Tools</span></a>
                 </nav>
                 <div class="sidebar-footer">
                     <div class="role-indicator" id="role-indicator"></div>
@@ -153,79 +133,81 @@
             </aside>
 
             <main class="main-content" id="main-content">
-                <!-- Tab panes (all empty, filled by JS) -->
+                <!-- NEW CONSOLIDATED TAB PANES (visible) -->
                 <div id="tab-home" class="tab-pane active"></div>
-                <div id="tab-players" class="tab-pane"></div>
-                <div id="tab-master" class="tab-pane"></div>
-                <div id="tab-economy" class="tab-pane"></div>
-                <div id="tab-livemap" class="tab-pane"></div>
-                <div id="tab-vehicles" class="tab-pane"></div>
-                <div id="tab-teleport" class="tab-pane"></div>
-                <div id="tab-events" class="tab-pane"></div>
-                <div id="tab-items" class="tab-pane"></div>
-                <div id="tab-kits" class="tab-pane"></div>
-                <div id="tab-world" class="tab-pane"></div>
-                <div id="tab-backups" class="tab-pane"></div>
-                <div id="tab-logs" class="tab-pane"></div>
-                <div id="tab-console" class="tab-pane"></div>
-                <div id="tab-gportal" class="tab-pane"></div>
-                <div id="tab-health" class="tab-pane"></div>
-                <div id="tab-recovery" class="tab-pane"></div>
-                <div id="tab-performance" class="tab-pane"></div>
-                <div id="tab-deepseek" class="tab-pane"></div>
+                <div id="tab-players-hub" class="tab-pane"></div>
+                <div id="tab-server-management" class="tab-pane"></div>
+                <div id="tab-game-mechanics" class="tab-pane"></div>
+                <div id="tab-tools-integration" class="tab-pane"></div>
                 <div id="tab-profile" class="tab-pane"></div>
-                <div id="tab-settings" class="tab-pane"></div>
-                <div id="tab-more" class="tab-pane"></div>
-                <div id="tab-resources" class="tab-pane"></div>
-                <!-- New Commands pane -->
-                <div id="tab-commands" class="tab-pane"></div>
-                <!-- Additional tabs (all existing) -->
-                <div id="tab-animals" class="tab-pane"></div>
-                <div id="tab-autoMod" class="tab-pane"></div>
-                <div id="tab-defense" class="tab-pane"></div>
-                <div id="tab-clans" class="tab-pane"></div>
-                <div id="tab-claims" class="tab-pane"></div>
-                <div id="tab-polls" class="tab-pane"></div>
-                <div id="tab-zones" class="tab-pane"></div>
-                <div id="tab-zorp" class="tab-pane"></div>
-                <div id="tab-combatlog" class="tab-pane"></div>
-                <div id="tab-idcard" class="tab-pane"></div>
-                <div id="tab-user-management" class="tab-pane"></div>
-                <div id="tab-audit" class="tab-pane"></div>
-                <div id="tab-orchestrator" class="tab-pane"></div>
-                <div id="tab-discord" class="tab-pane"></div>
-                <div id="tab-voice" class="tab-pane"></div>
-                <div id="tab-trading" class="tab-pane"></div>
-                <div id="tab-raid" class="tab-pane"></div>
-                <div id="tab-map3d" class="tab-pane"></div>
-                <div id="tab-drainedAI" class="tab-pane"></div>
-                <div id="tab-inventoryViewer" class="tab-pane"></div>
-                <div id="tab-psych" class="tab-pane"></div>
-                <div id="tab-predictive" class="tab-pane"></div>
-                <div id="tab-profiling" class="tab-pane"></div>
-                <div id="tab-playerHub" class="tab-pane"></div>
-                <div id="tab-playerActions" class="tab-pane"></div>
-                <div id="tab-modifiers" class="tab-pane"></div>
-                <div id="tab-entities" class="tab-pane"></div>
-                <div id="tab-spawn" class="tab-pane"></div>
-                <div id="tab-kits" class="tab-pane"></div>
-                <div id="tab-kitVending" class="tab-pane"></div>
-                <div id="tab-heli" class="tab-pane"></div>
-                <div id="tab-explosives" class="tab-pane"></div>
-                <div id="tab-traps" class="tab-pane"></div>
-                <div id="tab-underwater" class="tab-pane"></div>
-                <div id="tab-halloween" class="tab-pane"></div>
-                <div id="tab-decay" class="tab-pane"></div>
-                <div id="tab-scheduler" class="tab-pane"></div>
-                <div id="tab-monuments" class="tab-pane"></div>
-                <div id="tab-global" class="tab-pane"></div>
-                <div id="tab-status" class="tab-pane"></div>
-                <div id="tab-mobile" class="tab-pane"></div>
-                <div id="tab-heatmap" class="tab-pane"></div>
-                <div id="tab-alliance" class="tab-pane"></div>
-                <div id="tab-shop" class="tab-pane"></div>
-                <div id="tab-theme" class="tab-pane"></div>
-                <div id="tab-branding" class="tab-pane"></div>
+
+                <!-- ALL ORIGINAL TAB PANES (hidden, used for modal cloning) -->
+                <div id="tab-players" class="tab-pane hidden"></div>
+                <div id="tab-master" class="tab-pane hidden"></div>
+                <div id="tab-economy" class="tab-pane hidden"></div>
+                <div id="tab-livemap" class="tab-pane hidden"></div>
+                <div id="tab-vehicles" class="tab-pane hidden"></div>
+                <div id="tab-teleport" class="tab-pane hidden"></div>
+                <div id="tab-events" class="tab-pane hidden"></div>
+                <div id="tab-items" class="tab-pane hidden"></div>
+                <div id="tab-kits" class="tab-pane hidden"></div>
+                <div id="tab-world" class="tab-pane hidden"></div>
+                <div id="tab-backups" class="tab-pane hidden"></div>
+                <div id="tab-logs" class="tab-pane hidden"></div>
+                <div id="tab-console" class="tab-pane hidden"></div>
+                <div id="tab-gportal" class="tab-pane hidden"></div>
+                <div id="tab-health" class="tab-pane hidden"></div>
+                <div id="tab-recovery" class="tab-pane hidden"></div>
+                <div id="tab-performance" class="tab-pane hidden"></div>
+                <div id="tab-deepseek" class="tab-pane hidden"></div>
+                <div id="tab-settings" class="tab-pane hidden"></div>
+                <div id="tab-more" class="tab-pane hidden"></div>
+                <div id="tab-resources" class="tab-pane hidden"></div>
+                <div id="tab-animals" class="tab-pane hidden"></div>
+                <div id="tab-autoMod" class="tab-pane hidden"></div>
+                <div id="tab-defense" class="tab-pane hidden"></div>
+                <div id="tab-clans" class="tab-pane hidden"></div>
+                <div id="tab-claims" class="tab-pane hidden"></div>
+                <div id="tab-polls" class="tab-pane hidden"></div>
+                <div id="tab-zones" class="tab-pane hidden"></div>
+                <div id="tab-zorp" class="tab-pane hidden"></div>
+                <div id="tab-combatlog" class="tab-pane hidden"></div>
+                <div id="tab-idcard" class="tab-pane hidden"></div>
+                <div id="tab-user-management" class="tab-pane hidden"></div>
+                <div id="tab-audit" class="tab-pane hidden"></div>
+                <div id="tab-orchestrator" class="tab-pane hidden"></div>
+                <div id="tab-discord" class="tab-pane hidden"></div>
+                <div id="tab-voice" class="tab-pane hidden"></div>
+                <div id="tab-trading" class="tab-pane hidden"></div>
+                <div id="tab-raid" class="tab-pane hidden"></div>
+                <div id="tab-map3d" class="tab-pane hidden"></div>
+                <div id="tab-drainedAI" class="tab-pane hidden"></div>
+                <div id="tab-inventoryViewer" class="tab-pane hidden"></div>
+                <div id="tab-psych" class="tab-pane hidden"></div>
+                <div id="tab-predictive" class="tab-pane hidden"></div>
+                <div id="tab-profiling" class="tab-pane hidden"></div>
+                <div id="tab-playerHub" class="tab-pane hidden"></div>
+                <div id="tab-playerActions" class="tab-pane hidden"></div>
+                <div id="tab-modifiers" class="tab-pane hidden"></div>
+                <div id="tab-entities" class="tab-pane hidden"></div>
+                <div id="tab-spawn" class="tab-pane hidden"></div>
+                <div id="tab-kitVending" class="tab-pane hidden"></div>
+                <div id="tab-heli" class="tab-pane hidden"></div>
+                <div id="tab-explosives" class="tab-pane hidden"></div>
+                <div id="tab-traps" class="tab-pane hidden"></div>
+                <div id="tab-underwater" class="tab-pane hidden"></div>
+                <div id="tab-halloween" class="tab-pane hidden"></div>
+                <div id="tab-decay" class="tab-pane hidden"></div>
+                <div id="tab-scheduler" class="tab-pane hidden"></div>
+                <div id="tab-monuments" class="tab-pane hidden"></div>
+                <div id="tab-global" class="tab-pane hidden"></div>
+                <div id="tab-status" class="tab-pane hidden"></div>
+                <div id="tab-mobile" class="tab-pane hidden"></div>
+                <div id="tab-heatmap" class="tab-pane hidden"></div>
+                <div id="tab-alliance" class="tab-pane hidden"></div>
+                <div id="tab-shop" class="tab-pane hidden"></div>
+                <div id="tab-theme" class="tab-pane hidden"></div>
+                <div id="tab-branding" class="tab-pane hidden"></div>
             </main>
         </div>
 
@@ -235,7 +217,7 @@
         </footer>
     </div>
 
-    <!-- Modals -->
+    <!-- Modals (unchanged) -->
     <div id="error-modal" class="modal hidden">
         <div class="modal-content">
             <h3>❌ Error</h3>
@@ -257,7 +239,7 @@
         </div>
     </div>
 
-    <!-- Role Selection Modal (shown after first login) -->
+    <!-- Role Selection Modal -->
     <div id="role-modal" class="modal hidden">
         <div class="modal-content">
             <h3>👤 Select Your Role</h3>
@@ -320,6 +302,7 @@
     </div>
 
     <!-- ========== SCRIPT LOADING ========== -->
+    <!-- Core scripts -->
     <script src="js/core.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
@@ -333,15 +316,18 @@
     <script src="js/animations.js"></script>
     <script src="js/toast.js"></script>
 
+    <!-- Profile and related -->
     <script src="js/profile.js"></script>
     <script src="js/id-card-generator.js"></script>
     <script src="js/claim-system.js"></script>
     <script src="js/combat-log.js"></script>
 
+    <!-- Server commands -->
     <script src="js/server-commands.js"></script>
     <script src="js/master-control.js"></script>
     <script src="js/map-generation.js"></script>
 
+    <!-- Individual feature modules -->
     <script src="js/home.js"></script>
     <script src="js/players.js"></script>
     <script src="js/vehicles.js"></script>
@@ -356,12 +342,8 @@
     <script src="js/settings.js"></script>
     <script src="js/gportal-connector.js"></script>
     <script src="js/performance-metrics.js"></script>
-    <script src="js/deepseek-ai.js"></script>
 
-    <!-- New Commands page -->
-    <script src="js/commands.js"></script>
-
-    <!-- Legacy modules -->
+    <!-- Legacy modules (kept for data) -->
     <script src="js/animals.js"></script>
     <script src="js/autoMod.js"></script>
     <script src="js/baseDefense.js"></script>
@@ -371,7 +353,6 @@
     <script src="js/communityPolls.js"></script>
     <script src="js/decay.js"></script>
     <script src="js/discordSync.js"></script>
-    <script src="js/drainedAI.js"></script>
     <script src="js/echoMemory.js"></script>
     <script src="js/entities.js"></script>
     <script src="js/eventOrchestrator.js"></script>
@@ -397,8 +378,6 @@
     <script src="js/psychological.js"></script>
     <script src="js/raidDetector.js"></script>
     <script src="js/scheduler.js"></script>
-    <script src="js/security.js"></script>
-    <script src="js/securityDoor.js"></script>
     <script src="js/serverConnector.js"></script>
     <script src="js/shopSystem.js"></script>
     <script src="js/spawn.js"></script>
@@ -411,7 +390,11 @@
     <script src="js/zones.js"></script>
     <script src="js/zorp.js"></script>
 
-    <!-- Knowledge Base module -->
+    <!-- New consolidated page modules -->
+    <script src="js/players-hub.js"></script>
+    <script src="js/server-management.js"></script>
+    <script src="js/game-mechanics.js"></script>
+    <script src="js/tools-integration.js"></script>
     <script src="js/resources.js"></script>
 
     <!-- Global navigation and header handlers -->
