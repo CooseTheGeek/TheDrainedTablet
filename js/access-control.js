@@ -1,4 +1,4 @@
-// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (with temporary master override)
+// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (with debug bypass)
 
 class AccessControl {
     constructor() {
@@ -9,11 +9,16 @@ class AccessControl {
             owner: 2,
             master: 3
         };
+        // Enable bypass for debugging (set to false to disable)
+        this.debugBypass = true;
         this.init();
     }
 
     init() {
-        console.log('AccessControl initialized');
+        console.log('AccessControl initialized (debug bypass =', this.debugBypass, ')');
+        if (this.debugBypass) {
+            console.warn('⚠️ DEBUG MODE: Access control bypassed – all users have master access');
+        }
     }
 
     // Temporary override for CooseTheGeek
@@ -23,6 +28,9 @@ class AccessControl {
     }
 
     hasRole(requiredRole) {
+        // Debug bypass – always return true
+        if (this.debugBypass) return true;
+
         if (this.isMasterUser()) {
             return true;
         }
@@ -31,6 +39,7 @@ class AccessControl {
     }
 
     isMaster() {
+        if (this.debugBypass) return true;
         if (this.isMasterUser()) {
             return true;
         }
@@ -38,6 +47,7 @@ class AccessControl {
     }
 
     isOwner() {
+        if (this.debugBypass) return true;
         if (this.isMasterUser()) {
             return true;
         }
@@ -61,6 +71,9 @@ class AccessControl {
     }
 
     applyUIPermissions() {
+        // In debug mode, show everything
+        if (this.debugBypass) return;
+
         if (!this.hasRole('master')) {
             document.querySelectorAll('.master-only').forEach(el => el.style.display = 'none');
         }
