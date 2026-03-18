@@ -2,6 +2,7 @@
 // Complete item database for Rust Console Edition – all 553+ items.
 // Modern UI with search, categories, and quick actions.
 // Now with reliable image loading from corrosionhour.com and fallback placeholders.
+// FIXED: fallback data URI now uses percent‑encoded double quotes to avoid syntax errors.
 
 class Items {
     constructor() {
@@ -801,10 +802,10 @@ class Items {
         return `https://www.corrosionhour.com/img/items/${formattedShortname}.png`;
     }
 
-    // Ultimate fallback: data-URL placeholder with first letter
+    // FIXED: Safe fallback data URI with percent-encoded double quotes
     getFallbackImagePlaceholder(shortname) {
         const firstLetter = shortname.charAt(0).toUpperCase();
-        return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Crect width='30' height='30' fill='%23333'/%3E%3Ctext x='15' y='20' font-size='16' text-anchor='middle' fill='%23D4AF37' font-family='Inter'%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
+        return `data:image/svg+xml,%3Csvg xmlns=%22http%3A//www.w3.org/2000/svg%22 width=%2230%22 height=%2230%22 viewBox=%220 0 30 30%22%3E%3Crect width=%2230%22 height=%2230%22 fill=%22%23333%22/%3E%3Ctext x=%2215%22 y=%2220%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23D4AF37%22 font-family=%22Inter%22%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
     }
 
     renderItems() {
@@ -903,5 +904,5 @@ window.getItemImageUrl = (shortname) => {
 
 window.getFallbackImagePlaceholder = (shortname) => {
     const firstLetter = shortname.charAt(0).toUpperCase();
-    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Crect width='30' height='30' fill='%23333'/%3E%3Ctext x='15' y='20' font-size='16' text-anchor='middle' fill='%23D4AF37' font-family='Inter'%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
+    return `data:image/svg+xml,%3Csvg xmlns=%22http%3A//www.w3.org/2000/svg%22 width=%2230%22 height=%2230%22 viewBox=%220 0 30 30%22%3E%3Crect width=%2230%22 height=%2230%22 fill=%22%23333%22/%3E%3Ctext x=%2215%22 y=%2220%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23D4AF37%22 font-family=%22Inter%22%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
 };
