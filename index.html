@@ -6,63 +6,144 @@
     <title>DRAINED TABLET · 3UNKS</title>
     <link rel="stylesheet" href="global.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Cropper.js -->
+    <!-- Cropper.js for avatar cropping -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <!-- html2canvas -->
+    <!-- html2canvas for ID card download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/otpauth@9.1.0/dist/otpauth.min.js"></script>
-    <style>.hidden{display:none!important}#role-modal .modal-content{max-width:400px}.role-option{display:flex;align-items:center;gap:1rem;padding:1rem;margin:.5rem 0;background:var(--bg-tertiary);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:background .2s}.role-option:hover{background:var(--accent-primary);color:#000}.role-option.selected{background:var(--accent-primary);color:#000;border-color:var(--accent-primary)}.role-option input{display:none}</style>
+    <style>
+        .hidden { display: none !important; }
+        /* Role selection modal styles */
+        #role-modal .modal-content {
+            max-width: 400px;
+        }
+        .role-option {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .role-option:hover {
+            background: var(--accent-primary);
+            color: #000;
+        }
+        .role-option.selected {
+            background: var(--accent-primary);
+            color: #000;
+            border-color: var(--accent-primary);
+        }
+        .role-option input {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <div id="toast-container" class="toast-container"></div>
+
     <!-- SECURITY DOOR -->
     <div id="security-door" class="security-door">
         <div class="door-container glass-panel">
-            <div class="door-header"><h1>🔒 THE DRAINED TABLET</h1><p>Enter your 4‑digit access code</p></div>
-            <div class="code-dots"><span class="dot" id="dot1"></span><span class="dot" id="dot2"></span><span class="dot" id="dot3"></span><span class="dot" id="dot4"></span></div>
-            <div class="numpad">
-                <div class="numpad-row"><button class="numpad-btn" data-num="1">1</button><button class="numpad-btn" data-num="2">2</button><button class="numpad-btn" data-num="3">3</button></div>
-                <div class="numpad-row"><button class="numpad-btn" data-num="4">4</button><button class="numpad-btn" data-num="5">5</button><button class="numpad-btn" data-num="6">6</button></div>
-                <div class="numpad-row"><button class="numpad-btn" data-num="7">7</button><button class="numpad-btn" data-num="8">8</button><button class="numpad-btn" data-num="9">9</button></div>
-                <div class="numpad-row"><button class="numpad-btn" data-num="C">C</button><button class="numpad-btn" data-num="0">0</button><button class="numpad-btn" data-num="E">E</button></div>
+            <div class="door-header">
+                <h1>🔒 THE DRAINED TABLET</h1>
+                <p>Enter your 4‑digit access code</p>
             </div>
-            <div class="door-actions"><button id="unlock-btn" class="door-btn">UNLOCK</button><button id="clear-btn" class="door-btn">CLEAR</button><button id="forgot-btn" class="door-btn">FORGOT CODE</button></div>
-            <div class="door-footer"><p id="attempts">3 attempts remaining</p><p id="last-attempt">Last: Never</p></div>
+            <div class="code-dots">
+                <span class="dot" id="dot1"></span>
+                <span class="dot" id="dot2"></span>
+                <span class="dot" id="dot3"></span>
+                <span class="dot" id="dot4"></span>
+            </div>
+            <div class="numpad">
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="1">1</button>
+                    <button class="numpad-btn" data-num="2">2</button>
+                    <button class="numpad-btn" data-num="3">3</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="4">4</button>
+                    <button class="numpad-btn" data-num="5">5</button>
+                    <button class="numpad-btn" data-num="6">6</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="7">7</button>
+                    <button class="numpad-btn" data-num="8">8</button>
+                    <button class="numpad-btn" data-num="9">9</button>
+                </div>
+                <div class="numpad-row">
+                    <button class="numpad-btn" data-num="C">C</button>
+                    <button class="numpad-btn" data-num="0">0</button>
+                    <button class="numpad-btn" data-num="E">E</button>
+                </div>
+            </div>
+            <div class="door-actions">
+                <button id="unlock-btn" class="door-btn">UNLOCK</button>
+                <button id="clear-btn" class="door-btn">CLEAR</button>
+                <button id="forgot-btn" class="door-btn">FORGOT CODE</button>
+            </div>
+            <div class="door-footer">
+                <p id="attempts">3 attempts remaining</p>
+                <p id="last-attempt">Last: Never</p>
+            </div>
         </div>
     </div>
+
     <!-- MAIN DASHBOARD -->
     <div id="dashboard" class="dashboard hidden">
         <header class="main-header glass-panel">
-            <div class="header-left"><span class="logo">⚡ 3UNKS</span><span class="server-name" id="server-name-display">The Drained Land's 2X</span></div>
+            <div class="header-left">
+                <span class="logo">⚡ 3UNKS</span>
+                <span class="server-name" id="server-name-display">The Drained Land's 2X</span>
+            </div>
             <div class="header-right">
-                <div class="connection-status" id="connection-status"><span class="dot offline"></span> DISCONNECTED</div>
-                <div class="profile-badge" id="profile-link"><span id="profile-icon">👤</span><span id="profile-name">CooseTheGeek</span><span id="role-badge" class="role-badge"></span></div>
+                <div class="connection-status" id="connection-status">
+                    <span class="dot offline"></span> DISCONNECTED
+                </div>
+                <div class="profile-badge" id="profile-link">
+                    <img id="profile-avatar" src="" class="profile-avatar-small" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+                    <span id="profile-name">CooseTheGeek</span>
+                    <span id="role-badge" class="role-badge"></span>
+                </div>
                 <button id="sign-out-btn" class="header-btn" title="Disconnect and return to door">🚪</button>
             </div>
         </header>
+
         <div class="main-layout">
             <aside class="sidebar" id="sidebar">
-                <div class="sidebar-header"><button id="collapse-sidebar" class="sidebar-collapse">◀</button></div>
+                <div class="sidebar-header">
+                    <button id="collapse-sidebar" class="sidebar-collapse">◀</button>
+                </div>
                 <nav class="sidebar-nav">
                     <a href="#" class="nav-item active" data-tab="home">🏠 Home</a>
                     <a href="#" class="nav-item" data-tab="players-hub">👥 Players Hub</a>
                     <a href="#" class="nav-item" data-tab="server-management">🖥️ Server Management</a>
                     <a href="#" class="nav-item" data-tab="game-mechanics">⚙️ Game Mechanics</a>
                     <a href="#" class="nav-item" data-tab="tools-integration">🔧 Tools & Integration</a>
+                    <a href="#" class="nav-item" data-tab="shop">🏪 Shop</a>
                     <a href="#" class="nav-item" data-tab="profile">👤 Profile</a>
                 </nav>
-                <div class="sidebar-footer"><div class="role-indicator" id="role-indicator"></div></div>
+                <div class="sidebar-footer">
+                    <div class="role-indicator" id="role-indicator"></div>
+                </div>
             </aside>
+
             <main class="main-content" id="main-content">
-                <!-- Consolidated tabs -->
+                <!-- Consolidated Tab Panes (visible) -->
                 <div id="tab-home" class="tab-pane active"></div>
                 <div id="tab-players-hub" class="tab-pane"></div>
                 <div id="tab-server-management" class="tab-pane"></div>
                 <div id="tab-game-mechanics" class="tab-pane"></div>
                 <div id="tab-tools-integration" class="tab-pane"></div>
+                <div id="tab-shop" class="tab-pane"></div>
                 <div id="tab-profile" class="tab-pane"></div>
-                <!-- Original hidden tabs -->
+
+                <!-- Hidden Original Tab Panes (used for modal cloning) -->
                 <div id="tab-players" class="tab-pane hidden"></div>
                 <div id="tab-master" class="tab-pane hidden"></div>
                 <div id="tab-economy" class="tab-pane hidden"></div>
@@ -126,44 +207,104 @@
                 <div id="tab-mobile" class="tab-pane hidden"></div>
                 <div id="tab-heatmap" class="tab-pane hidden"></div>
                 <div id="tab-alliance" class="tab-pane hidden"></div>
-                <div id="tab-shop" class="tab-pane hidden"></div>
+                <div id="tab-shop-hidden" class="tab-pane hidden"></div>
                 <div id="tab-theme" class="tab-pane hidden"></div>
                 <div id="tab-branding" class="tab-pane hidden"></div>
             </main>
         </div>
-        <footer class="main-footer glass-panel"><span>⚡ The Drained Land's | 3UNKS ⚡</span><span class="version">v7.0.0</span></footer>
+
+        <footer class="main-footer glass-panel">
+            <span>⚡ The Drained Land's | 3UNKS ⚡</span>
+            <span class="version">v7.0.0</span>
+        </footer>
     </div>
+
     <!-- Modals -->
-    <div id="error-modal" class="modal hidden"><div class="modal-content"><h3>❌ Error</h3><p id="error-message"></p><div class="modal-actions"><button id="error-close" class="modal-btn">OK</button></div></div></div>
-    <div id="confirm-modal" class="modal hidden"><div class="modal-content"><h3>⚠️ Confirm</h3><p id="confirm-message"></p><div class="modal-actions"><button id="confirm-yes" class="modal-btn primary">Yes</button><button id="confirm-no" class="modal-btn">No</button></div></div></div>
+    <div id="error-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>❌ Error</h3>
+            <p id="error-message"></p>
+            <div class="modal-actions">
+                <button id="error-close" class="modal-btn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>⚠️ Confirm</h3>
+            <p id="confirm-message"></p>
+            <div class="modal-actions">
+                <button id="confirm-yes" class="modal-btn primary">Yes</button>
+                <button id="confirm-no" class="modal-btn">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role Selection Modal -->
     <div id="role-modal" class="modal hidden">
         <div class="modal-content">
             <h3>👤 Select Your Role</h3>
             <p>Choose your initial role. You can change this later in User Management.</p>
-            <div class="role-option" data-role="user"><input type="radio" name="role" value="user" id="role-user"><label for="role-user">👤 User</label><span>Basic access – view only, no commands</span></div>
-            <div class="role-option" data-role="master"><input type="radio" name="role" value="master" id="role-master"><label for="role-master">👑 Master</label><span>Full control – server commands, user management, all settings</span></div>
-            <div class="role-option" data-role="owner"><input type="radio" name="role" value="owner" id="role-owner"><label for="role-owner">🔒 Owner</label><span>RCON commands – manage server, but not dashboard users</span></div>
-            <div class="modal-actions"><button id="set-role" class="modal-btn primary">Set Role</button><button id="skip-role" class="modal-btn">Skip (stay as user)</button></div>
+            <div class="role-option" data-role="user">
+                <input type="radio" name="role" value="user" id="role-user">
+                <label for="role-user">👤 User</label>
+                <span>Basic access – view only, no commands</span>
+            </div>
+            <div class="role-option" data-role="master">
+                <input type="radio" name="role" value="master" id="role-master">
+                <label for="role-master">👑 Master</label>
+                <span>Full control – server commands, user management, all settings</span>
+            </div>
+            <div class="role-option" data-role="owner">
+                <input type="radio" name="role" value="owner" id="role-owner">
+                <label for="role-owner">🔒 Owner</label>
+                <span>RCON commands – manage server, but not dashboard users</span>
+            </div>
+            <div class="modal-actions">
+                <button id="set-role" class="modal-btn primary">Set Role</button>
+                <button id="skip-role" class="modal-btn">Skip (stay as user)</button>
+            </div>
         </div>
     </div>
+
+    <!-- Discord Link / Forgot Code Modal -->
     <div id="discord-modal" class="modal hidden">
         <div class="modal-content">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">🔗 Link Discord Account</h3><button id="discord-close-btn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">&times;</button></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin:0;">🔗 Link Discord Account</h3>
+                <button id="discord-close-btn" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
             <p>Connect your Discord to enable notifications and direct messaging.</p>
-            <button id="discord-link-btn" class="modal-btn primary">Link Discord</button><button id="discord-skip-btn" class="modal-btn">Skip</button>
-            <hr><h4>Forgot your code?</h4><p>An email will be sent to the master. You can also DM CooseTheGeek directly.</p>
-            <button id="forgot-email-btn" class="modal-btn">Send Email</button><button id="forgot-discord-dm-btn" class="modal-btn">DM Master on Discord</button>
-            <div class="modal-actions" style="margin-top:1rem;"><button id="discord-cancel-btn" class="modal-btn">Cancel</button></div>
+            <button id="discord-link-btn" class="modal-btn primary">Link Discord</button>
+            <button id="discord-skip-btn" class="modal-btn">Skip</button>
+            <hr>
+            <h4>Forgot your code?</h4>
+            <p>An email will be sent to the master. You can also DM CooseTheGeek directly.</p>
+            <button id="forgot-email-btn" class="modal-btn">Send Email</button>
+            <button id="forgot-discord-dm-btn" class="modal-btn">DM Master on Discord</button>
+            <div class="modal-actions" style="margin-top: 1rem;">
+                <button id="discord-cancel-btn" class="modal-btn">Cancel</button>
+            </div>
         </div>
     </div>
+
+    <!-- Avatar Crop Modal -->
     <div id="crop-modal" class="modal hidden">
         <div class="modal-content avatar-crop-modal">
             <h3>Crop Your Avatar</h3>
-            <div class="crop-container"><img id="crop-image" src="" alt="Avatar to crop"></div>
-            <div class="modal-actions"><button id="crop-save" class="modal-btn primary">Save</button><button id="crop-cancel" class="modal-btn">Cancel</button></div>
+            <div class="crop-container">
+                <img id="crop-image" src="" alt="Avatar to crop">
+            </div>
+            <div class="modal-actions">
+                <button id="crop-save" class="modal-btn primary">Save</button>
+                <button id="crop-cancel" class="modal-btn">Cancel</button>
+            </div>
         </div>
     </div>
-    <!-- Scripts -->
+
+    <!-- ========== SCRIPT LOADING ========== -->
+    <!-- Core scripts -->
     <script src="js/core.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
@@ -176,13 +317,20 @@
     <script src="js/icons.js"></script>
     <script src="js/animations.js"></script>
     <script src="js/toast.js"></script>
+    <script src="js/default-avatar.js"></script>
+
+    <!-- Profile and related -->
     <script src="js/profile.js"></script>
     <script src="js/id-card-generator.js"></script>
     <script src="js/claim-system.js"></script>
     <script src="js/combat-log.js"></script>
+
+    <!-- Server commands -->
     <script src="js/server-commands.js"></script>
     <script src="js/master-control.js"></script>
     <script src="js/map-generation.js"></script>
+
+    <!-- Individual feature modules -->
     <script src="js/home.js"></script>
     <script src="js/players.js"></script>
     <script src="js/vehicles.js"></script>
@@ -197,6 +345,8 @@
     <script src="js/settings.js"></script>
     <script src="js/gportal-connector.js"></script>
     <script src="js/performance-metrics.js"></script>
+
+    <!-- Legacy modules -->
     <script src="js/animals.js"></script>
     <script src="js/autoMod.js"></script>
     <script src="js/baseDefense.js"></script>
@@ -242,73 +392,113 @@
     <script src="js/voiceCommands.js"></script>
     <script src="js/zones.js"></script>
     <script src="js/zorp.js"></script>
+
+    <!-- New consolidated page modules -->
     <script src="js/players-hub.js"></script>
     <script src="js/server-management.js"></script>
     <script src="js/game-mechanics.js"></script>
     <script src="js/tools-integration.js"></script>
     <script src="js/resources.js"></script>
+    
+    <!-- New shop module -->
+    <script src="js/shop.js"></script>
+
+    <!-- Global navigation and header handlers -->
     <script>
-        (function(){
-            function switchTab(tabId){
-                document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-                const target=document.getElementById('tab-'+tabId);
-                if(target) target.classList.add('active');
-                document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
-                const nav=document.querySelector('.nav-item[data-tab="'+tabId+'"]');
-                if(nav) nav.classList.add('active');
-                window.dispatchEvent(new CustomEvent('tab-changed',{detail:{tab:tabId}}));
+        (function() {
+            // Tab switching
+            function switchTab(tabId) {
+                document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+                const target = document.getElementById(`tab-${tabId}`);
+                if (target) target.classList.add('active');
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                const activeNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+                if (activeNav) activeNav.classList.add('active');
+                window.dispatchEvent(new CustomEvent('tab-changed', { detail: { tab: tabId } }));
             }
-            document.querySelectorAll('.nav-item').forEach(item=>{
-                item.addEventListener('click',e=>{
+
+            // Attach sidebar clicks
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
                     e.preventDefault();
-                    if(item.dataset.tab) switchTab(item.dataset.tab);
+                    const tab = item.dataset.tab;
+                    if (tab) switchTab(tab);
                 });
             });
-            document.getElementById('profile-link')?.addEventListener('click',e=>{
-                e.preventDefault();
-                switchTab('profile');
-            });
-            document.getElementById('sign-out-btn')?.addEventListener('click',()=>{
-                if(window.UserManager) UserManager.logout();
-                else{
-                    document.getElementById('security-door').classList.remove('hidden');
-                    document.getElementById('dashboard').classList.add('hidden');
-                    localStorage.removeItem('tdl_session');
-                }
-            });
-            document.getElementById('collapse-sidebar')?.addEventListener('click',()=>{
-                document.getElementById('sidebar').classList.toggle('collapsed');
-                const isCollapsed=document.getElementById('sidebar').classList.contains('collapsed');
-                document.getElementById('collapse-sidebar').textContent=isCollapsed?'▶':'◀';
-            });
-            document.querySelectorAll('.role-option').forEach(opt=>{
-                opt.addEventListener('click',()=>{
-                    document.querySelectorAll('.role-option').forEach(o=>o.classList.remove('selected'));
+
+            // Header clicks
+            const profileLink = document.getElementById('profile-link');
+            if (profileLink) {
+                profileLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    switchTab('profile');
+                });
+            }
+
+            const signOutBtn = document.getElementById('sign-out-btn');
+            if (signOutBtn) {
+                signOutBtn.addEventListener('click', () => {
+                    if (window.UserManager) UserManager.logout();
+                    else {
+                        document.getElementById('security-door').classList.remove('hidden');
+                        document.getElementById('dashboard').classList.add('hidden');
+                        localStorage.removeItem('tdl_session');
+                    }
+                });
+            }
+
+            // Sidebar collapse toggle
+            const collapseBtn = document.getElementById('collapse-sidebar');
+            if (collapseBtn) {
+                collapseBtn.addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.toggle('collapsed');
+                    const isCollapsed = document.getElementById('sidebar').classList.contains('collapsed');
+                    collapseBtn.textContent = isCollapsed ? '▶' : '◀';
+                });
+            }
+
+            // Role selection modal logic
+            const roleOptions = document.querySelectorAll('.role-option');
+            roleOptions.forEach(opt => {
+                opt.addEventListener('click', () => {
+                    roleOptions.forEach(o => o.classList.remove('selected'));
                     opt.classList.add('selected');
-                    opt.querySelector('input').checked=true;
+                    opt.querySelector('input').checked = true;
                 });
             });
-            document.getElementById('set-role')?.addEventListener('click',()=>{
-                const selected=document.querySelector('input[name="role"]:checked');
-                if(!selected){toast.error('Please select a role');return;}
-                const role=selected.value;
-                if(AppState.user){
-                    AppState.user.role=role;
-                    localStorage.setItem('tdl_role',role);
-                    let users=JSON.parse(localStorage.getItem('tdl_users')||'{}');
-                    if(users[AppState.user.username]) users[AppState.user.username].role=role;
-                    localStorage.setItem('tdl_users',JSON.stringify(users));
+
+            document.getElementById('set-role')?.addEventListener('click', () => {
+                const selected = document.querySelector('input[name="role"]:checked');
+                if (!selected) {
+                    toast.error('Please select a role');
+                    return;
+                }
+                const role = selected.value;
+                if (AppState.user) {
+                    AppState.user.role = role;
+                    localStorage.setItem('tdl_role', role);
+                    let users = JSON.parse(localStorage.getItem('tdl_users') || '{}');
+                    if (users[AppState.user.username]) {
+                        users[AppState.user.username].role = role;
+                        localStorage.setItem('tdl_users', JSON.stringify(users));
+                    }
                 }
                 document.getElementById('role-modal').classList.add('hidden');
-                toast.success('Role set to '+role);
-                if(window.accessControl) window.accessControl.applyUIPermissions();
+                toast.success(`Role set to ${role}`);
+                if (window.accessControl) window.accessControl.applyUIPermissions();
             });
-            document.getElementById('skip-role')?.addEventListener('click',()=>{
+
+            document.getElementById('skip-role')?.addEventListener('click', () => {
                 document.getElementById('role-modal').classList.add('hidden');
                 toast.info('Role selection skipped – you are a basic user.');
             });
         })();
     </script>
-    <script>document.addEventListener('DOMContentLoaded',()=>console.log('🚀 DRAINED TABLET fully loaded'));</script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 DRAINED TABLET fully loaded');
+        });
+    </script>
 </body>
 </html>
