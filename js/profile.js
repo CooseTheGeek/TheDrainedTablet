@@ -1,6 +1,7 @@
 // profile.js – DRAINED TABLET ULTIMATE v7.0.0
 // User profile with tabbed interface: ID Card, Customize ID Card, and Settings
 // Enhanced with avatar cropping using Cropper.js, live preview, and persistent storage.
+// Updated with default Rust character avatar
 
 class Profile {
     constructor() {
@@ -55,11 +56,19 @@ class Profile {
         this.attachEvents();
         this.populateUserInfo();
         this.renderServers();
+        this.updateHeaderAvatar();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'profile') {
                 this.refresh();
             }
         });
+    }
+
+    updateHeaderAvatar() {
+        const headerAvatar = document.getElementById('profile-avatar');
+        if (headerAvatar) {
+            headerAvatar.src = AppState.user.avatar || window.DEFAULT_AVATAR;
+        }
     }
 
     createHTML() {
@@ -132,7 +141,7 @@ class Profile {
                                 <h3>Avatar</h3>
                                 <div class="form-group">
                                     <div class="avatar-controls">
-                                        <img id="custom-avatar-preview" class="avatar-preview-small" src="${AppState.user.avatar || ''}" onerror="this.style.display='none'">
+                                        <img id="custom-avatar-preview" class="avatar-preview-small" src="${AppState.user.avatar || window.DEFAULT_AVATAR}" onerror="this.src=window.DEFAULT_AVATAR">
                                         <div>
                                             <button id="upload-avatar" class="small-btn">📤 Upload</button>
                                             <button id="remove-avatar" class="small-btn">🗑️ Remove</button>
@@ -265,11 +274,8 @@ class Profile {
     }
 
     getAvatarHTML(size = 'large') {
-        const avatar = AppState.user.avatar;
-        if (avatar) {
-            return `<img src="${avatar}" alt="avatar" class="avatar-img">`;
-        }
-        return `<div class="avatar-placeholder">${AppState.user.username ? AppState.user.username.charAt(0).toUpperCase() : '?'}</div>`;
+        const avatar = AppState.user.avatar || window.DEFAULT_AVATAR;
+        return `<img src="${avatar}" alt="avatar" class="avatar-img" onerror="this.src=window.DEFAULT_AVATAR">`;
     }
 
     getPlatformDisplay(platform) {
@@ -450,9 +456,11 @@ class Profile {
                 customPreview.src = AppState.user.avatar;
                 customPreview.style.display = 'inline-block';
             } else {
-                customPreview.style.display = 'none';
+                customPreview.src = window.DEFAULT_AVATAR;
+                customPreview.style.display = 'inline-block';
             }
         }
+        this.updateHeaderAvatar();
     }
 
     saveCustomizations() {
@@ -617,4 +625,12 @@ class Profile {
 // Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.profile = new Profile();
+});
+
+// Update header avatar on load
+document.addEventListener('DOMContentLoaded', () => {
+    const headerAvatar = document.getElementById('profile-avatar');
+    if (headerAvatar) {
+        headerAvatar.src = AppState.user?.avatar || window.DEFAULT_AVATAR;
+    }
 });

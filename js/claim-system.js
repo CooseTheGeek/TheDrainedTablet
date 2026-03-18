@@ -1,6 +1,7 @@
 // claim-system.js – DRAINED TABLET ULTIMATE v7.0.0
 // Anti‑exploit claim system for rewards (kits, items, etc.).
 // Uses bridge database for persistence and RCON for delivery.
+// UPDATED: uses platformId for player identification.
 
 class ClaimSystem {
     constructor() {
@@ -188,15 +189,14 @@ class ClaimSystem {
     async deliverItem(claim) {
         // Determine delivery method
         const method = this.userPref;
-        const player = this.tablet.currentUser; // or use platformId to map to in‑game name?
-        // For now, we assume the player is logged in with the same name as in game.
-        const playerName = AppState.user.username;
-        if (!playerName) throw new Error('No player name');
+        // Use platformId as the in-game player identifier
+        const playerId = AppState.user.platformId;
+        if (!playerId) throw new Error('No platform ID');
 
         let command = '';
         switch (method) {
             case 'inventory':
-                command = `inventory.giveplayer "${playerName}" ${claim.item_shortname} ${claim.quantity}`;
+                command = `inventory.giveplayer "${playerId}" ${claim.item_shortname} ${claim.quantity}`;
                 break;
             case 'ground':
                 command = `spawn "${claim.item_shortname}" ${claim.quantity}`;
@@ -206,7 +206,7 @@ class ClaimSystem {
                 command = `spawn "${claim.item_shortname}" ${claim.quantity}`;
                 break;
             default:
-                command = `inventory.giveplayer "${playerName}" ${claim.item_shortname} ${claim.quantity}`;
+                command = `inventory.giveplayer "${playerId}" ${claim.item_shortname} ${claim.quantity}`;
         }
 
         try {
