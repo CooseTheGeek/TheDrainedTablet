@@ -2572,3 +2572,126 @@ input:checked + .slider:before {
         padding: 0.3rem 0.8rem;
     }
 }
+
+/* ========== LIVE MAP ========== */
+.map-wrapper {
+    position: relative;
+    width: 100%;
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.map-hamburger {
+    display: none;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+    font-size: 20px;
+    line-height: 1;
+}
+.map-hamburger span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: currentColor;
+    margin: 4px 0;
+    transition: 0.2s;
+}
+
+.map-tab-nav {
+    display: flex;
+    gap: 8px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border-bottom: 1px solid var(--glass-border);
+    padding: 8px 16px;
+    flex-wrap: wrap;
+}
+
+.map-tab-btn {
+    background: none;
+    border: none;
+    padding: 8px 16px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 30px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+.map-tab-btn.active {
+    background: var(--accent-primary);
+    color: #000;
+}
+.map-tab-btn:hover:not(.active) {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.map-container {
+    position: relative;
+    background: var(--bg-tertiary);
+}
+
+#live-map-canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: grab;
+    background: var(--bg-secondary);
+}
+#live-map-canvas:active {
+    cursor: grabbing;
+}
+
+.map-coords {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    color: var(--accent-primary);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Mobile styles for hamburger */
+@media (max-width: 768px) {
+    .map-hamburger {
+        display: block;
+    }
+    .map-tab-nav {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 50px;
+        left: 10px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--glass-blur));
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        width: 200px;
+        z-index: 99;
+        padding: 8px;
+        gap: 4px;
+    }
+    .map-tab-nav.open {
+        display: flex;
+    }
+    .map-tab-btn {
+        width: 100%;
+        text-align: left;
+        padding: 10px 16px;
+    }
+}
