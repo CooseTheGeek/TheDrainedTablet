@@ -230,8 +230,10 @@ class GPortalConnector {
         this.servers.forEach(s => {
             html += `
                 <div class="server-card">
-                    <div class="server-name">${s.name}</div>
-                    <div class="server-details">${s.ip}:${s.port}</div>
+                    <div class="server-info">
+                        <div class="server-name">${s.name}</div>
+                        <div class="server-details">${s.ip}:${s.port}</div>
+                    </div>
                     <div class="server-actions">
                         <button class="small-btn connect-server" data-id="${s.id}">🔌 Connect</button>
                         <button class="small-btn delete-server" data-id="${s.id}">🗑️ Delete</button>
@@ -284,9 +286,7 @@ class GPortalConnector {
                 AppState.connection.server = data.server;
                 localStorage.setItem('tdl_last_credentials', JSON.stringify({ ip: server.ip, port: server.port, password: server.password }));
                 this.updateHeaderStatus();
-                // Trigger a player list update
                 ConnectionManager.notify();
-                // Optionally, refresh the live map
                 if (window.livemap) window.livemap.refresh();
             } else {
                 toast.error(`Connection failed: ${data.error}`);
