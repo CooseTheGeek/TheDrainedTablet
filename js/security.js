@@ -19,8 +19,32 @@ class Security {
         this.updateDisplay();
         this.create2FAModal();
         this.createDiscordModal();
-        this.setupDiscordModalDelegation(); // use delegation
+        this.setupDiscordModalDelegation();
         this.updateRoleBadge();
+        this.checkSessionAndShowDashboard(); // <-- new method
+    }
+
+    // NEW: Check if we have a valid session and show dashboard directly
+    checkSessionAndShowDashboard() {
+        const session = localStorage.getItem('tdl_session');
+        if (session) {
+            try {
+                const sess = JSON.parse(session);
+                if (sess.expires > Date.now()) {
+                    // Session exists and is valid, so hide door and show dashboard
+                    document.getElementById('security-door').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    // Ensure user data is loaded into AppState
+                    if (window.AppState) {
+                        AppState.user.username = sess.username;
+                        AppState.user.role = sess.role;
+                    }
+                    console.log('✅ Valid session found, dashboard shown');
+                    return;
+                }
+            } catch(e) {}
+        }
+        console.log('No valid session, security door remains');
     }
 
     setupNumpad() {
@@ -260,9 +284,8 @@ class Security {
         const modal = document.getElementById('discord-modal');
         if (!modal) return;
 
-        // Use event delegation – one listener for all clicks inside modal
         modal.addEventListener('click', (e) => {
-            const target = e.target.closest('button'); // ensure we catch button clicks
+            const target = e.target.closest('button');
             if (!target) return;
 
             const id = target.id;
@@ -328,9 +351,23 @@ class Security {
     checkDiscordReturn() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('discord') === 'linked') {
-            localStorage.setItem('discord_linked', 'true');
-            toast.success('Discord linked successfully!');
-            window.history.replaceState({}, '', window.location.pathname);
+            const discordId = urlParams.get('id');
+            if (discordId) {
+                localStorage.setItem('discord_linked', 'true');
+                localStorage.setItem('discord_id', discordId);
+                toast.success('Discord linked successfully!');
+                // Remove the query param from URL
+                window.history.replaceState({}, '', window.location.pathname);
+                // If already logged in, ensure dashboard is visible
+                if (localStorage.getItem('tdl_session')) {
+                    document.getElementById('security-door').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                } else {
+                    // Not logged in, but we stored discord info; user will log in later
+                }
+            } else {
+                toast.error('Discord linking failed: no ID received');
+            }
         }
     }
 
