@@ -247,15 +247,11 @@ class Profile {
                 <!-- Settings Tab -->
                 <div id="profile-settings" class="profile-tab-content">
                     <div class="profile-settings">
-                        <h3>Connected Accounts</h3>
-                        <div class="connection-buttons">
-                            <button id="connect-discord" class="connection-btn ${localStorage.getItem('discord_linked') === 'true' ? 'linked' : ''}">
-                                <span>🔗</span> Discord ${localStorage.getItem('discord_linked') === 'true' ? '(Linked)' : ''}
-                            </button>
-                            <button id="connect-gportal" class="connection-btn">
-                                <span>🔌</span> GPortal
-                            </button>
-                        </div>
+                        <h3>Connected Accounts</h3><div class="connection-buttons">
+    <button id="connect-gportal" class="connection-btn">
+        <span>🔌</span> GPortal
+    </button>
+</div>
 
                         <h3>Saved Servers</h3>
                         <div id="servers-list" class="servers-list"></div>

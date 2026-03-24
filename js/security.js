@@ -1,5 +1,5 @@
 // security.js – DRAINED TABLET ULTIMATE v7.0.0
-// Security door, 2FA, Discord linking, and forgot code.
+// Security door, 2FA, and forgot code (no Discord).
 
 class Security {
     constructor() {
@@ -18,8 +18,6 @@ class Security {
         this.setupButtons();
         this.updateDisplay();
         this.create2FAModal();
-        this.createDiscordModal();
-        this.setupDiscordModalDelegation();
         this.updateRoleBadge();
         this.checkSessionAndShowDashboard();
     }
@@ -116,10 +114,6 @@ class Security {
                 if (userEl) userEl.innerText = result.username;
                 
                 toast.success(`Welcome, ${result.username}!`);
-
-                if (!localStorage.getItem('discord_linked')) {
-                    setTimeout(() => this.showDiscordModal(), 500);
-                }
             } else if (result.require2FA) {
                 this.pendingUser = result.username;
                 this.pendingRole = result.role;
@@ -167,7 +161,7 @@ class Security {
     }
 
     forgotCode() {
-        this.showDiscordModal();
+        toast.info('Contact master: CooseTheGeek on Discord or email');
     }
 
     // ---------- 2FA Modal ----------
@@ -237,139 +231,12 @@ class Security {
                 
                 toast.success(`Welcome, ${result.username}!`);
                 this.pendingUser = null;
-
-                if (!localStorage.getItem('discord_linked')) {
-                    setTimeout(() => this.showDiscordModal(), 500);
-                }
             } else {
                 toast.error('Invalid 2FA code');
             }
         } catch (err) {
             toast.error(err.message);
         }
-    }
-
-    // ---------- Discord/Forgot Modal ----------
-    createDiscordModal() {
-        if (document.getElementById('discord-modal')) return;
-        
-        const modalHTML = `
-            <div id="discord-modal" class="modal hidden">
-                <div class="modal-content">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h3 style="margin:0;">🔗 Link Discord Account</h3>
-                        <button id="discord-close-btn" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: var(--text-primary);">&times;</button>
-                    </div>
-                    <p>Connect your Discord to enable notifications and direct messaging.</p>
-                    <button id="discord-link-btn" class="modal-btn primary">Link Discord</button>
-                    <button id="discord-skip-btn" class="modal-btn">Skip</button>
-                    <hr>
-                    <h4>Forgot your code?</h4>
-                    <p>An email will be sent to the master. You can also DM CooseTheGeek directly.</p>
-                    <button id="forgot-email-btn" class="modal-btn">Send Email</button>
-                    <button id="forgot-discord-dm-btn" class="modal-btn">DM Master on Discord</button>
-                    <div class="modal-actions" style="margin-top: 1rem;">
-                        <button id="discord-cancel-btn" class="modal-btn">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
-
-    setupDiscordModalDelegation() {
-        const modal = document.getElementById('discord-modal');
-        if (!modal) return;
-
-        modal.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-
-            const id = target.id;
-            
-            if (id === 'discord-close-btn' || id === 'discord-cancel-btn') {
-                modal.classList.add('hidden');
-            }
-            else if (id === 'discord-skip-btn') {
-                localStorage.setItem('discord_linked', 'skipped');
-                modal.classList.add('hidden');
-                toast.info('Discord linking skipped');
-            }
-            else if (id === 'discord-link-btn') {
-                window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
-            }
-            else if (id === 'forgot-email-btn') {
-                this.sendForgotEmail();
-            }
-            else if (id === 'forgot-discord-dm-btn') {
-                this.dmMaster();
-            }
-        });
-    }
-
-    showDiscordModal() {
-        const modal = document.getElementById('discord-modal');
-        if (modal) {
-            if (localStorage.getItem('discord_linked') === 'skipped') {
-                return;
-            }
-            modal.classList.remove('hidden');
-        }
-    }
-
-    linkDiscord() {
-        window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
-    }
-
-    sendForgotEmail() {
-        fetch('https://drained-bridge.onrender.com/api/forgot-code', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: AppState.user?.username || 'unknown' })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                toast.info('Email sent to master.');
-            } else {
-                toast.error('Failed to send email.');
-            }
-        })
-        .catch(() => toast.error('Network error.'));
-        document.getElementById('discord-modal').classList.add('hidden');
-    }
-
-    dmMaster() {
-        const masterDiscordId = '546976779534073882';
-        window.open(`https://discord.com/users/${masterDiscordId}`, '_blank');
-        document.getElementById('discord-modal').classList.add('hidden');
-    }
-
-    checkDiscordReturn() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('discord') === 'linked') {
-            const discordId = urlParams.get('id');
-            if (discordId) {
-                localStorage.setItem('discord_linked', 'true');
-                localStorage.setItem('discord_id', discordId);
-                toast.success('Discord linked successfully!');
-                window.history.replaceState({}, '', window.location.pathname);
-                // Ensure dashboard is visible if already logged in
-                if (localStorage.getItem('tdl_session')) {
-                    document.getElementById('security-door').classList.add('hidden');
-                    document.getElementById('dashboard').classList.remove('hidden');
-                }
-            } else {
-                toast.error('Discord linking failed: no ID received');
-            }
-        } else if (urlParams.get('discord') === 'error') {
-            const errorMsg = urlParams.get('message');
-            toast.error(`Discord link failed: ${errorMsg || 'Unknown error'}`);
-            window.history.replaceState({}, '', window.location.pathname);
-        }
-
-        // After handling any URL parameters, always show the dashboard if there's a valid session
-        this.checkSessionAndShowDashboard();
     }
 
     updateRoleBadge() {
@@ -383,5 +250,4 @@ class Security {
 
 document.addEventListener('DOMContentLoaded', () => {
     window.security = new Security();
-    window.security.checkDiscordReturn();
 });
