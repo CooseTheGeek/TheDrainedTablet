@@ -345,3 +345,27 @@ setInterval(async () => {
         }
     }
 }, 15000);
+
+// ========================= DRAINED TABLET GLOBAL OBJECT =========================
+// This object is used by modules to show toasts and access server config.
+if (!window.drainedTablet) {
+    window.drainedTablet = {
+        showToast: function(msg, type) {
+            if (window.toast) window.toast.show(msg, type);
+            else console.log(`[Toast] ${type}: ${msg}`);
+        },
+        showError: function(msg) {
+            if (window.toast) window.toast.error(msg);
+            else console.error(msg);
+        },
+        connected: false,
+        serverConfig: {
+            ip: null,
+            port: null,
+            password: null,
+            name: 'The Drained Land\'s 2X',
+            mapSize: 3500,
+            mapSeed: 10325
+        }
+    };
+}
