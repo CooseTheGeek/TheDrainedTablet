@@ -1,5 +1,5 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// GPortal connector without Discord (manual server entry).
+// GPortal connector with manual server entry using username.
 
 class GPortalConnector {
     constructor() {
@@ -148,16 +148,26 @@ class GPortalConnector {
             return;
         }
 
-        this.logMessage(`Adding server ${name}...`);
+        // Get the logged-in username from AppState
+        const username = AppState.user?.username;
+        if (!username) {
+            toast.error('You must be logged in to add servers');
+            btn.disabled = false;
+            btn.textContent = 'ADD SERVER';
+            return;
+        }
 
-        const url = `${this.bridgeUrl}/api/user/servers`;
+        this.logMessage(`Adding server ${name} for user ${username}...`);
+
+        // Send username in the query string
+        const url = `${this.bridgeUrl}/api/user/servers?username=${encodeURIComponent(username)}`;
         console.log('Adding server with URL:', url);
 
         try {
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, ip, port, password, server_id: serverId, region })
+                body: JSON.stringify({ name, ip, port, password, server_id: serverId, region, username })
             });
             const data = await res.json();
             if (data.success) {
@@ -180,9 +190,14 @@ class GPortalConnector {
     }
 
     async loadServers() {
-        console.log('Loading servers');
+        const username = AppState.user?.username;
+        if (!username) {
+            console.log('No username, cannot load servers');
+            return;
+        }
+        console.log('Loading servers for user:', username);
         try {
-            const res = await fetch(`${this.bridgeUrl}/api/user/servers`);
+            const res = await fetch(`${this.bridgeUrl}/api/user/servers?username=${encodeURIComponent(username)}`);
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}: ${await res.text()}`);
             }
@@ -228,9 +243,11 @@ class GPortalConnector {
         container.querySelectorAll('.delete-server').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.dataset.id;
+                const username = AppState.user?.username;
+                if (!username) return;
                 if (confirm('Delete this server?')) {
                     try {
-                        await fetch(`${this.bridgeUrl}/api/user/servers/${id}`, { method: 'DELETE' });
+                        await fetch(`${this.bridgeUrl}/api/user/servers/${id}?username=${encodeURIComponent(username)}`, { method: 'DELETE' });
                         this.loadServers();
                         toast.success('Server deleted');
                     } catch (err) {
