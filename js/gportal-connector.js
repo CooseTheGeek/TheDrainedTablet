@@ -26,7 +26,9 @@ class GPortalConnector {
     updateHeaderStatus() {
         const statusEl = document.getElementById('connection-status');
         if (!statusEl) return;
-        if (this.apiReady) {
+        if (AppState.connection.status === 'connected') {
+            statusEl.innerHTML = '<span class="dot online"></span> CONNECTED (RCON)';
+        } else if (this.apiReady) {
             statusEl.innerHTML = '<span class="dot online"></span> CONNECTED (GPortal)';
         } else {
             statusEl.innerHTML = '<span class="dot offline"></span> DISCONNECTED';
@@ -148,7 +150,6 @@ class GPortalConnector {
             return;
         }
 
-        // Get the logged-in username from AppState
         const username = AppState.user?.username;
         if (!username) {
             toast.error('You must be logged in to add servers');
@@ -159,7 +160,6 @@ class GPortalConnector {
 
         this.logMessage(`Adding server ${name} for user ${username}...`);
 
-        // Send username in the query string
         const url = `${this.bridgeUrl}/api/user/servers?username=${encodeURIComponent(username)}`;
         console.log('Adding server with URL:', url);
 
@@ -233,12 +233,23 @@ class GPortalConnector {
                     <div class="server-name">${s.name}</div>
                     <div class="server-details">${s.ip}:${s.port}</div>
                     <div class="server-actions">
-                        <button class="small-btn delete-server" data-id="${s.id}">Delete</button>
+                        <button class="small-btn connect-server" data-id="${s.id}">🔌 Connect</button>
+                        <button class="small-btn delete-server" data-id="${s.id}">🗑️ Delete</button>
                     </div>
                 </div>
             `;
         });
         container.innerHTML = html;
+
+        container.querySelectorAll('.connect-server').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.currentTarget.dataset.id;
+                const server = this.servers.find(s => s.id == id);
+                if (server) {
+                    await this.connectToServer(server);
+                }
+            });
+        });
 
         container.querySelectorAll('.delete-server').forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -256,6 +267,34 @@ class GPortalConnector {
                 }
             });
         });
+    }
+
+    async connectToServer(server) {
+        toast.info(`Connecting to ${server.name}...`);
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/connect`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip: server.ip, port: server.port, password: server.password })
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success(`Connected to ${server.name}`);
+                AppState.connection.status = 'connected';
+                AppState.connection.server = data.server;
+                localStorage.setItem('tdl_last_credentials', JSON.stringify({ ip: server.ip, port: server.port, password: server.password }));
+                this.updateHeaderStatus();
+                // Trigger a player list update
+                ConnectionManager.notify();
+                // Optionally, refresh the live map
+                if (window.livemap) window.livemap.refresh();
+            } else {
+                toast.error(`Connection failed: ${data.error}`);
+            }
+        } catch (err) {
+            console.error('Connection error:', err);
+            toast.error(`Network error: ${err.message}`);
+        }
     }
 
     async checkApiStatus() {
