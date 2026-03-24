@@ -1,6 +1,6 @@
 // settings.js – DRAINED TABLET ULTIMATE v7.0.0
 // Dashboard settings: user preferences, export/import, layout customization,
-// theme, notifications, security, and more.
+// theme, notifications, security, and sidebar tab selection.
 // Includes smooth animations and responsive design.
 
 class Settings {
@@ -199,6 +199,12 @@ class Settings {
                     </div>
                     ` : ''}
 
+                    <!-- Sidebar Tabs Section -->
+                    <div class="settings-section">
+                        <h3>📑 Sidebar Tabs</h3>
+                        <div id="sidebar-tabs-customizer"></div>
+                    </div>
+
                     <!-- Data Management Section -->
                     <div class="settings-section">
                         <h3>💾 Data Management</h3>
@@ -226,6 +232,7 @@ class Settings {
             this.renderLayoutList();
         }
         this.setupRangeListeners();
+        this.renderSidebarCustomizer();
     }
 
     setupRangeListeners() {
@@ -253,6 +260,17 @@ class Settings {
         }
 
         // Update settings in real time (optional, but we'll rely on save button)
+    }
+
+    renderSidebarCustomizer() {
+        const container = document.getElementById('sidebar-tabs-customizer');
+        if (!container) return;
+        if (window.sidebarManager && window.sidebarManager.getSelectionUI) {
+            container.innerHTML = window.sidebarManager.getSelectionUI();
+            window.sidebarManager.attachSettingsEvents();
+        } else {
+            container.innerHTML = '<p>Sidebar manager not loaded yet.</p>';
+        }
     }
 
     saveSettings() {
@@ -463,6 +481,7 @@ class Settings {
 
     refresh() {
         this.renderLayoutList();
+        this.renderSidebarCustomizer();
         this.tablet.showToast('Settings refreshed', 'success');
     }
 }

@@ -1,6 +1,5 @@
 // auth.js – DRAINED TABLET ULTIMATE v7.0.0
-// Simplified two‑role authentication with hardcoded master (CooseTheGeek).
-// Server owners have their own codes and data isolation.
+// Three‑tier authentication with real TOTP (Google Authenticator compatible).
 
 class AuthSystem {
     constructor() {
@@ -11,14 +10,19 @@ class AuthSystem {
         this.sessionExpiry = null;
         this.lockoutUntil = null;
         this.attempts = 0;
-        this.masterUsername = 'CooseTheGeek'; // Hardcoded master
-        this.masterCode = '0325'; // Master code – keep secure
     }
 
     loadUsers() {
         try {
             const saved = localStorage.getItem('tdl_users');
-            return saved ? JSON.parse(saved) : {};
+            return saved ? JSON.parse(saved) : {
+                'CooseTheGeek': {
+                    code: '0325',
+                    role: 'master',
+                    totpEnabled: false,
+                    created: new Date().toISOString()
+                }
+            };
         } catch (e) {
             return {};
         }
@@ -46,7 +50,7 @@ class AuthSystem {
         localStorage.setItem('tdl_trusted_devices', JSON.stringify(this.trustedDevices));
     }
 
-    // Device fingerprint
+    // Generate a device fingerprint
     getDeviceFingerprint() {
         const components = [
             navigator.userAgent,
@@ -87,19 +91,22 @@ class AuthSystem {
         this.saveTrustedDevices();
     }
 
-    // Generate TOTP secret
+    // Generate a new TOTP secret for a user (returns secret and otpauth URI)
     generateTotpSecret(username) {
         const randomBytes = new Uint8Array(16);
         window.crypto.getRandomValues(randomBytes);
         const secret = this.base32Encode(randomBytes);
+        
         const issuer = encodeURIComponent('Drained Tablet');
         const account = encodeURIComponent(username);
         const uri = `otpauth://totp/${issuer}:${account}?secret=${secret}&issuer=${issuer}`;
+        
         this.totpSecrets[username] = secret;
         this.saveTotpSecrets();
         return { secret, uri };
     }
 
+    // Base32 encoding (RFC 4648) without padding
     base32Encode(buffer) {
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
         let result = '';
@@ -119,6 +126,7 @@ class AuthSystem {
         return result;
     }
 
+    // Verify a TOTP code using otpauth library
     verifyTotp(username, code) {
         const secret = this.totpSecrets[username];
         if (!secret) return false;
@@ -139,15 +147,16 @@ class AuthSystem {
         return false;
     }
 
+    // Enable 2FA for a user (sets totpEnabled = true)
     enable2FA(username) {
         if (!this.users[username]) return;
         this.users[username].totpEnabled = true;
         this.saveUsers();
     }
 
-    disable2FA(username) {
-        // Only master can disable for others, but we'll allow self? For simplicity, master only.
-        if (username === this.masterUsername) return; // can't disable master's 2FA via this method
+    // Disable 2FA (master only)
+    disable2FA(username, masterUser) {
+        if (masterUser !== 'CooseTheGeek') return;
         if (this.users[username]) {
             this.users[username].totpEnabled = false;
             this.saveUsers();
@@ -155,48 +164,17 @@ class AuthSystem {
     }
 
     // Login attempt
-    async login(code) {
+    async login(code, rconCredentials = null) {
         // Rate limiting
         if (this.lockoutUntil && this.lockoutUntil > Date.now()) {
             const minutes = Math.ceil((this.lockoutUntil - Date.now()) / 60000);
             throw new Error(`Too many attempts. Locked for ${minutes} minutes.`);
         }
 
-        // Check master first
-        if (code === this.masterCode) {
-            // Master login – no 2FA required? We'll allow optional 2FA if set.
-            const require2FA = this.users[this.masterUsername]?.totpEnabled === true;
-            if (require2FA && !this.isDeviceTrusted(this.masterUsername)) {
-                return {
-                    success: false,
-                    require2FA: true,
-                    username: this.masterUsername,
-                    role: 'master'
-                };
-            }
-            this.attempts = 0;
-            const sessionToken = this.generateSessionToken();
-            this.sessionToken = sessionToken;
-            this.sessionExpiry = Date.now() + 24 * 60 * 60 * 1000;
-            localStorage.setItem('tdl_session', JSON.stringify({
-                username: this.masterUsername,
-                role: 'master',
-                token: sessionToken,
-                expires: this.sessionExpiry
-            }));
-            return {
-                success: true,
-                username: this.masterUsername,
-                role: 'master',
-                sessionToken
-            };
-        }
-
-        // Otherwise check server owners
         let username = null;
         let user = null;
         for (let [u, data] of Object.entries(this.users)) {
-            if (data.code === code && u !== this.masterUsername) {
+            if (data.code === code) {
                 username = u;
                 user = data;
                 break;
@@ -211,10 +189,15 @@ class AuthSystem {
             throw new Error('Invalid code');
         }
 
-        const role = 'owner'; // All non‑master are server owners
+        let role = user.role;
+        if (rconCredentials) {
+            const valid = await this.testRconConnection(rconCredentials);
+            if (!valid) throw new Error('Invalid RCON credentials');
+            role = 'owner';
+        }
 
-        const require2FA = user.totpEnabled === true && !this.isDeviceTrusted(username);
-        if (require2FA) {
+        const require2FA = (role === 'owner') || (role === 'master' && user.totpEnabled);
+        if (require2FA && !this.isDeviceTrusted(username)) {
             return {
                 success: false,
                 require2FA: true,
@@ -250,22 +233,36 @@ class AuthSystem {
         if (trustDevice) {
             this.trustDevice(username);
         }
-        const role = username === this.masterUsername ? 'master' : 'owner';
+        const user = this.users[username];
         const sessionToken = this.generateSessionToken();
         this.sessionToken = sessionToken;
         this.sessionExpiry = Date.now() + 24 * 60 * 60 * 1000;
         localStorage.setItem('tdl_session', JSON.stringify({
             username,
-            role,
+            role: user.role,
             token: sessionToken,
             expires: this.sessionExpiry
         }));
         return {
             success: true,
             username,
-            role,
+            role: user.role,
             sessionToken
         };
+    }
+
+    async testRconConnection(credentials) {
+        try {
+            const res = await fetch(`${AppState.connection.bridgeUrl}/api/connect`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credentials)
+            });
+            const data = await res.json();
+            return data.success;
+        } catch (e) {
+            return false;
+        }
     }
 
     generateSessionToken() {
@@ -292,30 +289,27 @@ class AuthSystem {
         this.sessionExpiry = null;
     }
 
-    // Add a server owner (master only)
-    addUser(username, code, masterUser) {
-        if (masterUser !== this.masterUsername) throw new Error('Only master can add users');
+    addUser(username, code, role, masterUser) {
+        if (masterUser !== 'CooseTheGeek') throw new Error('Only master can add users');
         if (this.users[username]) throw new Error('User already exists');
         if (!code || code.length !== 4 || !/^\d+$/.test(code)) throw new Error('Code must be 4 digits');
         this.users[username] = {
             code,
-            role: 'owner',
+            role,
             totpEnabled: false,
             created: new Date().toISOString()
         };
         this.saveUsers();
     }
 
-    // Remove a server owner (master only)
     removeUser(username, masterUser) {
-        if (masterUser !== this.masterUsername) throw new Error('Only master can remove users');
-        if (username === this.masterUsername) throw new Error('Cannot remove primary master');
+        if (masterUser !== 'CooseTheGeek') throw new Error('Only master can remove users');
+        if (username === 'CooseTheGeek') throw new Error('Cannot remove primary master');
         delete this.users[username];
         this.saveUsers();
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.authSystem = new AuthSystem();
 });

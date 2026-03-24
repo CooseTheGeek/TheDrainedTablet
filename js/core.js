@@ -287,7 +287,6 @@ setInterval(async () => {
                 const raw = data.result;
                 console.log('Raw playerlist response:', raw);
 
-                // If it's already an array of objects (like your screenshot)
                 if (Array.isArray(raw)) {
                     players = raw.map(p => ({
                         name: p.DisplayName || p.name || p.displayName || 'Unknown',
@@ -296,7 +295,6 @@ setInterval(async () => {
                         position: null
                     }));
                 } else if (typeof raw === 'string') {
-                    // Try to parse as JSON
                     try {
                         const parsed = JSON.parse(raw);
                         if (Array.isArray(parsed)) {
@@ -307,7 +305,6 @@ setInterval(async () => {
                                 position: null
                             }));
                         } else {
-                            // Single object (unlikely for playerlist, but handle)
                             players = [{
                                 name: parsed.DisplayName || parsed.name || parsed.displayName || 'Unknown',
                                 online: true,
@@ -316,14 +313,12 @@ setInterval(async () => {
                             }];
                         }
                     } catch {
-                        // If JSON parse fails, assume newline-separated names
                         const lines = raw.split('\n').filter(l => l.trim());
                         players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
                     }
                 }
             }
 
-            // If no players, try parsing status as fallback (optional)
             if (players.length === 0) {
                 const statusRes = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
                     method: 'POST',

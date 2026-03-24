@@ -125,33 +125,8 @@
                 <div class="sidebar-header">
                     <button id="collapse-sidebar" class="sidebar-collapse">◀</button>
                 </div>
-                <nav class="sidebar-nav">
-                    <a href="#" class="nav-item active" data-tab="home"><span class="nav-icon">🏠</span> <span class="nav-text">Home</span></a>
-                    <a href="#" class="nav-item" data-tab="players"><span class="nav-icon">👥</span> <span class="nav-text">Players</span></a>
-                    <a href="#" class="nav-item" data-tab="master"><span class="nav-icon">👑</span> <span class="nav-text">Master Control</span></a>
-                    <a href="#" class="nav-item" data-tab="economy"><span class="nav-icon">💰</span> <span class="nav-text">Economy</span></a>
-                    <a href="#" class="nav-item" data-tab="livemap"><span class="nav-icon">🗺️</span> <span class="nav-text">Live Map</span></a>
-                    <a href="#" class="nav-item" data-tab="vehicles"><span class="nav-icon">🚗</span> <span class="nav-text">Vehicles</span></a>
-                    <a href="#" class="nav-item" data-tab="teleport"><span class="nav-icon">📍</span> <span class="nav-text">Teleport</span></a>
-                    <a href="#" class="nav-item" data-tab="events"><span class="nav-icon">🎉</span> <span class="nav-text">Events</span></a>
-                    <a href="#" class="nav-item" data-tab="items"><span class="nav-icon">📦</span> <span class="nav-text">Items</span></a>
-                    <a href="#" class="nav-item" data-tab="kits"><span class="nav-icon">🧰</span> <span class="nav-text">Kits</span></a>
-                    <a href="#" class="nav-item" data-tab="world"><span class="nav-icon">🌍</span> <span class="nav-text">World</span></a>
-                    <a href="#" class="nav-item" data-tab="backups"><span class="nav-icon">💾</span> <span class="nav-text">Backups</span></a>
-                    <a href="#" class="nav-item" data-tab="logs"><span class="nav-icon">📜</span> <span class="nav-text">Logs</span></a>
-                    <a href="#" class="nav-item" data-tab="console"><span class="nav-icon">🖥️</span> <span class="nav-text">Console</span></a>
-                    <a href="#" class="nav-item" data-tab="gportal"><span class="nav-icon">🔌</span> <span class="nav-text">GPortal</span></a>
-                    <a href="#" class="nav-item" data-tab="health"><span class="nav-icon">📡</span> <span class="nav-text">Health</span></a>
-                    <a href="#" class="nav-item" data-tab="recovery"><span class="nav-icon">🔄</span> <span class="nav-text">Recovery</span></a>
-                    <a href="#" class="nav-item" data-tab="performance"><span class="nav-icon">📊</span> <span class="nav-text">Performance</span></a>
-                    <a href="#" class="nav-item" data-tab="deepseek"><span class="nav-icon">🤖</span> <span class="nav-text">DeepSeek AI</span></a>
-                    <a href="#" class="nav-item" data-tab="profile"><span class="nav-icon">👤</span> <span class="nav-text">Profile</span></a>
-                    <a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>
-                    <!-- New Knowledge Base tab -->
-                    <a href="#" class="nav-item" data-tab="resources"><span class="nav-icon">📚</span> <span class="nav-text">Knowledge Base</span></a>
-                    <!-- New Shop tab -->
-                    <a href="#" class="nav-item" data-tab="shop"><span class="nav-icon">🏪</span> <span class="nav-text">Shop</span></a>
-                    <a href="#" class="nav-item" data-tab="more"><span class="nav-icon">📊</span> <span class="nav-text">More Tools</span></a>
+                <nav class="sidebar-nav" id="sidebar-nav-container">
+                    <!-- Sidebar will be populated dynamically by SidebarManager -->
                 </nav>
                 <div class="sidebar-footer">
                     <div class="role-indicator" id="role-indicator"></div>
@@ -416,12 +391,13 @@
     <!-- New modules -->
     <script src="js/resources.js"></script>
     <script src="js/shop.js"></script>
+    <script src="js/sidebar-manager.js"></script>
 
     <!-- Global navigation and header handlers -->
     <script>
         (function() {
-            // Tab switching
-            function switchTab(tabId) {
+            // Global tab switching function
+            window.switchTab = function(tabId) {
                 document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
                 const target = document.getElementById(`tab-${tabId}`);
                 if (target) target.classList.add('active');
@@ -429,23 +405,14 @@
                 const activeNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
                 if (activeNav) activeNav.classList.add('active');
                 window.dispatchEvent(new CustomEvent('tab-changed', { detail: { tab: tabId } }));
-            }
-
-            // Attach sidebar clicks
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const tab = item.dataset.tab;
-                    if (tab) switchTab(tab);
-                });
-            });
+            };
 
             // Header clicks
             const profileLink = document.getElementById('profile-link');
             if (profileLink) {
                 profileLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    switchTab('profile');
+                    window.switchTab('profile');
                 });
             }
 

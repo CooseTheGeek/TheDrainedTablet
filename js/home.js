@@ -1,7 +1,8 @@
-// home.js – DRAINED TABLET UIMATE v7.0.0 (with working refresh and events)
+// home.js – DRAINED TABLET ULTIMATE v7.0.0 (with GPortal player count)
 
 class Home {
     constructor() {
+        this.tablet = window.drainedTablet;
         this.access = window.accessControl;
         this.stats = {
             fps: 0,
@@ -35,9 +36,9 @@ class Home {
 
         tab.innerHTML = `
             <div class="home-container">
-                <div class="home-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h2 style="color: var(--accent-primary);">🏠 DASHBOARD</h2>
-                    <button id="home-refresh" class="home-btn" style="background: var(--bg-tertiary); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;">🔄 REFRESH</button>
+                <div class="home-header">
+                    <h2>🏠 DASHBOARD</h2>
+                    <button id="home-refresh" class="home-btn">🔄 REFRESH</button>
                 </div>
                 <div class="home-grid" id="home-grid"></div>
                 <div class="home-row">
@@ -59,10 +60,6 @@ class Home {
 
         this.renderGauges();
         this.renderQuickActions();
-    }
-
-    attachEvents() {
-        document.getElementById('home-refresh')?.addEventListener('click', () => this.refresh());
     }
 
     renderGauges() {
@@ -243,7 +240,6 @@ class Home {
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.home = new Home();
 });

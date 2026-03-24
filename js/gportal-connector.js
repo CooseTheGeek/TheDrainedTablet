@@ -1,5 +1,4 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Enhanced GPortal connector with proper status updates, Discord linking, and server management.
 
 class GPortalConnector {
     constructor() {
@@ -10,7 +9,6 @@ class GPortalConnector {
         this.serverIdentifier = 'main-server';
         this.apiReady = false;
         this.lastStatus = null;
-        this.statusInterval = null;
         this.init();
     }
 
@@ -22,8 +20,6 @@ class GPortalConnector {
             this.loadServers();
             this.checkApiStatus();
             this.fetchStatus();
-            // Refresh status every 30 seconds
-            this.statusInterval = setInterval(() => this.fetchStatus(), 30000);
         }
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'gportal') {
@@ -37,18 +33,8 @@ class GPortalConnector {
         if (!statusEl) return;
         if (this.apiReady) {
             statusEl.innerHTML = '<span class="dot online"></span> CONNECTED (GPortal)';
-            // Update AppState for legacy modules
-            AppState.connection.status = 'connected';
-            AppState.connection.server = AppState.connection.server || { 
-                ip: 'GPortal', 
-                port: 0, 
-                maxPlayers: this.lastStatus?.MaxPlayers || 100 
-            };
-            ConnectionManager.notify();
         } else {
             statusEl.innerHTML = '<span class="dot offline"></span> DISCONNECTED';
-            AppState.connection.status = 'disconnected';
-            ConnectionManager.notify();
         }
     }
 
@@ -58,85 +44,85 @@ class GPortalConnector {
 
         tab.innerHTML = `
             <div class="gportal-container">
-                <div class="gportal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h2 style="color: var(--accent-primary);">🔌 GPORTAL CONNECTOR</h2>
+                <div class="gportal-header">
+                    <h2>🔌 GPORTAL CONNECTOR</h2>
                     <div class="api-status" id="gportal-api-status">
                         API Status: <span class="status-badge ${this.apiReady ? 'online' : 'offline'}">${this.apiReady ? 'Connected' : 'Unknown'}</span>
                     </div>
                 </div>
 
-                <div class="gportal-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                <div class="gportal-grid">
                     <!-- Discord Connect Section -->
-                    <div class="gportal-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem;">
-                        <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">🔗 CONNECT WITH DISCORD</h3>
-                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Link your Discord account to manage your servers.</p>
-                        <button id="discord-connect-btn" class="gportal-btn primary" style="width: 100%; padding: 0.8rem; background: var(--accent-primary); color: #000; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+                    <div class="gportal-section">
+                        <h3>🔗 CONNECT WITH DISCORD</h3>
+                        <p>Link your Discord account to manage your servers.</p>
+                        <button id="discord-connect-btn" class="gportal-btn primary">
                             ${this.discordLinked ? '✅ Discord Connected' : '🔗 Connect Discord'}
                         </button>
-                        ${this.discordLinked ? '<p class="success-message" style="color: var(--success); margin-top: 0.5rem;">Discord linked! You can now add your servers below.</p>' : ''}
-                        ${this.discordLinked && this.servers.length === 0 ? '<p class="info-message" style="color: var(--info); margin-top: 0.5rem;">No servers found. Please add your server.</p>' : ''}
+                        ${this.discordLinked ? '<p class="success-message">Discord linked! You can now add your servers below.</p>' : ''}
+                        ${this.discordLinked && this.servers.length === 0 ? '<p class="info-message">No servers found. Please add your server again.</p>' : ''}
                     </div>
 
                     ${this.discordLinked ? `
                     <!-- Add Server Form -->
-                    <div class="gportal-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem;">
-                        <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">➕ ADD SERVER</h3>
-                        <div class="form-group" style="margin-bottom: 0.8rem;">
-                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Server Name:</label>
-                            <input type="text" id="server-name" placeholder="My Rust Server" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                    <div class="gportal-section">
+                        <h3>➕ ADD SERVER</h3>
+                        <div class="form-group">
+                            <label>Server Name:</label>
+                            <input type="text" id="server-name" placeholder="My Rust Server">
                         </div>
-                        <div class="form-group" style="margin-bottom: 0.8rem;">
-                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">IP Address:</label>
-                            <input type="text" id="server-ip" value="144.126.137.59" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <div class="form-group">
+                            <label>IP Address:</label>
+                            <input type="text" id="server-ip" value="144.126.137.59">
                         </div>
-                        <div class="form-group" style="margin-bottom: 0.8rem;">
-                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">RCON Port:</label>
-                            <input type="number" id="server-port" value="28916" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <div class="form-group">
+                            <label>RCON Port:</label>
+                            <input type="number" id="server-port" value="28916">
                         </div>
-                        <div class="form-group" style="margin-bottom: 0.8rem;">
-                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">RCON Password:</label>
-                            <input type="password" id="server-password" value="Thatakspray" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <div class="form-group">
+                            <label>RCON Password:</label>
+                            <input type="password" id="server-password" value="Thatakspray">
                         </div>
-                        <div class="form-group" style="margin-bottom: 0.8rem;">
-                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Server ID (optional):</label>
-                            <input type="text" id="server-id" value="1879409" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <div class="form-group">
+                            <label>Server ID (optional):</label>
+                            <input type="text" id="server-id" value="1879409">
                         </div>
-                        <div class="form-group" style="margin-bottom: 0.8rem;">
-                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Region (int/eur):</label>
-                            <input type="text" id="server-region" value="int" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <div class="form-group">
+                            <label>Region (int/eur):</label>
+                            <input type="text" id="server-region" value="int">
                         </div>
-                        <button id="add-server-btn" class="gportal-btn" style="width: 100%; padding: 0.8rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer; transition: background 0.2s;">ADD SERVER</button>
+                        <button id="add-server-btn" class="gportal-btn">ADD SERVER</button>
                     </div>
 
                     <!-- Saved Servers List -->
-                    <div class="gportal-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem;">
-                        <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">📋 YOUR SERVERS</h3>
-                        <div id="servers-list" class="servers-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem;"></div>
-                        <button id="refresh-servers-btn" class="gportal-btn small" style="padding: 0.4rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 20px; cursor: pointer;">🔄 Refresh List</button>
+                    <div class="gportal-section">
+                        <h3>📋 YOUR SERVERS</h3>
+                        <div id="servers-list" class="servers-list"></div>
+                        <button id="refresh-servers-btn" class="gportal-btn small" style="margin-top: 10px;">🔄 Refresh List</button>
                     </div>
 
                     <!-- Command Execution -->
-                    <div class="gportal-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem;">
-                        <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⚡ SEND COMMAND</h3>
-                        <div class="form-group" style="margin-bottom: 0.8rem;">
-                            <input type="text" id="gportal-command" placeholder="Enter command (e.g., status)" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                    <div class="gportal-section">
+                        <h3>⚡ SEND COMMAND</h3>
+                        <div class="form-group">
+                            <input type="text" id="gportal-command" placeholder="Enter command (e.g., status)">
                         </div>
-                        <button id="gportal-send-command" class="gportal-btn primary" style="width: 100%; padding: 0.8rem; background: var(--accent-primary); color: #000; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">SEND COMMAND</button>
-                        <div id="gportal-command-output" class="command-output" style="margin-top: 1rem; padding: 0.8rem; background: var(--bg-secondary); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; max-height: 150px; overflow-y: auto;"></div>
+                        <button id="gportal-send-command" class="gportal-btn primary">SEND COMMAND</button>
+                        <div id="gportal-command-output" class="command-output"></div>
                     </div>
 
                     <!-- Server Status -->
-                    <div class="gportal-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem;">
-                        <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">📊 SERVER STATUS</h3>
-                        <pre id="gportal-server-status" class="status-pre" style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 200px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">Loading...</pre>
-                        <button id="gportal-refresh-status" class="gportal-btn small" style="margin-top: 0.5rem; padding: 0.4rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 20px; cursor: pointer;">🔄 Refresh</button>
+                    <div class="gportal-section">
+                        <h3>📊 SERVER STATUS</h3>
+                        <pre id="gportal-server-status" class="status-pre">Loading...</pre>
+                        <button id="gportal-refresh-status" class="gportal-btn small">🔄 Refresh</button>
                     </div>
                     ` : ''}
                 </div>
 
-                <div class="gportal-logs" style="margin-top: 1.5rem; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem;">
-                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">📋 CONNECTION LOGS</h3>
-                    <div id="gportal-log-list" style="max-height: 150px; overflow-y: auto;"></div>
+                <div class="gportal-logs" id="gportal-logs">
+                    <h3>📋 CONNECTION LOGS</h3>
+                    <div id="gportal-log-list"></div>
                 </div>
             </div>
         `;
@@ -246,7 +232,7 @@ class GPortalConnector {
             this.logMessage(`❌ Failed to load servers: ${err.message}`);
             const container = document.getElementById('servers-list');
             if (container) {
-                container.innerHTML = `<p class="error" style="color: var(--error);">Error loading servers: ${err.message}</p>`;
+                container.innerHTML = `<p class="error">Error loading servers: ${err.message}</p>`;
             }
         }
     }
@@ -255,19 +241,17 @@ class GPortalConnector {
         const container = document.getElementById('servers-list');
         if (!container) return;
         if (this.servers.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-secondary);">No servers added yet.</p>';
+            container.innerHTML = '<p>No servers added yet.</p>';
             return;
         }
         let html = '';
         this.servers.forEach(s => {
             html += `
-                <div class="server-card" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid var(--glass-border);">
-                    <div>
-                        <div style="font-weight: 600;">${s.name}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary);">${s.ip}:${s.port}</div>
-                    </div>
-                    <div>
-                        <button class="small-btn delete-server" data-id="${s.id}" style="background: var(--error); color: #fff; border: none; border-radius: 4px; padding: 0.2rem 0.5rem; cursor: pointer;">Delete</button>
+                <div class="server-card">
+                    <div class="server-name">${s.name}</div>
+                    <div class="server-details">${s.ip}:${s.port}</div>
+                    <div class="server-actions">
+                        <button class="small-btn delete-server" data-id="${s.id}">Delete</button>
                     </div>
                 </div>
             `;
@@ -299,12 +283,11 @@ class GPortalConnector {
                 body: JSON.stringify({ command: 'status' })
             });
             this.apiReady = res.ok;
-            this.updateHeaderStatus();
-            this.updateApiStatusBadge();
         } catch {
             this.apiReady = false;
-            this.updateHeaderStatus();
         }
+        this.updateApiStatusBadge();
+        this.updateHeaderStatus();
     }
 
     updateApiStatusBadge() {
@@ -321,8 +304,7 @@ class GPortalConnector {
         if (!command) return;
 
         this.logMessage(`Sending command: ${command}`);
-        const outputDiv = document.getElementById('gportal-command-output');
-        outputDiv.innerText = 'Sending...';
+        document.getElementById('gportal-command-output').innerText = 'Sending...';
 
         try {
             const res = await fetch(`${this.bridgeUrl}/api/gportal/command`, {
@@ -333,7 +315,7 @@ class GPortalConnector {
             const data = await res.json();
             if (data.success) {
                 const output = data.result || 'Command executed successfully (no output)';
-                outputDiv.innerText = output;
+                document.getElementById('gportal-command-output').innerText = output;
                 this.logMessage(`✅ Command executed: ${output.substring(0, 100)}...`);
                 if (!this.apiReady) {
                     this.apiReady = true;
@@ -341,11 +323,11 @@ class GPortalConnector {
                     this.updateHeaderStatus();
                 }
             } else {
-                outputDiv.innerText = `Error: ${data.error}`;
+                document.getElementById('gportal-command-output').innerText = `Error: ${data.error}`;
                 this.logMessage(`❌ Command failed: ${data.error}`);
             }
         } catch (err) {
-            outputDiv.innerText = `Network error: ${err.message}`;
+            document.getElementById('gportal-command-output').innerText = `Network error: ${err.message}`;
             this.logMessage(`❌ Network error: ${err.message}`);
         }
     }
@@ -407,9 +389,6 @@ class GPortalConnector {
         if (!list) return;
         const entry = document.createElement('div');
         entry.className = 'log-entry';
-        entry.style.padding = '0.2rem 0';
-        entry.style.borderBottom = '1px solid var(--glass-border)';
-        entry.style.fontSize = '0.85rem';
         entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
         list.prepend(entry);
         if (list.children.length > 20) list.removeChild(list.lastChild);
@@ -425,11 +404,9 @@ class GPortalConnector {
             this.checkApiStatus();
             this.fetchStatus();
         }
-        this.updateHeaderStatus();
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.gportalConnector = new GPortalConnector();
 });
