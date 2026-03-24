@@ -21,20 +21,17 @@ class Security {
         this.createDiscordModal();
         this.setupDiscordModalDelegation();
         this.updateRoleBadge();
-        this.checkSessionAndShowDashboard(); // <-- added
+        this.checkSessionAndShowDashboard();
     }
 
-    // NEW: Check if we have a valid session and show dashboard directly
     checkSessionAndShowDashboard() {
         const session = localStorage.getItem('tdl_session');
         if (session) {
             try {
                 const sess = JSON.parse(session);
                 if (sess.expires > Date.now()) {
-                    // Session exists and is valid, so hide door and show dashboard
                     document.getElementById('security-door').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
-                    // Ensure user data is loaded into AppState
                     if (window.AppState) {
                         AppState.user.username = sess.username;
                         AppState.user.role = sess.role;
@@ -356,19 +353,23 @@ class Security {
                 localStorage.setItem('discord_linked', 'true');
                 localStorage.setItem('discord_id', discordId);
                 toast.success('Discord linked successfully!');
-                // Remove the query param from URL
                 window.history.replaceState({}, '', window.location.pathname);
-                // If already logged in, ensure dashboard is visible
+                // Ensure dashboard is visible if already logged in
                 if (localStorage.getItem('tdl_session')) {
                     document.getElementById('security-door').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
-                } else {
-                    // Not logged in, but we stored discord info; user will log in later
                 }
             } else {
                 toast.error('Discord linking failed: no ID received');
             }
+        } else if (urlParams.get('discord') === 'error') {
+            const errorMsg = urlParams.get('message');
+            toast.error(`Discord link failed: ${errorMsg || 'Unknown error'}`);
+            window.history.replaceState({}, '', window.location.pathname);
         }
+
+        // After handling any URL parameters, always show the dashboard if there's a valid session
+        this.checkSessionAndShowDashboard();
     }
 
     updateRoleBadge() {
