@@ -14,10 +14,6 @@
     <script src="https://cdn.jsdelivr.net/npm/otpauth@9.1.0/dist/otpauth.min.js"></script>
     <style>
         .hidden { display: none !important; }
-        /* Role selection modal styles */
-        #role-modal .modal-content {
-            max-width: 400px;
-        }
         .role-option {
             display: flex;
             align-items: center;
@@ -125,16 +121,13 @@
                 <div class="sidebar-header">
                     <button id="collapse-sidebar" class="sidebar-collapse">◀</button>
                 </div>
-                <nav class="sidebar-nav" id="sidebar-nav-container">
-                    <!-- Sidebar will be populated dynamically by SidebarManager -->
-                </nav>
+                <nav class="sidebar-nav" id="sidebar-nav-container"></nav>
                 <div class="sidebar-footer">
                     <div class="role-indicator" id="role-indicator"></div>
                 </div>
             </aside>
 
             <main class="main-content" id="main-content">
-                <!-- Tab panes (all empty, filled by JS) -->
                 <div id="tab-home" class="tab-pane active"></div>
                 <div id="tab-players" class="tab-pane"></div>
                 <div id="tab-master" class="tab-pane"></div>
@@ -159,7 +152,7 @@
                 <div id="tab-more" class="tab-pane"></div>
                 <div id="tab-resources" class="tab-pane"></div>
                 <div id="tab-shop" class="tab-pane"></div>
-                <!-- Additional legacy tabs (kept for compatibility) -->
+                <!-- hidden legacy tabs -->
                 <div id="tab-animals" class="tab-pane hidden"></div>
                 <div id="tab-autoMod" class="tab-pane hidden"></div>
                 <div id="tab-defense" class="tab-pane hidden"></div>
@@ -235,7 +228,7 @@
         </div>
     </div>
 
-    <!-- Role Selection Modal (shown after first login) -->
+    <!-- Role Selection Modal -->
     <div id="role-modal" class="modal hidden">
         <div class="modal-content">
             <h3>👤 Select Your Role</h3>
@@ -354,7 +347,6 @@
     <script src="js/security.js"></script>
     <script src="js/securityDoor.js"></script>
     <script src="js/serverConnector.js"></script>
-    <!-- Old shopSystem.js removed – replaced by new shop.js -->
     <script src="js/spawn.js"></script>
     <script src="js/status.js"></script>
     <script src="js/themeStudio.js"></script>
@@ -365,15 +357,12 @@
     <script src="js/zones.js"></script>
     <script src="js/zorp.js"></script>
 
-    <!-- New modules -->
     <script src="js/resources.js"></script>
     <script src="js/shop.js"></script>
     <script src="js/sidebar-config.js"></script>
 
-    <!-- Global navigation and header handlers -->
     <script>
         (function() {
-            // Global tab switching function
             window.switchTab = function(tabId) {
                 document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
                 const target = document.getElementById(`tab-${tabId}`);
@@ -384,7 +373,6 @@
                 window.dispatchEvent(new CustomEvent('tab-changed', { detail: { tab: tabId } }));
             };
 
-            // Header clicks
             const profileLink = document.getElementById('profile-link');
             if (profileLink) {
                 profileLink.addEventListener('click', (e) => {
@@ -405,7 +393,6 @@
                 });
             }
 
-            // Sidebar collapse toggle
             const collapseBtn = document.getElementById('collapse-sidebar');
             if (collapseBtn) {
                 collapseBtn.addEventListener('click', () => {
@@ -415,7 +402,6 @@
                 });
             }
 
-            // Role selection modal logic
             const roleOptions = document.querySelectorAll('.role-option');
             roleOptions.forEach(opt => {
                 opt.addEventListener('click', () => {

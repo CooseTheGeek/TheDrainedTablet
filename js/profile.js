@@ -1,7 +1,5 @@
 // profile.js – DRAINED TABLET ULTIMATE v7.0.0
-// User profile with tabbed interface: ID Card, Customize ID Card, and Settings
-// Enhanced with avatar cropping using Cropper.js, live preview, and persistent storage.
-// Updated with default Rust character avatar
+// User profile with ID card, customization, and settings (no Discord).
 
 class Profile {
     constructor() {
@@ -23,7 +21,6 @@ class Profile {
         localStorage.setItem('tdl_saved_servers', JSON.stringify(this.savedServers));
     }
 
-    // Load profile data from localStorage (per user)
     loadProfileData() {
         const username = AppState.user?.username || 'default';
         const saved = localStorage.getItem(`tdl_profile_${username}`);
@@ -36,8 +33,6 @@ class Profile {
             region: 'North America',
             serverName: 'Geek\'s Survival Base',
             logoText: 'GEEK BASE',
-            discordId: 'Geek#1234',
-            discordConnected: true,
             tagline: 'NEW GEN | US',
             platform: AppState.user?.platform || '',
             platformId: AppState.user?.platformId || ''
@@ -47,7 +42,6 @@ class Profile {
     saveProfileData(data) {
         const username = AppState.user?.username || 'default';
         localStorage.setItem(`tdl_profile_${username}`, JSON.stringify(data));
-        // Also sync to bridge if needed (future)
     }
 
     init() {
@@ -120,10 +114,6 @@ class Profile {
                             <div class="card-logo-block">
                                 <span class="logo-text" id="card-logo">${this.profileData.logoText}</span>
                             </div>
-                            <div class="card-discord">
-                                <span class="discord-id" id="card-discord-id">${this.profileData.discordId}</span>
-                                <span class="discord-badge" id="card-discord-badge">${this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED'}</span>
-                            </div>
                             <div class="card-actions">
                                 <button id="manage-server" class="btn-manage">MANAGE SERVER</button>
                                 <button id="delete-server" class="btn-delete">DELETE</button>
@@ -185,18 +175,6 @@ class Profile {
                                     <input type="text" id="edit-logo" value="${this.profileData.logoText}">
                                 </div>
                             </div>
-                            <div class="form-section">
-                                <h3>Discord</h3>
-                                <div class="form-group">
-                                    <label>Discord ID</label>
-                                    <input type="text" id="edit-discord-id" value="${this.profileData.discordId}">
-                                </div>
-                                <div class="checkbox-item">
-                                    <label>
-                                        <input type="checkbox" id="edit-discord-connected" ${this.profileData.discordConnected ? 'checked' : ''}> Discord Connected
-                                    </label>
-                                </div>
-                            </div>
                             <div class="form-actions">
                                 <button id="save-customize" class="btn-save primary">Save Changes</button>
                                 <button id="cancel-customize" class="btn-cancel">Cancel</button>
@@ -235,10 +213,6 @@ class Profile {
                                 <div class="card-logo-block">
                                     <span class="logo-text" id="preview-logo">${this.profileData.logoText}</span>
                                 </div>
-                                <div class="card-discord">
-                                    <span class="discord-id" id="preview-discord-id">${this.profileData.discordId}</span>
-                                    <span class="discord-badge" id="preview-discord-badge">${this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED'}</span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -247,11 +221,12 @@ class Profile {
                 <!-- Settings Tab -->
                 <div id="profile-settings" class="profile-tab-content">
                     <div class="profile-settings">
-                        <h3>Connected Accounts</h3><div class="connection-buttons">
-    <button id="connect-gportal" class="connection-btn">
-        <span>🔌</span> GPortal
-    </button>
-</div>
+                        <h3>Connected Accounts</h3>
+                        <div class="connection-buttons">
+                            <button id="connect-gportal" class="connection-btn">
+                                <span>🔌</span> GPortal
+                            </button>
+                        </div>
 
                         <h3>Saved Servers</h3>
                         <div id="servers-list" class="servers-list"></div>
@@ -322,13 +297,6 @@ class Profile {
         document.getElementById('edit-logo')?.addEventListener('input', (e) => {
             document.getElementById('preview-logo').innerText = e.target.value;
         });
-        document.getElementById('edit-discord-id')?.addEventListener('input', (e) => {
-            document.getElementById('preview-discord-id').innerText = e.target.value;
-        });
-        document.getElementById('edit-discord-connected')?.addEventListener('change', (e) => {
-            const badge = document.getElementById('preview-discord-badge');
-            badge.innerText = e.target.checked ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED';
-        });
 
         // Save/Cancel in Customize tab
         document.getElementById('save-customize')?.addEventListener('click', () => this.saveCustomizations());
@@ -347,7 +315,6 @@ class Profile {
         });
 
         // Settings buttons
-        document.getElementById('connect-discord')?.addEventListener('click', () => this.connectDiscord());
         document.getElementById('connect-gportal')?.addEventListener('click', () => this.connectGPortal());
         document.getElementById('change-password')?.addEventListener('click', () => this.changePassword());
         document.getElementById('enable-2fa')?.addEventListener('click', () => this.enable2FA());
@@ -467,13 +434,10 @@ class Profile {
             region: document.getElementById('edit-region').value,
             serverName: document.getElementById('edit-server-name').value,
             logoText: document.getElementById('edit-logo').value,
-            discordId: document.getElementById('edit-discord-id').value,
-            discordConnected: document.getElementById('edit-discord-connected').checked,
             platform: document.getElementById('edit-platform')?.value || '',
             platformId: document.getElementById('edit-platform-id')?.value || ''
         };
 
-        // Also update AppState platform if those fields exist
         const platformSelect = document.getElementById('edit-platform');
         const platformIdInput = document.getElementById('edit-platform-id');
         if (platformSelect && platformIdInput) {
@@ -485,15 +449,12 @@ class Profile {
 
         this.saveProfileData(this.profileData);
 
-        // Update main card
         document.getElementById('card-tagline').innerText = this.profileData.tagline;
         document.getElementById('card-expires').innerText = this.profileData.expires;
         document.getElementById('card-portal-id').innerText = this.profileData.portalId;
         document.getElementById('card-region').innerText = this.profileData.region;
         document.getElementById('card-server-name').innerText = this.profileData.serverName;
         document.getElementById('card-logo').innerText = this.profileData.logoText;
-        document.getElementById('card-discord-id').innerText = this.profileData.discordId;
-        document.getElementById('card-discord-badge').innerText = this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED';
 
         toast.success('ID Card updated');
         document.querySelector('.profile-tab[data-tab="idcard"]').click();
@@ -549,7 +510,6 @@ class Profile {
     loadServer(id) {
         const server = this.savedServers.find(s => s.id === id);
         if (!server) return;
-        // Fill in the connection fields in the GPortal tab
         const ipField = document.getElementById('server-ip');
         const portField = document.getElementById('server-port');
         const passField = document.getElementById('server-password');
@@ -567,13 +527,9 @@ class Profile {
         toast.info('Server deleted');
     }
 
-    connectDiscord() {
-        window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
-    }
-
     connectGPortal() {
         window.home?.switchToTab('gportal');
-        toast.info('Please connect your Discord first in the GPortal tab');
+        toast.info('Go to GPortal tab to manage server connection');
     }
 
     changePassword() {
@@ -604,26 +560,13 @@ class Profile {
     refresh() {
         this.renderServers();
         this.populateUserInfo();
-        // Update Discord button status
-        const discordBtn = document.getElementById('connect-discord');
-        if (discordBtn) {
-            if (localStorage.getItem('discord_linked') === 'true') {
-                discordBtn.classList.add('linked');
-                discordBtn.innerHTML = '<span>🔗</span> Discord (Linked)';
-            } else {
-                discordBtn.classList.remove('linked');
-                discordBtn.innerHTML = '<span>🔗</span> Discord';
-            }
-        }
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.profile = new Profile();
 });
 
-// Update header avatar on load
 document.addEventListener('DOMContentLoaded', () => {
     const headerAvatar = document.getElementById('profile-avatar');
     if (headerAvatar) {

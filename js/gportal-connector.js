@@ -1,10 +1,9 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
+// GPortal connector without Discord (manual server entry).
 
 class GPortalConnector {
     constructor() {
         this.bridgeUrl = AppState.connection.bridgeUrl;
-        this.discordLinked = localStorage.getItem('discord_linked') === 'true';
-        this.discordId = localStorage.getItem('discord_id');
         this.servers = [];
         this.serverIdentifier = 'main-server';
         this.apiReady = false;
@@ -15,12 +14,8 @@ class GPortalConnector {
     init() {
         this.createHTML();
         this.attachEvents();
-        this.checkDiscordReturn();
-        if (this.discordId) {
-            this.loadServers();
-            this.checkApiStatus();
-            this.fetchStatus();
-        }
+        this.checkApiStatus();
+        this.fetchStatus();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'gportal') {
                 this.refresh();
@@ -52,18 +47,6 @@ class GPortalConnector {
                 </div>
 
                 <div class="gportal-grid">
-                    <!-- Discord Connect Section -->
-                    <div class="gportal-section">
-                        <h3>🔗 CONNECT WITH DISCORD</h3>
-                        <p>Link your Discord account to manage your servers.</p>
-                        <button id="discord-connect-btn" class="gportal-btn primary">
-                            ${this.discordLinked ? '✅ Discord Connected' : '🔗 Connect Discord'}
-                        </button>
-                        ${this.discordLinked ? '<p class="success-message">Discord linked! You can now add your servers below.</p>' : ''}
-                        ${this.discordLinked && this.servers.length === 0 ? '<p class="info-message">No servers found. Please add your server again.</p>' : ''}
-                    </div>
-
-                    ${this.discordLinked ? `
                     <!-- Add Server Form -->
                     <div class="gportal-section">
                         <h3>➕ ADD SERVER</h3>
@@ -117,7 +100,6 @@ class GPortalConnector {
                         <pre id="gportal-server-status" class="status-pre">Loading...</pre>
                         <button id="gportal-refresh-status" class="gportal-btn small">🔄 Refresh</button>
                     </div>
-                    ` : ''}
                 </div>
 
                 <div class="gportal-logs" id="gportal-logs">
@@ -129,36 +111,25 @@ class GPortalConnector {
     }
 
     attachEvents() {
-        document.getElementById('discord-connect-btn')?.addEventListener('click', () => this.connectDiscord());
-        if (this.discordLinked) {
-            const addBtn = document.getElementById('add-server-btn');
-            if (addBtn) {
-                addBtn.addEventListener('click', (e) => this.addServer(e));
-            }
-            document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
-            document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
-            const refreshBtn = document.getElementById('refresh-servers-btn');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', () => {
-                    console.log('Refresh button clicked');
-                    this.loadServers();
-                });
-            }
-            document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.sendCommand();
+        const addBtn = document.getElementById('add-server-btn');
+        if (addBtn) {
+            addBtn.addEventListener('click', (e) => this.addServer(e));
+        }
+        document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
+        document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
+        const refreshBtn = document.getElementById('refresh-servers-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                console.log('Refresh button clicked');
+                this.loadServers();
             });
         }
-    }
-
-    connectDiscord() {
-        window.location.href = `${this.bridgeUrl}/api/discord/login`;
+        document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.sendCommand();
+        });
     }
 
     async addServer(e) {
-        if (!this.discordId) {
-            toast.error('You must link Discord first');
-            return;
-        }
         const btn = e.currentTarget;
         btn.disabled = true;
         btn.textContent = 'ADDING...';
@@ -179,7 +150,7 @@ class GPortalConnector {
 
         this.logMessage(`Adding server ${name}...`);
 
-        const url = `${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`;
+        const url = `${this.bridgeUrl}/api/user/servers`;
         console.log('Adding server with URL:', url);
 
         try {
@@ -209,13 +180,9 @@ class GPortalConnector {
     }
 
     async loadServers() {
-        if (!this.discordId) {
-            console.warn('loadServers called with no discordId');
-            return;
-        }
-        console.log('Loading servers for discordId:', this.discordId);
+        console.log('Loading servers');
         try {
-            const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`);
+            const res = await fetch(`${this.bridgeUrl}/api/user/servers`);
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}: ${await res.text()}`);
             }
@@ -260,11 +227,10 @@ class GPortalConnector {
 
         container.querySelectorAll('.delete-server').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                if (!this.discordId) return;
                 const id = e.currentTarget.dataset.id;
                 if (confirm('Delete this server?')) {
                     try {
-                        await fetch(`${this.bridgeUrl}/api/user/servers/${id}?discord_id=${this.discordId}`, { method: 'DELETE' });
+                        await fetch(`${this.bridgeUrl}/api/user/servers/${id}`, { method: 'DELETE' });
                         this.loadServers();
                         toast.success('Server deleted');
                     } catch (err) {
@@ -368,22 +334,6 @@ class GPortalConnector {
         return 0;
     }
 
-    checkDiscordReturn() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('discord') === 'linked') {
-            const discordId = urlParams.get('id');
-            console.log('Discord return detected, ID:', discordId);
-            if (discordId) {
-                localStorage.setItem('discord_linked', 'true');
-                localStorage.setItem('discord_id', discordId);
-                console.log('Saved to localStorage:', { linked: 'true', id: discordId });
-                window.location.href = window.location.pathname;
-            } else {
-                toast.error('Discord linking failed: no ID received');
-            }
-        }
-    }
-
     logMessage(msg) {
         const list = document.getElementById('gportal-log-list');
         if (!list) return;
@@ -395,15 +345,9 @@ class GPortalConnector {
     }
 
     refresh() {
-        this.discordLinked = localStorage.getItem('discord_linked') === 'true';
-        this.discordId = localStorage.getItem('discord_id');
-        this.createHTML();
-        this.attachEvents();
-        if (this.discordId) {
-            this.loadServers();
-            this.checkApiStatus();
-            this.fetchStatus();
-        }
+        this.loadServers();
+        this.checkApiStatus();
+        this.fetchStatus();
     }
 }
 
