@@ -62,6 +62,10 @@ class Home {
         this.renderQuickActions();
     }
 
+    attachEvents() {
+        document.getElementById('home-refresh')?.addEventListener('click', () => this.refresh());
+    }
+
     renderGauges() {
         const grid = document.getElementById('home-grid');
         if (!grid) return;
