@@ -21,7 +21,7 @@ class Security {
         this.createDiscordModal();
         this.setupDiscordModalDelegation();
         this.updateRoleBadge();
-        this.checkSessionAndShowDashboard(); // <-- new method
+        this.checkSessionAndShowDashboard(); // <-- added
     }
 
     // NEW: Check if we have a valid session and show dashboard directly
