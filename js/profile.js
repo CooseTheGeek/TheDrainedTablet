@@ -1,5 +1,6 @@
 // profile.js – DRAINED TABLET ULTIMATE v7.0.0
-// User profile with ID card, customization, and settings (no Discord).
+// User profile with ID Card, Customize ID Card, and Settings
+// Enhanced with avatar cropping, cover photo, and persistent storage.
 
 class Profile {
     constructor() {
@@ -9,6 +10,7 @@ class Profile {
         this.savedServers = this.loadServers();
         this.platforms = ['ps5', 'ps4', 'xbox', 'xboxone'];
         this.cropper = null;
+        this.coverCropper = null;
         this.init();
     }
 
@@ -33,6 +35,8 @@ class Profile {
             region: 'North America',
             serverName: 'Geek\'s Survival Base',
             logoText: 'GEEK BASE',
+            discordId: 'Geek#1234',
+            discordConnected: true,
             tagline: 'NEW GEN | US',
             platform: AppState.user?.platform || '',
             platformId: AppState.user?.platformId || ''
@@ -51,6 +55,7 @@ class Profile {
         this.populateUserInfo();
         this.renderServers();
         this.updateHeaderAvatar();
+        this.loadCoverImage();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'profile') {
                 this.refresh();
@@ -58,20 +63,44 @@ class Profile {
         });
     }
 
+    loadCoverImage() {
+        const coverUrl = localStorage.getItem('tdl_cover_image');
+        if (coverUrl) {
+            const coverImg = document.getElementById('profile-cover-image');
+            if (coverImg) coverImg.src = coverUrl;
+        }
+    }
+
     updateHeaderAvatar() {
         const headerAvatar = document.getElementById('profile-avatar');
         if (headerAvatar) {
             headerAvatar.src = AppState.user.avatar || window.DEFAULT_AVATAR;
+        }
+        const largeAvatar = document.getElementById('profile-avatar-large');
+        if (largeAvatar) {
+            largeAvatar.src = AppState.user.avatar || window.DEFAULT_AVATAR;
         }
     }
 
     createHTML() {
         const tab = document.getElementById('tab-profile');
         if (!tab) return;
+        const coverImage = localStorage.getItem('tdl_cover_image') || '';
+        const defaultCover = coverImage ? `<img id="profile-cover-image" class="profile-header-image" src="${coverImage}" alt="Cover">` : '<div class="profile-header-image" style="background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center;">No Cover Image</div>';
         tab.innerHTML = `
             <div class="profile-container">
+                <div class="profile-header-image-container">
+                    ${defaultCover}
+                    <button id="change-cover-btn" class="change-cover-btn">Change Cover</button>
+                </div>
+                <div class="profile-avatar-wrapper">
+                    <div style="position: relative; display: inline-block;">
+                        <img id="profile-avatar-large" class="profile-avatar-large" src="${AppState.user.avatar || window.DEFAULT_AVATAR}" onerror="this.src=window.DEFAULT_AVATAR">
+                        <button id="change-avatar-btn" class="change-avatar-btn">✏️</button>
+                    </div>
+                </div>
                 <div class="profile-header">
-                    <h2>👤 USER PROFILE</h2>
+                    <h2 id="profile-display-name">${AppState.user.username || 'SURVIVOR'}</h2>
                 </div>
 
                 <div class="profile-tabs">
@@ -113,6 +142,10 @@ class Profile {
                             </div>
                             <div class="card-logo-block">
                                 <span class="logo-text" id="card-logo">${this.profileData.logoText}</span>
+                            </div>
+                            <div class="card-discord">
+                                <span class="discord-id" id="card-discord-id">${this.profileData.discordId}</span>
+                                <span class="discord-badge" id="card-discord-badge">${this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED'}</span>
                             </div>
                             <div class="card-actions">
                                 <button id="manage-server" class="btn-manage">MANAGE SERVER</button>
@@ -175,6 +208,18 @@ class Profile {
                                     <input type="text" id="edit-logo" value="${this.profileData.logoText}">
                                 </div>
                             </div>
+                            <div class="form-section">
+                                <h3>Discord</h3>
+                                <div class="form-group">
+                                    <label>Discord ID</label>
+                                    <input type="text" id="edit-discord-id" value="${this.profileData.discordId}">
+                                </div>
+                                <div class="checkbox-item">
+                                    <label>
+                                        <input type="checkbox" id="edit-discord-connected" ${this.profileData.discordConnected ? 'checked' : ''}> Discord Connected
+                                    </label>
+                                </div>
+                            </div>
                             <div class="form-actions">
                                 <button id="save-customize" class="btn-save primary">Save Changes</button>
                                 <button id="cancel-customize" class="btn-cancel">Cancel</button>
@@ -212,6 +257,10 @@ class Profile {
                                 </div>
                                 <div class="card-logo-block">
                                     <span class="logo-text" id="preview-logo">${this.profileData.logoText}</span>
+                                </div>
+                                <div class="card-discord">
+                                    <span class="discord-id" id="preview-discord-id">${this.profileData.discordId}</span>
+                                    <span class="discord-badge" id="preview-discord-badge">${this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED'}</span>
                                 </div>
                             </div>
                         </div>
@@ -274,10 +323,15 @@ class Profile {
         document.getElementById('upload-avatar')?.addEventListener('click', () => this.uploadAndCropAvatar());
         document.getElementById('remove-avatar')?.addEventListener('click', () => this.removeAvatar());
         document.getElementById('card-avatar')?.addEventListener('click', () => this.uploadAndCropAvatar());
+        document.getElementById('change-avatar-btn')?.addEventListener('click', () => this.uploadAndCropAvatar());
+
+        // Cover photo change
+        document.getElementById('change-cover-btn')?.addEventListener('click', () => this.uploadCoverImage());
 
         // Live preview updates
         document.getElementById('edit-username')?.addEventListener('input', (e) => {
             document.getElementById('preview-username').innerText = e.target.value || 'SURVIVOR';
+            document.getElementById('profile-display-name').innerText = e.target.value || 'SURVIVOR';
         });
         document.getElementById('edit-tagline')?.addEventListener('input', (e) => {
             document.getElementById('preview-tagline').innerText = e.target.value;
@@ -297,6 +351,13 @@ class Profile {
         document.getElementById('edit-logo')?.addEventListener('input', (e) => {
             document.getElementById('preview-logo').innerText = e.target.value;
         });
+        document.getElementById('edit-discord-id')?.addEventListener('input', (e) => {
+            document.getElementById('preview-discord-id').innerText = e.target.value;
+        });
+        document.getElementById('edit-discord-connected')?.addEventListener('change', (e) => {
+            const badge = document.getElementById('preview-discord-badge');
+            badge.innerText = e.target.checked ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED';
+        });
 
         // Save/Cancel in Customize tab
         document.getElementById('save-customize')?.addEventListener('click', () => this.saveCustomizations());
@@ -306,11 +367,14 @@ class Profile {
 
         // Main ID card buttons
         document.getElementById('manage-server')?.addEventListener('click', () => {
-            toast.info('Manage Server clicked – implement your logic');
+            window.switchTab('gportal');
         });
         document.getElementById('delete-server')?.addEventListener('click', () => {
             if (confirm('Are you sure you want to delete this server?')) {
-                toast.error('Server deletion triggered');
+                localStorage.removeItem('tdl_saved_servers');
+                this.savedServers = [];
+                this.renderServers();
+                toast.success('Servers cleared');
             }
         });
 
@@ -323,10 +387,7 @@ class Profile {
         // Server management
         document.getElementById('add-server')?.addEventListener('click', () => this.addServer());
 
-        // Crop modal buttons
-        document.getElementById('crop-save')?.addEventListener('click', () => this.saveCroppedAvatar());
-        document.getElementById('crop-cancel')?.addEventListener('click', () => this.closeCropModal());
-
+        // Crop modal buttons (will be attached dynamically)
         // Delegate for server actions
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('load-server')) {
@@ -338,6 +399,79 @@ class Profile {
                 this.deleteServer(id);
             }
         });
+    }
+
+    uploadCoverImage() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    this.showCoverCropModal(event.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    }
+
+    showCoverCropModal(imageSrc) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <h3>Crop Cover Image</h3>
+                <div class="crop-container">
+                    <img id="crop-cover-image" src="${imageSrc}" style="max-width: 100%;">
+                </div>
+                <div class="modal-actions">
+                    <button id="save-cover-crop" class="modal-btn primary">Save</button>
+                    <button id="cancel-cover-crop" class="modal-btn">Cancel</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        const img = document.getElementById('crop-cover-image');
+        img.onload = () => {
+            if (this.coverCropper) this.coverCropper.destroy();
+            this.coverCropper = new Cropper(img, {
+                aspectRatio: 16/9,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 1,
+                cropBoxResizable: true,
+                cropBoxMovable: true,
+                background: false
+            });
+        };
+        modal.classList.remove('hidden');
+        document.getElementById('save-cover-crop').onclick = () => {
+            if (this.coverCropper) {
+                const canvas = this.coverCropper.getCroppedCanvas({ width: 1200, height: 675 });
+                const croppedImage = canvas.toDataURL('image/png');
+                localStorage.setItem('tdl_cover_image', croppedImage);
+                const coverImg = document.getElementById('profile-cover-image');
+                if (coverImg) coverImg.src = croppedImage;
+                else {
+                    const container = document.querySelector('.profile-header-image-container');
+                    if (container) {
+                        container.innerHTML = `<img id="profile-cover-image" class="profile-header-image" src="${croppedImage}" alt="Cover"><button id="change-cover-btn" class="change-cover-btn">Change Cover</button>`;
+                        document.getElementById('change-cover-btn')?.addEventListener('click', () => this.uploadCoverImage());
+                    }
+                }
+                this.coverCropper.destroy();
+                this.coverCropper = null;
+            }
+            modal.remove();
+            toast.success('Cover image updated');
+        };
+        document.getElementById('cancel-cover-crop').onclick = () => {
+            if (this.coverCropper) this.coverCropper.destroy();
+            modal.remove();
+        };
     }
 
     uploadAndCropAvatar() {
@@ -434,6 +568,8 @@ class Profile {
             region: document.getElementById('edit-region').value,
             serverName: document.getElementById('edit-server-name').value,
             logoText: document.getElementById('edit-logo').value,
+            discordId: document.getElementById('edit-discord-id').value,
+            discordConnected: document.getElementById('edit-discord-connected').checked,
             platform: document.getElementById('edit-platform')?.value || '',
             platformId: document.getElementById('edit-platform-id')?.value || ''
         };
@@ -455,6 +591,8 @@ class Profile {
         document.getElementById('card-region').innerText = this.profileData.region;
         document.getElementById('card-server-name').innerText = this.profileData.serverName;
         document.getElementById('card-logo').innerText = this.profileData.logoText;
+        document.getElementById('card-discord-id').innerText = this.profileData.discordId;
+        document.getElementById('card-discord-badge').innerText = this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED';
 
         toast.success('ID Card updated');
         document.querySelector('.profile-tab[data-tab="idcard"]').click();
@@ -516,6 +654,7 @@ class Profile {
         if (ipField) ipField.value = server.ip;
         if (portField) portField.value = server.port;
         if (passField) passField.value = server.password;
+        window.switchTab('gportal');
         toast.success(`Loaded server: ${server.name}`);
     }
 
@@ -528,7 +667,7 @@ class Profile {
     }
 
     connectGPortal() {
-        window.home?.switchToTab('gportal');
+        window.switchTab('gportal');
         toast.info('Go to GPortal tab to manage server connection');
     }
 
@@ -555,11 +694,13 @@ class Profile {
         document.getElementById('card-username').innerText = AppState.user.username || 'SURVIVOR';
         document.getElementById('preview-username').innerText = AppState.user.username || 'SURVIVOR';
         document.getElementById('edit-username').value = AppState.user.username || '';
+        document.getElementById('profile-display-name').innerText = AppState.user.username || 'SURVIVOR';
     }
 
     refresh() {
         this.renderServers();
         this.populateUserInfo();
+        this.loadCoverImage();
     }
 }
 

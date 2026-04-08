@@ -17,7 +17,7 @@ class AuthSystem {
             const saved = localStorage.getItem('tdl_users');
             return saved ? JSON.parse(saved) : {
                 'CooseTheGeek': {
-                    code: '0325',
+                    code: '0427',
                     role: 'master',
                     totpEnabled: false,
                     created: new Date().toISOString()
@@ -50,7 +50,6 @@ class AuthSystem {
         localStorage.setItem('tdl_trusted_devices', JSON.stringify(this.trustedDevices));
     }
 
-    // Generate a device fingerprint
     getDeviceFingerprint() {
         const components = [
             navigator.userAgent,
@@ -91,7 +90,6 @@ class AuthSystem {
         this.saveTrustedDevices();
     }
 
-    // Generate a new TOTP secret for a user (returns secret and otpauth URI)
     generateTotpSecret(username) {
         const randomBytes = new Uint8Array(16);
         window.crypto.getRandomValues(randomBytes);
@@ -106,7 +104,6 @@ class AuthSystem {
         return { secret, uri };
     }
 
-    // Base32 encoding (RFC 4648) without padding
     base32Encode(buffer) {
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
         let result = '';
@@ -126,7 +123,6 @@ class AuthSystem {
         return result;
     }
 
-    // Verify a TOTP code using otpauth library
     verifyTotp(username, code) {
         const secret = this.totpSecrets[username];
         if (!secret) return false;
@@ -147,14 +143,12 @@ class AuthSystem {
         return false;
     }
 
-    // Enable 2FA for a user (sets totpEnabled = true)
     enable2FA(username) {
         if (!this.users[username]) return;
         this.users[username].totpEnabled = true;
         this.saveUsers();
     }
 
-    // Disable 2FA (master only)
     disable2FA(username, masterUser) {
         if (masterUser !== 'CooseTheGeek') return;
         if (this.users[username]) {
@@ -163,9 +157,7 @@ class AuthSystem {
         }
     }
 
-    // Login attempt
     async login(code, rconCredentials = null) {
-        // Rate limiting
         if (this.lockoutUntil && this.lockoutUntil > Date.now()) {
             const minutes = Math.ceil((this.lockoutUntil - Date.now()) / 60000);
             throw new Error(`Too many attempts. Locked for ${minutes} minutes.`);
@@ -225,7 +217,6 @@ class AuthSystem {
         };
     }
 
-    // Verify 2FA after initial login
     async verify2FA(username, code, trustDevice = false) {
         if (!this.verifyTotp(username, code)) {
             throw new Error('Invalid 2FA code');
