@@ -1,4 +1,26 @@
-('tab-master');
+// master-control.js – DRAINED TABLET ULTIMATE v7.0.0
+// Complete master control panel with unlimited power over everything.
+// Only accessible by master (CooseTheGeek).
+
+class MasterControl {
+    constructor() {
+        this.access = window.accessControl;
+        this.commands = window.serverCommands;
+        this.init();
+    }
+
+    init() {
+        this.createHTML();
+        this.attachEvents();
+        window.addEventListener('tab-changed', (e) => {
+            if (e.detail.tab === 'master') {
+                this.refresh();
+            }
+        });
+    }
+
+    createHTML() {
+        const tab = document.getElementById('tab-master');
         if (!tab) return;
 
         if (!this.access.isMaster()) {
@@ -13,7 +35,6 @@
                     <div class="master-badge" style="background: var(--accent-primary); color: #000; padding: 0.3rem 1rem; border-radius: 20px; font-weight: 600;">MASTER ACCESS</div>
                 </div>
 
-                <!-- Quick Actions -->
                 <div class="master-section">
                     <h3>⚡ QUICK ACTIONS</h3>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
@@ -25,127 +46,61 @@
                     </div>
                 </div>
 
-                <!-- Server Core Settings -->
                 <div class="master-section">
                     <h3>🖥️ SERVER CORE</h3>
                     <div class="master-settings-grid">
-                        <div class="master-setting">
-                            <label>Server Name</label>
-                            <input type="text" id="master-hostname" placeholder="Server Name">
-                        </div>
-                        <div class="master-setting">
-                            <label>Max Players</label>
-                            <input type="number" id="master-maxplayers" value="100" min="1" max="500">
-                        </div>
-                        <div class="master-setting">
-                            <label>World Size</label>
-                            <input type="number" id="master-worldsize" value="3500" min="1000" max="6000">
-                        </div>
-                        <div class="master-setting">
-                            <label>World Seed</label>
-                            <input type="number" id="master-seed" value="10325">
-                        </div>
+                        <div class="master-setting"><label>Server Name</label><input type="text" id="master-hostname" placeholder="Server Name"></div>
+                        <div class="master-setting"><label>Max Players</label><input type="number" id="master-maxplayers" value="100" min="1" max="500"></div>
+                        <div class="master-setting"><label>World Size</label><input type="number" id="master-worldsize" value="3500" min="1000" max="6000"></div>
+                        <div class="master-setting"><label>World Seed</label><input type="number" id="master-seed" value="10325"></div>
                     </div>
                     <button id="master-apply-core" class="master-btn">APPLY CORE SETTINGS</button>
                 </div>
 
-                <!-- Performance Tuning -->
                 <div class="master-section">
                     <h3>⚡ PERFORMANCE TUNING</h3>
                     <div class="master-settings-grid">
-                        <div class="master-setting">
-                            <label>Tickrate: <span id="master-tickrate-val">30</span></label>
-                            <input type="range" id="master-tickrate" min="10" max="100" value="30">
-                        </div>
-                        <div class="master-setting">
-                            <label>FPS Limit: <span id="master-fps-val">60</span></label>
-                            <input type="range" id="master-fps" min="30" max="300" value="60">
-                        </div>
-                        <div class="master-setting">
-                            <label>Craft Timescale: <span id="master-craftscale-val">1.0</span></label>
-                            <input type="range" id="master-craftscale" min="0.1" max="10" step="0.1" value="1.0">
-                        </div>
+                        <div class="master-setting"><label>Tickrate: <span id="master-tickrate-val">30</span></label><input type="range" id="master-tickrate" min="10" max="100" value="30"></div>
+                        <div class="master-setting"><label>FPS Limit: <span id="master-fps-val">60</span></label><input type="range" id="master-fps" min="30" max="300" value="60"></div>
+                        <div class="master-setting"><label>Craft Timescale: <span id="master-craftscale-val">1.0</span></label><input type="range" id="master-craftscale" min="0.1" max="10" step="0.1" value="1.0"></div>
                     </div>
                     <button id="master-apply-performance" class="master-btn">APPLY PERFORMANCE SETTINGS</button>
                 </div>
 
-                <!-- World Environment -->
                 <div class="master-section">
                     <h3>🌍 WORLD ENVIRONMENT</h3>
                     <div class="master-settings-grid">
-                        <div class="master-setting">
-                            <label>Time of Day: <span id="master-time-val">12:00</span></label>
-                            <input type="range" id="master-time" min="0" max="24" step="0.5" value="12">
-                        </div>
-                        <div class="master-setting">
-                            <label>Day Length (min): <span id="master-daylength-val">45</span></label>
-                            <input type="range" id="master-daylength" min="5" max="240" value="45">
-                        </div>
-                        <div class="master-setting">
-                            <label>Night Length (min): <span id="master-nightlength-val">15</span></label>
-                            <input type="range" id="master-nightlength" min="5" max="240" value="15">
-                        </div>
-                        <div class="master-setting">
-                            <label>Clouds: <span id="master-clouds-val">0.5</span></label>
-                            <input type="range" id="master-clouds" min="0" max="1" step="0.1" value="0.5">
-                        </div>
-                        <div class="master-setting">
-                            <label>Rain: <span id="master-rain-val">0</span></label>
-                            <input type="range" id="master-rain" min="0" max="1" step="0.1" value="0">
-                        </div>
-                        <div class="master-setting">
-                            <label>Wind: <span id="master-wind-val">0.5</span></label>
-                            <input type="range" id="master-wind" min="0" max="1" step="0.1" value="0.5">
-                        </div>
+                        <div class="master-setting"><label>Time of Day: <span id="master-time-val">12:00</span></label><input type="range" id="master-time" min="0" max="24" step="0.5" value="12"></div>
+                        <div class="master-setting"><label>Day Length (min): <span id="master-daylength-val">45</span></label><input type="range" id="master-daylength" min="5" max="240" value="45"></div>
+                        <div class="master-setting"><label>Night Length (min): <span id="master-nightlength-val">15</span></label><input type="range" id="master-nightlength" min="5" max="240" value="15"></div>
+                        <div class="master-setting"><label>Clouds: <span id="master-clouds-val">0.5</span></label><input type="range" id="master-clouds" min="0" max="1" step="0.1" value="0.5"></div>
+                        <div class="master-setting"><label>Rain: <span id="master-rain-val">0</span></label><input type="range" id="master-rain" min="0" max="1" step="0.1" value="0"></div>
+                        <div class="master-setting"><label>Wind: <span id="master-wind-val">0.5</span></label><input type="range" id="master-wind" min="0" max="1" step="0.1" value="0.5"></div>
                     </div>
                     <button id="master-apply-world" class="master-btn">APPLY WORLD SETTINGS</button>
                 </div>
 
-                <!-- Decay & Upkeep -->
                 <div class="master-section">
                     <h3>⏳ DECAY & UPKEEP</h3>
                     <div class="master-settings-grid">
-                        <div class="master-setting">
-                            <label>Decay Scale: <span id="master-decay-scale-val">1.0</span></label>
-                            <input type="range" id="master-decay-scale" min="0.1" max="5" step="0.1" value="1.0">
-                        </div>
-                        <div class="master-setting">
-                            <label>Tick Rate (sec): <span id="master-decay-tick-val">600</span></label>
-                            <input type="range" id="master-decay-tick" min="60" max="3600" step="60" value="600">
-                        </div>
-                        <div class="master-setting">
-                            <label>Upkeep Period (min): <span id="master-upkeep-period-val">1440</span></label>
-                            <input type="range" id="master-upkeep-period" min="60" max="2880" value="1440">
-                        </div>
+                        <div class="master-setting"><label>Decay Scale: <span id="master-decay-scale-val">1.0</span></label><input type="range" id="master-decay-scale" min="0.1" max="5" step="0.1" value="1.0"></div>
+                        <div class="master-setting"><label>Tick Rate (sec): <span id="master-decay-tick-val">600</span></label><input type="range" id="master-decay-tick" min="60" max="3600" step="60" value="600"></div>
+                        <div class="master-setting"><label>Upkeep Period (min): <span id="master-upkeep-period-val">1440</span></label><input type="range" id="master-upkeep-period" min="60" max="2880" value="1440"></div>
                     </div>
                     <button id="master-apply-decay" class="master-btn">APPLY DECAY SETTINGS</button>
                 </div>
 
-                <!-- Economy & Modifiers -->
                 <div class="master-section">
                     <h3>💰 ECONOMY & MODIFIERS</h3>
                     <div class="master-settings-grid">
-                        <div class="master-setting">
-                            <label>Starting Balance</label>
-                            <input type="number" id="master-start-balance" value="1000">
-                        </div>
-                        <div class="master-setting">
-                            <label>Kill Reward</label>
-                            <input type="number" id="master-kill-reward" value="50">
-                        </div>
-                        <div class="master-setting">
-                            <label>Gather Rate: <span id="master-gather-val">1.0</span></label>
-                            <input type="range" id="master-gather" min="0.5" max="5" step="0.1" value="1.0">
-                        </div>
-                        <div class="master-setting">
-                            <label>Furnace Speed: <span id="master-furnace-speed-val">1.0</span></label>
-                            <input type="range" id="master-furnace-speed" min="0.5" max="5" step="0.1" value="1.0">
-                        </div>
+                        <div class="master-setting"><label>Starting Balance</label><input type="number" id="master-start-balance" value="1000"></div>
+                        <div class="master-setting"><label>Kill Reward</label><input type="number" id="master-kill-reward" value="50"></div>
+                        <div class="master-setting"><label>Gather Rate: <span id="master-gather-val">1.0</span></label><input type="range" id="master-gather" min="0.5" max="5" step="0.1" value="1.0"></div>
+                        <div class="master-setting"><label>Furnace Speed: <span id="master-furnace-speed-val">1.0</span></label><input type="range" id="master-furnace-speed" min="0.5" max="5" step="0.1" value="1.0"></div>
                     </div>
                     <button id="master-apply-economy" class="master-btn">APPLY ECONOMY SETTINGS</button>
                 </div>
 
-                <!-- Plugin Management -->
                 <div class="master-section">
                     <h3>🧩 PLUGIN MANAGEMENT</h3>
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
@@ -157,7 +112,6 @@
                     <div id="master-plugin-list" class="plugin-list"></div>
                 </div>
 
-                <!-- Dashboard User Management -->
                 <div class="master-section">
                     <h3>👥 DASHBOARD USERS (SERVER OWNERS)</h3>
                     <div id="master-users-list" class="users-list"></div>
@@ -168,7 +122,6 @@
                     </div>
                 </div>
 
-                <!-- Raw Command Executor -->
                 <div class="master-section">
                     <h3>⚡ RAW COMMAND EXECUTOR</h3>
                     <div style="display: flex; gap: 0.5rem;">
