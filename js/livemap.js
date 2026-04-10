@@ -1,8 +1,11 @@
 // livemap.js – DRAINED TABLET ULTIMATE v7.0.0
-// Live map with player positions, monument markers, and responsive tabs.
+// Live map with real player positions, monument markers, and responsive hamburger tabs.
+// Fetches monument positions automatically via RCON (GPortal bridge).
 
 class Livemap {
     constructor() {
+        this.tablet = window.drainedTablet;
+        this.access = window.accessControl;
         this.mapConfig = window.MAP_CONFIG;
         this.canvas = null;
         this.ctx = null;
@@ -18,6 +21,7 @@ class Livemap {
         this.dragging = false;
         this.lastX = 0;
         this.lastY = 0;
+        this.resizeObserver = null;
         this.init();
     }
 
@@ -31,17 +35,23 @@ class Livemap {
             this.draw();
         });
         window.addEventListener('tab-changed', (e) => {
-            if (e.detail.tab === 'livemap') this.refresh();
+            if (e.detail.tab === 'livemap') {
+                this.refresh();
+            }
         });
-        window.addEventListener('resize', () => this.setCanvasSize());
+        window.addEventListener('resize', () => this.handleResize());
+        this.setupResizeObserver();
     }
 
     createHTML() {
         const tab = document.getElementById('tab-livemap');
         if (!tab) return;
+
         tab.innerHTML = `
             <div class="map-wrapper">
-                <button class="map-hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+                <button class="map-hamburger" aria-label="Menu" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
                 <nav class="map-tab-nav">
                     <button class="map-tab-btn active" data-category="all">All</button>
                     <button class="map-tab-btn" data-category="quarries">Quarries</button>
@@ -55,6 +65,7 @@ class Livemap {
                 </div>
             </div>
         `;
+
         this.canvas = document.getElementById('live-map-canvas');
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d');
@@ -63,6 +74,7 @@ class Livemap {
     }
 
     attachEvents() {
+        // Tab buttons
         document.querySelectorAll('.map-tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.map-tab-btn').forEach(b => b.classList.remove('active'));
@@ -70,22 +82,40 @@ class Livemap {
                 this.activeCategory = e.target.dataset.category;
                 this.filterMonuments();
                 this.draw();
-                if (window.innerWidth <= 768) document.querySelector('.map-tab-nav').classList.remove('open');
+                if (window.innerWidth <= 768) {
+                    document.querySelector('.map-tab-nav').classList.remove('open');
+                    document.querySelector('.map-hamburger').setAttribute('aria-expanded', 'false');
+                }
             });
         });
+
+        // Hamburger toggle
         const hamburger = document.querySelector('.map-hamburger');
         const tabNav = document.querySelector('.map-tab-nav');
-        hamburger?.addEventListener('click', () => {
+        hamburger.addEventListener('click', () => {
             const expanded = hamburger.getAttribute('aria-expanded') === 'true' ? false : true;
             hamburger.setAttribute('aria-expanded', expanded);
             tabNav.classList.toggle('open');
         });
+
+        // Canvas events for pan/zoom
         this.canvas.addEventListener('mousedown', (e) => this.startDrag(e));
         this.canvas.addEventListener('mousemove', (e) => this.drag(e));
         this.canvas.addEventListener('mouseup', () => this.stopDrag());
         this.canvas.addEventListener('mouseleave', () => this.stopDrag());
         this.canvas.addEventListener('wheel', (e) => this.handleWheel(e));
         this.canvas.addEventListener('mousemove', (e) => this.trackMouse(e));
+    }
+
+    setupResizeObserver() {
+        this.resizeObserver = new ResizeObserver(() => this.handleResize());
+        const container = document.querySelector('.map-container');
+        if (container) this.resizeObserver.observe(container);
+    }
+
+    handleResize() {
+        this.setCanvasSize();
+        if (this.imageLoaded) this.draw();
     }
 
     setCanvasSize() {
@@ -97,66 +127,52 @@ class Livemap {
         this.canvas.height = height;
         this.canvas.style.width = `${width}px`;
         this.canvas.style.height = `${height}px`;
-        this.draw();
     }
 
     loadMapImage() {
+        const imgUrl = this.mapConfig.map.imageUrl;
         this.mapImage = new Image();
         this.mapImage.crossOrigin = 'anonymous';
-        this.mapImage.src = this.mapConfig.map.imageUrl;
+        this.mapImage.src = imgUrl;
         this.mapImage.onload = () => {
             this.imageLoaded = true;
             this.draw();
         };
         this.mapImage.onerror = () => {
-            console.warn('Map image failed to load');
+            console.warn('Map image failed to load, using fallback grid');
             this.imageLoaded = false;
             this.draw();
         };
     }
 
     async fetchMonuments() {
-        // If not connected, use fallback mock data
-        if (!AppState.connection.server) {
+        try {
+            // Send command via GPortal bridge
+            const res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'find_entity *' })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || 'Failed to fetch monuments');
+            const raw = data.result || '';
+            this.monuments = this.parseMonuments(raw);
+            this.filterMonuments();
+            this.draw();
+        } catch (err) {
+            console.error('Failed to fetch monuments:', err);
+            // Fallback to mock data for demo
             this.monuments = this.getMockMonuments();
             this.filterMonuments();
             this.draw();
-            return;
         }
-        try {
-            const res = await fetch(`${AppState.connection.bridgeUrl}/api/command`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ip: AppState.connection.server.ip,
-                    port: AppState.connection.server.port,
-                    password: AppState.connection.server.password,
-                    command: 'find_entity *'
-                })
-            });
-            const data = await res.json();
-            if (data.success && data.result) {
-                this.monuments = this.parseMonuments(data.result);
-            } else {
-                this.monuments = this.getMockMonuments();
-            }
-        } catch (err) {
-            console.warn('Failed to fetch monuments, using mock data', err);
-            this.monuments = this.getMockMonuments();
-        }
-        this.filterMonuments();
-        this.draw();
     }
 
     parseMonuments(raw) {
         const lines = raw.split('\n');
         const monuments = [];
         const seenNames = new Map();
-        const anchors = this.mapConfig.map.anchors;
-        const a1 = anchors[0];
-        const a2 = anchors[1];
-        const scaleX = (a2.pixelX - a1.pixelX) / (a2.worldX - a1.worldX);
-        const scaleZ = (a2.pixelY - a1.pixelY) / (a2.worldZ - a1.worldZ);
+
         for (const line of lines) {
             const match = line.match(/Monument "([^"]+)" at \((-?\d+\.?\d*),\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*)\)/);
             if (match) {
@@ -164,6 +180,8 @@ class Livemap {
                 const worldX = parseFloat(match[2]);
                 const worldZ = parseFloat(match[4]);
                 let displayName = internalName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                // Handle duplicates
                 if (seenNames.has(displayName)) {
                     const count = seenNames.get(displayName) + 1;
                     seenNames.set(displayName, count);
@@ -171,19 +189,32 @@ class Livemap {
                 } else {
                     seenNames.set(displayName, 1);
                 }
+
                 const category = this.getCategory(displayName);
-                const pixelX = a1.pixelX + (worldX - a1.worldX) * scaleX;
-                const pixelY = a1.pixelY + (worldZ - a1.worldZ) * scaleZ;
+                const pixel = this.worldToPixel(worldX, worldZ);
                 monuments.push({
                     id: internalName,
                     name: displayName,
-                    pixelX: pixelX,
-                    pixelY: pixelY,
-                    category: category
+                    worldX,
+                    worldZ,
+                    pixelX: pixel.x,
+                    pixelY: pixel.y,
+                    category,
                 });
             }
         }
         return monuments;
+    }
+
+    worldToPixel(worldX, worldZ) {
+        const anchors = this.mapConfig.map.anchors;
+        const a1 = anchors[0];
+        const a2 = anchors[1];
+        const scaleX = (a2.pixelX - a1.pixelX) / (a2.worldX - a1.worldX);
+        const scaleZ = (a2.pixelY - a1.pixelY) / (a2.worldZ - a1.worldZ);
+        const pixelX = a1.pixelX + (worldX - a1.worldX) * scaleX;
+        const pixelY = a1.pixelY + (worldZ - a1.worldZ) * scaleZ;
+        return { x: pixelX, y: pixelY };
     }
 
     getCategory(name) {
@@ -224,9 +255,11 @@ class Livemap {
         const w = this.canvas.width / this.zoom;
         const h = this.canvas.height / this.zoom;
         const gridSize = 50 / this.zoom;
-        this.ctx.fillStyle = '#0a192f';
+
+        this.ctx.fillStyle = '#0a0a0a';
         this.ctx.fillRect(0, 0, w, h);
-        this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.2)';
+
+        this.ctx.strokeStyle = 'rgba(255, 177, 0, 0.2)';
         this.ctx.lineWidth = 1 / this.zoom;
         for (let x = 0; x <= w; x += gridSize) {
             this.ctx.beginPath();
@@ -240,7 +273,8 @@ class Livemap {
             this.ctx.lineTo(w, y);
             this.ctx.stroke();
         }
-        this.ctx.fillStyle = '#00ffff';
+
+        this.ctx.fillStyle = '#FFB100';
         this.ctx.font = `${12 / this.zoom}px 'Inter'`;
         this.ctx.textAlign = 'center';
         this.ctx.fillText('Map image not loaded', w/2, h/2);
@@ -254,7 +288,7 @@ class Livemap {
             const y = m.pixelY / (this.mapConfig.map.measured.h / this.zoom);
             this.ctx.beginPath();
             this.ctx.arc(x, y, 6 / this.zoom, 0, 2 * Math.PI);
-            this.ctx.fillStyle = '#00ffff';
+            this.ctx.fillStyle = '#FFB100';
             this.ctx.fill();
             this.ctx.strokeStyle = '#000';
             this.ctx.lineWidth = 1 / this.zoom;
@@ -270,13 +304,14 @@ class Livemap {
         const mapSize = this.mapConfig.map.worldSize;
         const w = this.canvas.width / this.zoom;
         const h = this.canvas.height / this.zoom;
+
         for (const player of this.players) {
             if (!player.position) continue;
             const x = ((player.position.x / mapSize) + 0.5) * w;
             const y = ((player.position.z / mapSize) + 0.5) * h;
             this.ctx.beginPath();
             this.ctx.arc(x, y, 5 / this.zoom, 0, 2 * Math.PI);
-            this.ctx.fillStyle = '#00ff88';
+            this.ctx.fillStyle = '#00ff00';
             this.ctx.fill();
             this.ctx.fillStyle = '#fff';
             this.ctx.font = `${10 / this.zoom}px 'Inter'`;
@@ -328,7 +363,7 @@ class Livemap {
     }
 
     getMockMonuments() {
-        // Fallback monument data
+        // Fallback data in case RCON fails
         return [
             { name: 'HQM Quarry', category: 'quarries', pixelX: 420, pixelY: 560 },
             { name: 'Stone Quarry', category: 'quarries', pixelX: 540, pixelY: 410 },
@@ -345,10 +380,11 @@ class Livemap {
     refresh() {
         this.fetchMonuments();
         this.draw();
-        toast.success('Live map refreshed');
+        this.tablet.showToast('Live map refreshed', 'success');
     }
 }
 
+// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.livemap = new Livemap();
 });
