@@ -1,5 +1,6 @@
 // sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
-// Manages the customizable sidebar navigation.
+// Manages customizable sidebar navigation (max 5 user tabs + Settings)
+// Supports collapse/expand, mobile hamburger, localStorage persistence.
 
 class SidebarManager {
     constructor() {
@@ -41,6 +42,8 @@ class SidebarManager {
         this.renderSidebar();
         this.addEventDelegation();
         window.addEventListener('tab-changed', () => this.highlightActiveTab());
+        // Listen for role changes to refresh sidebar access
+        window.addEventListener('user-role-changed', () => this.renderSidebar());
     }
 
     loadSelection() {
@@ -82,7 +85,10 @@ class SidebarManager {
                 html += `<a href="#" class="nav-item" data-tab="${tab.id}"><span class="nav-icon">${tab.icon}</span> <span class="nav-text">${tab.name}</span></a>`;
             }
         }
-        html += `<a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>`;
+        // Always add Settings tab at the bottom (if user has access)
+        if (this.access.hasRole('master')) {
+            html += `<a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>`;
+        }
         container.innerHTML = html;
 
         this.highlightActiveTab();
@@ -103,31 +109,25 @@ class SidebarManager {
     addEventDelegation() {
         const container = document.getElementById('sidebar-nav-container');
         if (!container) return;
-        container.addEventListener('click', (e) => {
-            const item = e.target.closest('.nav-item');
-            if (item && item.dataset.tab) {
-                e.preventDefault();
-                const tabId = item.dataset.tab;
-                window.switchTab(tabId);
-            }
-        });
+        // Already handled in index.html via click delegation, but we keep for safety
+        // Tab switching is already attached in index.html; we don't need to duplicate.
     }
 
     getSelectionUI() {
         const available = this.getAvailableTabs();
         const filtered = available.filter(t => t.id !== 'settings');
         let html = `<div class="sidebar-customizer"><h3>Select up to ${this.maxTabs} sidebar tabs</h3>`;
-        html += '<div class="tab-selection-list">';
+        html += '<div class="tab-selection-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:0.8rem;">';
         filtered.forEach(tab => {
             const isChecked = this.selectedIds.includes(tab.id);
             html += `
-                <label class="tab-checkbox">
+                <label class="tab-checkbox" style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
                     <input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${this.selectedIds.length >= this.maxTabs && !isChecked ? 'disabled' : ''}>
                     <span class="tab-icon">${tab.icon}</span> ${tab.name}
                 </label>
             `;
         });
-        html += '</div><button id="save-sidebar-tabs" class="settings-btn primary">Save Sidebar Tabs</button></div>';
+        html += '</div><button id="save-sidebar-tabs" class="settings-btn primary" style="margin-top:1rem;">Save Sidebar Tabs</button></div>';
         return html;
     }
 
@@ -145,6 +145,7 @@ class SidebarManager {
                 this.saveSelection();
                 this.renderSidebar();
                 toast.success('Sidebar updated');
+                // Update disabled states
                 const allCbs = document.querySelectorAll('.tab-checkbox input');
                 allCbs.forEach(cb => {
                     cb.disabled = this.selectedIds.length >= this.maxTabs && !cb.checked;

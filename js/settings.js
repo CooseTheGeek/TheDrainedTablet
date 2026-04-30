@@ -1,6 +1,6 @@
 // settings.js – DRAINED TABLET ULTIMATE v7.0.0
 // Dashboard settings: user preferences, export/import, layout customization,
-// theme, notifications, security, and sidebar tab selection.
+// theme, notifications, security, sidebar tab selection, and background effects.
 // Includes smooth animations and responsive design.
 
 class Settings {
@@ -16,7 +16,7 @@ class Settings {
         const saved = localStorage.getItem('tdl_dashboard_settings');
         return saved ? JSON.parse(saved) : {
             defaultTab: 'home',
-            theme: 'default',
+            theme: 'crimson',      // now crimson is default
             sidebarPosition: 'left',
             compactMode: false,
             showAvatars: true,
@@ -26,7 +26,8 @@ class Settings {
             autoLock: 30,
             language: 'en',
             animations: true,
-            reducedMotion: false
+            reducedMotion: false,
+            backgroundEffect: 'fire'  // 'fire', 'smoke', 'static', 'custom'
         };
     }
 
@@ -41,6 +42,7 @@ class Settings {
     saveSettings() {
         localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
         this.applySettings();
+        this.applyBackgroundEffect();
     }
 
     saveLayouts() {
@@ -51,6 +53,7 @@ class Settings {
         this.createHTML();
         this.attachEvents();
         this.applySettings(); // ensure initial theme etc.
+        this.applyBackgroundEffect();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'settings') {
                 this.refresh();
@@ -62,7 +65,7 @@ class Settings {
         const tab = document.getElementById('tab-settings');
         if (!tab) return;
 
-        // Build HTML with all sections
+        // Build HTML with all sections, including new Background & Effects section
         tab.innerHTML = `
             <div class="settings-container">
                 <div class="settings-header">
@@ -76,11 +79,12 @@ class Settings {
                         <div class="setting-item">
                             <label>Theme:</label>
                             <select id="theme-select">
-                                <option value="default" ${this.settings.theme === 'default' ? 'selected' : ''}>Rust Classic</option>
+                                <option value="crimson" ${this.settings.theme === 'crimson' ? 'selected' : ''}>Crimson Red</option>
                                 <option value="dark" ${this.settings.theme === 'dark' ? 'selected' : ''}>Pure Dark</option>
                                 <option value="amber" ${this.settings.theme === 'amber' ? 'selected' : ''}>Amber Glow</option>
                                 <option value="military" ${this.settings.theme === 'military' ? 'selected' : ''}>Military Green</option>
                                 <option value="neon" ${this.settings.theme === 'neon' ? 'selected' : ''}>Cyberpunk</option>
+                                <option value="light" ${this.settings.theme === 'light' ? 'selected' : ''}>Light Theme</option>
                             </select>
                         </div>
                         <div class="setting-item">
@@ -103,6 +107,31 @@ class Settings {
                                 Show Player Avatars
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Background & Effects Section -->
+                    <div class="settings-section">
+                        <h3>🔥 Background & Effects</h3>
+                        <div class="setting-item">
+                            <label>Background Effect:</label>
+                            <select id="bg-effect-select">
+                                <option value="fire" ${this.settings.backgroundEffect === 'fire' ? 'selected' : ''}>Live Fire</option>
+                                <option value="smoke" ${this.settings.backgroundEffect === 'smoke' ? 'selected' : ''}>Drifting Smoke</option>
+                                <option value="static" ${this.settings.backgroundEffect === 'static' ? 'selected' : ''}>Static Dark</option>
+                                <option value="custom" ${this.settings.backgroundEffect === 'custom' ? 'selected' : ''}>Custom Upload</option>
+                            </select>
+                        </div>
+                        <div id="custom-bg-upload" style="display: none; margin-top: 1rem;">
+                            <label>Upload your own background image/video:</label>
+                            <input type="file" id="custom-bg-file" accept="image/*,video/*">
+                            <button id="apply-custom-bg" class="small-btn" style="margin-top: 0.5rem;">Apply</button>
+                        </div>
+                        <div class="checkbox-item">
+                            <label>
+                                <input type="checkbox" id="enable-smoke" checked> Enable Smoke Particles
+                            </label>
+                        </div>
+                        <p class="hint" style="font-size: 0.8rem; margin-top: 0.5rem;">Live fire & smoke create an immersive atmosphere.</p>
                     </div>
 
                     <!-- Behavior Section -->
@@ -233,6 +262,155 @@ class Settings {
         }
         this.setupRangeListeners();
         this.renderSidebarCustomizer();
+        this.attachBackgroundEvents();
+    }
+
+    attachBackgroundEvents() {
+        const bgSelect = document.getElementById('bg-effect-select');
+        const customDiv = document.getElementById('custom-bg-upload');
+        bgSelect.addEventListener('change', (e) => {
+            customDiv.style.display = e.target.value === 'custom' ? 'block' : 'none';
+            this.settings.backgroundEffect = e.target.value;
+            this.applyBackgroundEffect();
+        });
+        document.getElementById('apply-custom-bg')?.addEventListener('click', () => {
+            const fileInput = document.getElementById('custom-bg-file');
+            const file = fileInput.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                this.setCustomBackground(url);
+                this.settings.backgroundEffect = 'custom';
+                this.settings.customBgUrl = url;
+                this.saveSettings();
+                toast.success('Custom background applied');
+            }
+        });
+        document.getElementById('enable-smoke')?.addEventListener('change', (e) => {
+            localStorage.setItem('tdl_enable_smoke', e.target.checked);
+            this.applyBackgroundEffect();
+        });
+    }
+
+    setCustomBackground(url) {
+        let bgDiv = document.getElementById('custom-bg-layer');
+        if (!bgDiv) {
+            bgDiv = document.createElement('div');
+            bgDiv.id = 'custom-bg-layer';
+            bgDiv.style.position = 'fixed';
+            bgDiv.style.top = '0';
+            bgDiv.style.left = '0';
+            bgDiv.style.width = '100%';
+            bgDiv.style.height = '100%';
+            bgDiv.style.zIndex = '-1';
+            bgDiv.style.pointerEvents = 'none';
+            document.body.appendChild(bgDiv);
+        }
+        if (url.match(/\.(mp4|webm)$/i)) {
+            bgDiv.innerHTML = `<video autoplay loop muted playsinline style="width:100%; height:100%; object-fit:cover;"><source src="${url}" type="video/mp4"></video>`;
+        } else {
+            bgDiv.innerHTML = `<div style="background:url('${url}') center/cover no-repeat; width:100%; height:100%;"></div>`;
+        }
+    }
+
+    applyBackgroundEffect() {
+        const effect = this.settings.backgroundEffect;
+        const enableSmoke = document.getElementById('enable-smoke')?.checked;
+        // Remove existing fire/smoke layers if any
+        const existingFire = document.getElementById('fire-canvas');
+        if (existingFire) existingFire.remove();
+        const existingSmoke = document.getElementById('smoke-container');
+        if (existingSmoke) existingSmoke.remove();
+
+        if (effect === 'fire') {
+            this.startFireAnimation();
+        } else if (effect === 'smoke') {
+            this.startSmokeParticles();
+        } else if (effect === 'static') {
+            // nothing extra
+        } else if (effect === 'custom' && this.settings.customBgUrl) {
+            this.setCustomBackground(this.settings.customBgUrl);
+        }
+        if (enableSmoke && effect !== 'smoke') {
+            this.startSmokeParticles(); // add smoke overlay anyway
+        }
+    }
+
+    startFireAnimation() {
+        const canvas = document.createElement('canvas');
+        canvas.id = 'fire-canvas';
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        const updateSize = () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        };
+        window.addEventListener('resize', updateSize);
+        const firePixels = [];
+        const numParticles = 150;
+        for (let i = 0; i < numParticles; i++) {
+            firePixels.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: 5 + Math.random() * 15,
+                speedX: (Math.random() - 0.5) * 0.8,
+                speedY: (Math.random() - 0.5) * 0.8,
+                life: 0.3 + Math.random() * 0.7
+            });
+        }
+        function drawFire() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, width, height);
+            for (let p of firePixels) {
+                const intensity = p.life * 0.8;
+                const r = 255;
+                const g = 70 + Math.floor(intensity * 100);
+                const b = 30;
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${intensity * 0.7})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * (0.5 + intensity), 0, Math.PI * 2);
+                ctx.fill();
+                p.x += p.speedX;
+                p.y += p.speedY;
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+                p.life += 0.005;
+                if (p.life > 1) p.life = 0.3;
+            }
+            requestAnimationFrame(drawFire);
+        }
+        drawFire();
+    }
+
+    startSmokeParticles() {
+        const container = document.createElement('div');
+        container.id = 'smoke-container';
+        container.style.position = 'fixed';
+        container.style.top = '0';
+        container.style.left = '0';
+        container.style.width = '100%';
+        container.style.height = '100%';
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '-1';
+        document.body.appendChild(container);
+        for (let i = 0; i < 45; i++) {
+            const smoke = document.createElement('div');
+            smoke.className = 'smoke-particle';
+            const size = 60 + Math.random() * 200;
+            smoke.style.width = `${size}px`;
+            smoke.style.height = `${size}px`;
+            smoke.style.left = `${Math.random() * 100}%`;
+            smoke.style.animationDelay = `${Math.random() * 15}s`;
+            smoke.style.animationDuration = `${15 + Math.random() * 20}s`;
+            container.appendChild(smoke);
+        }
     }
 
     setupRangeListeners() {
@@ -286,6 +464,7 @@ class Settings {
         this.settings.language = document.getElementById('language-select').value;
         this.settings.animations = document.getElementById('enable-animations').checked;
         this.settings.reducedMotion = document.getElementById('reduced-motion').checked;
+        this.settings.backgroundEffect = document.getElementById('bg-effect-select').value;
 
         this.saveSettings();
         this.tablet.showToast('Settings saved', 'success');
@@ -307,7 +486,6 @@ class Settings {
             document.body.classList.remove('no-animations');
         }
         // Apply language (if implemented)
-        // Could set dir or lang attribute
         document.documentElement.lang = this.settings.language;
     }
 
@@ -315,7 +493,7 @@ class Settings {
         if (confirm('Reset all settings to default?')) {
             this.settings = {
                 defaultTab: 'home',
-                theme: 'default',
+                theme: 'crimson',
                 sidebarPosition: 'left',
                 compactMode: false,
                 showAvatars: true,
@@ -325,7 +503,8 @@ class Settings {
                 autoLock: 30,
                 language: 'en',
                 animations: true,
-                reducedMotion: false
+                reducedMotion: false,
+                backgroundEffect: 'fire'
             };
             this.saveSettings();
             // Update UI to match
@@ -343,6 +522,7 @@ class Settings {
             document.getElementById('language-select').value = this.settings.language;
             document.getElementById('enable-animations').checked = this.settings.animations;
             document.getElementById('reduced-motion').checked = this.settings.reducedMotion;
+            document.getElementById('bg-effect-select').value = this.settings.backgroundEffect;
 
             this.tablet.showToast('Settings reset', 'info');
         }
@@ -354,7 +534,6 @@ class Settings {
             layouts: this.layouts,
             timestamp: new Date().toISOString()
         };
-        // Add other stored data (users, etc.) if master
         if (this.access.hasRole('master')) {
             data.users = localStorage.getItem('tdl_users');
             data.audit = localStorage.getItem('tdl_audit_log');
@@ -442,7 +621,6 @@ class Settings {
     saveLayout() {
         const name = prompt('Enter layout name:');
         if (!name) return;
-        // Capture current layout from LayoutManager
         const current = LayoutManager.loadLayout() || {};
         const layout = {
             name,

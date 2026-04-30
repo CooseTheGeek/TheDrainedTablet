@@ -1,20 +1,33 @@
 // themeStudio.js – DRAINED TABLET ULTIMATE v7.0.0
 // Theme studio: create, edit, save, import, and export custom themes.
 // All original features preserved, now integrated with global CSS variables and enhanced UI.
+// Includes new Crimson Red preset.
 
 class ThemeStudio {
     constructor() {
         this.tablet = window.drainedTablet;
         this.access = window.accessControl;
         this.themes = this.loadThemes();
-        this.currentTheme = 'default';
+        this.currentTheme = 'crimson'; // changed default to crimson
         this.previewMode = false;
         this.init();
     }
 
     loadThemes() {
         const saved = localStorage.getItem('tdl_themes');
-        return saved ? JSON.parse(saved) : {
+        if (saved) return JSON.parse(saved);
+        
+        // Built-in themes, including Crimson Red
+        return {
+            crimson: {
+                name: 'Crimson Red',
+                primary: '#dc2626',
+                background: '#1a0808',
+                secondary: '#2d1212',
+                text: '#f5e0e0',
+                accent: '#b91c1c',
+                font: 'Inter'
+            },
             default: {
                 name: 'Rust Classic',
                 primary: '#FFB100',
@@ -101,16 +114,16 @@ class ThemeStudio {
                             <h4>Colors</h4>
                             <div class="color-picker">
                                 <label>Primary:
-                                    <input type="color" id="color-primary" value="#FFB100">
+                                    <input type="color" id="color-primary" value="#dc2626">
                                 </label>
                                 <label>Background:
-                                    <input type="color" id="color-bg" value="#0d0d0d">
+                                    <input type="color" id="color-bg" value="#1a0808">
                                 </label>
                                 <label>Text:
-                                    <input type="color" id="color-text" value="#FFB100">
+                                    <input type="color" id="color-text" value="#f5e0e0">
                                 </label>
                                 <label>Accent:
-                                    <input type="color" id="color-accent" value="#aa8c4c">
+                                    <input type="color" id="color-accent" value="#b91c1c">
                                 </label>
                             </div>
                         </div>
@@ -118,6 +131,7 @@ class ThemeStudio {
                         <div class="customizer-section">
                             <h4>Fonts</h4>
                             <select id="font-select">
+                                <option value="Inter">Inter</option>
                                 <option value="JetBrains Mono">JetBrains Mono</option>
                                 <option value="Courier New">Courier New</option>
                                 <option value="Consolas">Consolas</option>
@@ -262,6 +276,9 @@ class ThemeStudio {
         document.documentElement.style.setProperty('--text-primary', theme.text);
         document.documentElement.style.setProperty('--accent-secondary', theme.accent);
         this.currentTheme = themeKey;
+        // Also update body class for any fallbacks
+        document.body.className = document.body.className.replace(/theme-\S+/, '').trim();
+        document.body.classList.add(`theme-${themeKey}`);
     }
 
     updatePreview() {
@@ -297,8 +314,8 @@ class ThemeStudio {
     }
 
     resetTheme() {
-        this.loadPreset('default');
-        this.tablet.showToast('Reset to default theme', 'success');
+        this.loadPreset('crimson');  // reset to crimson red default
+        this.tablet.showToast('Reset to Crimson Red theme', 'success');
     }
 
     saveCustomTheme() {

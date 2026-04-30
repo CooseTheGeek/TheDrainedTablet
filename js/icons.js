@@ -9,7 +9,7 @@ const Icons = {
         <circle cx="12" cy="12" r="3" fill="currentColor"/>
     </svg>`,
 
-    // PlayStation 4 icon (similar but smaller circle or different)
+    // PlayStation 4 icon
     ps4: `<svg class="platform-icon ps4" viewBox="0 0 24 24" width="24" height="24">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
         <rect x="9" y="9" width="6" height="6" fill="currentColor"/>
@@ -21,7 +21,7 @@ const Icons = {
         <path d="M7 9l5 3 5-3-5-3-5 3zm5 4l-5-3v5l5 3 5-3v-5l-5 3z" fill="currentColor"/>
     </svg>`,
 
-    // Xbox One icon (slightly different)
+    // Xbox One icon
     xboxone: `<svg class="platform-icon xboxone" viewBox="0 0 24 24" width="24" height="24">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
         <rect x="7" y="7" width="10" height="10" fill="currentColor"/>
@@ -40,7 +40,7 @@ const Icons = {
 
     // Helper function to get icon by platform string
     getPlatformIcon(platform) {
-        return this[platform] || this.xbox; // fallback
+        return this[platform] || this.xbox;
     },
 
     // Helper to get role icon (returns axe for master/owner, lilUnk for user)
@@ -49,5 +49,4 @@ const Icons = {
     }
 };
 
-// Expose globally
 window.Icons = Icons;

@@ -165,7 +165,6 @@ class ConnectionHealth {
             const cpu = await ConnectionManager.executeCommand('server.cpu');
             const mem = await ConnectionManager.executeCommand('server.memory');
             const fps = await ConnectionManager.executeCommand('server.fps');
-            // Ping/packet loss may need separate mechanism; for now we use simulated values
             const ping = 24 + Math.floor(Math.random() * 10);
             const packetLoss = Math.random() * 2;
             const jitter = Math.random() * 5;
@@ -191,7 +190,6 @@ class ConnectionHealth {
     }
 
     setDisconnected() {
-        // Safely update only if elements exist
         const valueIds = ['cpu-value', 'ram-value', 'fps-value', 'ping-value', 'packetloss-value', 'jitter-value'];
         valueIds.forEach(id => {
             const el = document.getElementById(id);
@@ -229,7 +227,6 @@ class ConnectionHealth {
     }
 
     checkAlerts() {
-        const now = Date.now();
         if (this.metrics.cpu > this.thresholds.cpuCrit) {
             this.addAlert('critical', `CPU critical: ${this.metrics.cpu}%`);
         } else if (this.metrics.cpu > this.thresholds.cpuWarn) {
@@ -293,7 +290,6 @@ class ConnectionHealth {
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.connectionHealth = new ConnectionHealth();
 });

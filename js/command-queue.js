@@ -6,10 +6,10 @@ class CommandQueue {
     constructor() {
         this.queue = [];
         this.processing = false;
-        this.maxConcurrent = 1; // serial execution
+        this.maxConcurrent = 1;
         this.retryLimit = 3;
-        this.retryDelay = 1000; // ms
-        this.timeout = 10000; // ms per command
+        this.retryDelay = 1000;
+        this.timeout = 10000;
         this.stats = {
             total: 0,
             succeeded: 0,
@@ -19,13 +19,12 @@ class CommandQueue {
         this.listeners = [];
     }
 
-    // Add a command to the queue
     add(command, options = {}) {
         const id = this.generateId();
         const item = {
             id,
             command,
-            priority: options.priority || 0, // higher = sooner
+            priority: options.priority || 0,
             retries: options.retries || 0,
             maxRetries: options.maxRetries || this.retryLimit,
             timeout: options.timeout || this.timeout,
@@ -67,7 +66,7 @@ class CommandQueue {
             if (item.retries < item.maxRetries) {
                 item.retries++;
                 this.stats.retried++;
-                this.queue.unshift(item); // retry at front (or could delay)
+                this.queue.unshift(item);
                 this.notify();
                 setTimeout(() => this.processNext(), this.retryDelay);
                 this.processing = false;
@@ -79,7 +78,7 @@ class CommandQueue {
             }
         }
         this.processing = false;
-        this.processNext(); // continue with next item
+        this.processNext();
     }
 
     executeWithTimeout(item) {
@@ -92,11 +91,9 @@ class CommandQueue {
     }
 
     async executeCommand(command) {
-        // Use ConnectionManager to send the command
         return await ConnectionManager.executeCommand(command);
     }
 
-    // Clear all pending commands
     clear() {
         this.queue.forEach(item => item.reject(new Error('Queue cleared')));
         this.queue = [];
@@ -104,17 +101,14 @@ class CommandQueue {
         this.notify();
     }
 
-    // Get current queue length
     length() {
         return this.queue.length;
     }
 
-    // Get statistics
     getStats() {
         return { ...this.stats, pending: this.queue.length };
     }
 
-    // Subscribe to changes (for UI updates)
     subscribe(listener) {
         this.listeners.push(listener);
         return () => {
@@ -127,8 +121,6 @@ class CommandQueue {
     }
 }
 
-// Create a singleton instance for the whole app
 window.commandQueue = new CommandQueue();
 
-// Optional: expose as a global for debugging
 window.debugQueue = () => console.log(window.commandQueue.getStats());

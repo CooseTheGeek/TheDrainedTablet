@@ -26,7 +26,7 @@ class AccessControl {
         if (this.isMasterUser()) {
             return true;
         }
-        const currentRole = AppState.user.role || 'user';
+        const currentRole = AppState.user?.role || 'user';
         return this.roleHierarchy[currentRole] >= this.roleHierarchy[requiredRole];
     }
 
@@ -34,14 +34,14 @@ class AccessControl {
         if (this.isMasterUser()) {
             return true;
         }
-        return AppState.user.role === 'master';
+        return AppState.user?.role === 'master';
     }
 
     isOwner() {
         if (this.isMasterUser()) {
             return true;
         }
-        return AppState.user.role === 'owner';
+        return AppState.user?.role === 'owner';
     }
 
     guard(requiredRole) {

@@ -10,7 +10,6 @@ class Animations {
     }
 
     init() {
-        // Read user preference
         const settings = JSON.parse(localStorage.getItem('tdl_dashboard_settings') || '{}');
         this.enabled = settings.animations !== false;
         this.reducedMotion = settings.reducedMotion === true;
@@ -22,7 +21,6 @@ class Animations {
         this.observeElements();
     }
 
-    // Apply fade-in to elements as they appear
     observeElements() {
         if (!this.enabled) return;
         const observer = new IntersectionObserver((entries) => {
@@ -37,7 +35,6 @@ class Animations {
         document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
     }
 
-    // Page transition when switching tabs
     pageTransition(oldTab, newTab) {
         if (!this.enabled) {
             newTab.classList.add('active');
@@ -54,7 +51,6 @@ class Animations {
         }, 150);
     }
 
-    // Toast notification animation
     showToast(element) {
         if (!this.enabled) {
             element.classList.add('show');
@@ -64,17 +60,12 @@ class Animations {
         setTimeout(() => element.classList.remove('toast-slide-in'), 300);
     }
 
-    // Button pulse effect
     pulseButton(button) {
         if (!this.enabled) return;
         button.classList.add('pulse');
         setTimeout(() => button.classList.remove('pulse'), 300);
     }
 
-    // Card hover effect (CSS handles most, but we can add JS for extra)
-    // …
-
-    // Loading spinner
     showSpinner(container) {
         const spinner = document.createElement('div');
         spinner.className = 'spinner';
@@ -87,7 +78,6 @@ class Animations {
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.animations = new Animations();
 });

@@ -1,5 +1,6 @@
 // security.js – DRAINED TABLET ULTIMATE v7.0.0
 // Security door, 2FA, Discord linking, and forgot code.
+// Master code is 0827.
 
 class Security {
     constructor() {
@@ -19,7 +20,7 @@ class Security {
         this.updateDisplay();
         this.create2FAModal();
         this.createDiscordModal();
-        this.setupDiscordModalDelegation(); // use delegation
+        this.setupDiscordModalDelegation();
         this.updateRoleBadge();
     }
 
@@ -61,7 +62,7 @@ class Security {
     }
 
     updateDisplay() {
-        const dots = document.querySelectorAll('.dot');
+        const dots = document.querySelectorAll('.code-dots .dot');
         for (let i = 0; i < dots.length; i++) {
             if (i < this.currentCode.length) {
                 dots[i].classList.add('filled');
@@ -149,10 +150,8 @@ class Security {
         this.showDiscordModal();
     }
 
-    // ---------- 2FA Modal ----------
     create2FAModal() {
         if (document.getElementById('2fa-modal')) return;
-        
         const modalHTML = `
             <div id="2fa-modal" class="modal hidden">
                 <div class="modal-content">
@@ -174,7 +173,6 @@ class Security {
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-
         document.getElementById('verify-2fa')?.addEventListener('click', () => this.verify2FA());
         document.getElementById('cancel-2fa')?.addEventListener('click', () => {
             document.getElementById('2fa-modal').classList.add('hidden');
@@ -196,27 +194,20 @@ class Security {
             toast.error('Enter a valid 6-digit code');
             return;
         }
-
         const trustDevice = document.getElementById('trust-device').checked;
-
         try {
             const result = await this.auth.verify2FA(this.pendingUser, code, trustDevice);
             if (result.success) {
                 document.getElementById('2fa-modal').classList.add('hidden');
-                
                 AppState.user.role = result.role;
                 AppState.user.username = result.username;
                 this.updateRoleBadge();
-                
                 document.getElementById('security-door').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
-                
                 const userEl = document.getElementById('profile-name');
                 if (userEl) userEl.innerText = result.username;
-                
                 toast.success(`Welcome, ${result.username}!`);
                 this.pendingUser = null;
-
                 if (!localStorage.getItem('discord_linked')) {
                     setTimeout(() => this.showDiscordModal(), 500);
                 }
@@ -228,16 +219,14 @@ class Security {
         }
     }
 
-    // ---------- Discord/Forgot Modal ----------
     createDiscordModal() {
         if (document.getElementById('discord-modal')) return;
-        
         const modalHTML = `
             <div id="discord-modal" class="modal hidden">
                 <div class="modal-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h3 style="margin:0;">🔗 Link Discord Account</h3>
-                        <button id="discord-close-btn" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: var(--text-primary);">&times;</button>
+                        <button id="discord-close-btn" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
                     </div>
                     <p>Connect your Discord to enable notifications and direct messaging.</p>
                     <button id="discord-link-btn" class="modal-btn primary">Link Discord</button>
@@ -259,29 +248,21 @@ class Security {
     setupDiscordModalDelegation() {
         const modal = document.getElementById('discord-modal');
         if (!modal) return;
-
-        // Use event delegation – one listener for all clicks inside modal
         modal.addEventListener('click', (e) => {
-            const target = e.target.closest('button'); // ensure we catch button clicks
+            const target = e.target.closest('button');
             if (!target) return;
-
             const id = target.id;
-            
             if (id === 'discord-close-btn' || id === 'discord-cancel-btn') {
                 modal.classList.add('hidden');
-            }
-            else if (id === 'discord-skip-btn') {
+            } else if (id === 'discord-skip-btn') {
                 localStorage.setItem('discord_linked', 'skipped');
                 modal.classList.add('hidden');
                 toast.info('Discord linking skipped');
-            }
-            else if (id === 'discord-link-btn') {
+            } else if (id === 'discord-link-btn') {
                 window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
-            }
-            else if (id === 'forgot-email-btn') {
+            } else if (id === 'forgot-email-btn') {
                 this.sendForgotEmail();
-            }
-            else if (id === 'forgot-discord-dm-btn') {
+            } else if (id === 'forgot-discord-dm-btn') {
                 this.dmMaster();
             }
         });
@@ -289,10 +270,7 @@ class Security {
 
     showDiscordModal() {
         const modal = document.getElementById('discord-modal');
-        if (modal) {
-            if (localStorage.getItem('discord_linked') === 'skipped') {
-                return;
-            }
+        if (modal && localStorage.getItem('discord_linked') !== 'skipped') {
             modal.classList.remove('hidden');
         }
     }
@@ -309,11 +287,8 @@ class Security {
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                toast.info('Email sent to master.');
-            } else {
-                toast.error('Failed to send email.');
-            }
+            if (data.success) toast.info('Email sent to master.');
+            else toast.error('Failed to send email.');
         })
         .catch(() => toast.error('Network error.'));
         document.getElementById('discord-modal').classList.add('hidden');

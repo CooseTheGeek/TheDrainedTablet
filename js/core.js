@@ -1,4 +1,4 @@
-// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with fixed player list parsing)
+// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with GPortal connection handling, console‑compatible)
 
 // ========================= GLOBAL STATE =========================
 const AppState = {
@@ -7,6 +7,7 @@ const AppState = {
         role: localStorage.getItem('tdl_role') || null,
         platform: localStorage.getItem('tdl_platform') || null,
         avatar: localStorage.getItem('tdl_avatar') || null,
+        platformId: localStorage.getItem('tdl_platform_id') || null,
         settings: JSON.parse(localStorage.getItem('tdl_settings') || '{}')
     },
     connection: {
@@ -37,17 +38,14 @@ const ConnectionManager = {
         console.log('📡 Checking bridge health...');
         try {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/health`);
-            console.log('📥 Health response status:', res.status);
             if (!res.ok) throw new Error('Bridge unreachable');
             const data = await res.json();
-            console.log('✅ Bridge health OK:', data);
             AppState.connection.status = 'connected';
             AppState.connection.lastPing = Date.now();
             AppState.connection.error = null;
             this.notify();
             return true;
         } catch (err) {
-            console.error('🔥 Health check error:', err.message);
             AppState.connection.status = 'error';
             AppState.connection.error = err.message;
             this.notify();
@@ -56,33 +54,27 @@ const ConnectionManager = {
     },
 
     async connect(credentials) {
-        console.log('🔌 Attempting to connect with credentials:', { ip: credentials.ip, port: credentials.port, password: '***' });
         AppState.connection.status = 'connecting';
         this.notify();
         try {
             const url = `${AppState.connection.bridgeUrl}/api/connect`;
-            console.log('📡 Sending POST request to:', url);
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(credentials)
             });
-            console.log('📥 Response status:', res.status);
             const data = await res.json();
-            console.log('📦 Response data:', data);
             if (!data.success) throw new Error(data.error || 'Connection failed');
-            console.log('✅ Connection successful, server:', data.server);
             AppState.connection.status = 'connected';
             AppState.connection.server = data.server;
             AppState.connection.lastPing = Date.now();
             AppState.connection.reconnectAttempts = 0;
             AppState.connection.error = null;
             localStorage.setItem('tdl_last_connected', new Date().toISOString());
+            localStorage.setItem('tdl_last_credentials', JSON.stringify(credentials));
             this.notify();
             return true;
         } catch (err) {
-            console.error('🔥 Exception in connect():', err.message);
-            if (err.stack) console.error('Stack:', err.stack);
             AppState.connection.status = 'error';
             AppState.connection.error = err.message;
             this.notify();
@@ -91,7 +83,6 @@ const ConnectionManager = {
     },
 
     disconnect() {
-        console.log('🔌 Disconnecting from server');
         AppState.connection.status = 'disconnected';
         AppState.connection.server = null;
         AppState.connection.lastPing = null;
@@ -103,7 +94,6 @@ const ConnectionManager = {
         console.log('⚡ Executing RCON command:', command);
         
         if (window.gportalConnector && window.gportalConnector.apiReady) {
-            console.log('Using GPortal API for command');
             try {
                 const res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
                     method: 'POST',
@@ -123,13 +113,11 @@ const ConnectionManager = {
         }
 
         if (AppState.connection.status !== 'connected') {
-            console.error('❌ Not connected to any server (old RCON)');
             throw new Error('Not connected to any server');
         }
 
         try {
             const url = `${AppState.connection.bridgeUrl}/api/command`;
-            console.log('📡 Sending command to:', url);
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -140,23 +128,17 @@ const ConnectionManager = {
                     command
                 })
             });
-            console.log('📥 Command response status:', res.status);
             const data = await res.json();
-            console.log('📦 Command response data:', data);
             if (!data.success) throw new Error(data.error || 'Command execution failed');
-            console.log('✅ Command executed successfully');
             return data.result;
         } catch (err) {
-            console.error('🔥 Exception in executeCommand:', err.message);
             throw err;
         }
     },
 
     async autoReconnect() {
-        console.log('🔄 Auto-reconnect attempt', AppState.connection.reconnectAttempts + 1);
         if (AppState.connection.status === 'connected') return;
         if (AppState.connection.reconnectAttempts >= AppState.connection.maxReconnect) {
-            console.log('⏹️ Max reconnect attempts reached');
             AppState.connection.status = 'disconnected';
             this.notify();
             return;
@@ -165,10 +147,8 @@ const ConnectionManager = {
         if (!lastCreds) return;
         try {
             AppState.connection.reconnectAttempts++;
-            console.log('🔄 Attempt', AppState.connection.reconnectAttempts);
             await this.connect(JSON.parse(lastCreds));
         } catch (e) {
-            console.log('⏱️ Reconnect failed, scheduling next attempt');
             setTimeout(() => this.autoReconnect(), 2000 * AppState.connection.reconnectAttempts);
         }
     },
@@ -193,6 +173,7 @@ const UserManager = {
         if (userData.role) localStorage.setItem('tdl_role', userData.role);
         if (userData.platform) localStorage.setItem('tdl_platform', userData.platform);
         if (userData.avatar) localStorage.setItem('tdl_avatar', userData.avatar);
+        if (userData.platformId) localStorage.setItem('tdl_platform_id', userData.platformId);
         ConnectionManager.notify();
     },
 
@@ -201,11 +182,14 @@ const UserManager = {
         localStorage.removeItem('tdl_role');
         localStorage.removeItem('tdl_platform');
         localStorage.removeItem('tdl_avatar');
+        localStorage.removeItem('tdl_platform_id');
         localStorage.removeItem('tdl_last_credentials');
-        AppState.user = { username: null, role: null, platform: null, avatar: null, settings: {} };
+        AppState.user = { username: null, role: null, platform: null, avatar: null, platformId: null, settings: {} };
         ConnectionManager.disconnect();
-        document.getElementById('security-door')?.classList.remove('hidden');
-        document.getElementById('dashboard')?.classList.add('hidden');
+        const securityDoor = document.getElementById('security-door');
+        const dashboard = document.getElementById('dashboard');
+        if (securityDoor) securityDoor.classList.remove('hidden');
+        if (dashboard) dashboard.classList.add('hidden');
     },
 
     hasRole(minRole) {
@@ -271,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 DRAINED TABLET core loaded');
 });
 
-// ========================= GPortal Player List Polling (Fixed for object array) =========================
+// ========================= GPortal Player List Polling (console‑compatible) =========================
 setInterval(async () => {
     if (window.gportalConnector && window.gportalConnector.apiReady) {
         try {
@@ -285,8 +269,6 @@ setInterval(async () => {
 
             if (data.success && data.result) {
                 const raw = data.result;
-                console.log('Raw playerlist response:', raw);
-
                 if (Array.isArray(raw)) {
                     players = raw.map(p => ({
                         name: p.DisplayName || p.name || p.displayName || 'Unknown',
@@ -339,6 +321,7 @@ setInterval(async () => {
             }
 
             AppState.players = players;
+            window.dispatchEvent(new CustomEvent('players-updated', { detail: { players } }));
             ConnectionManager.notify();
         } catch (err) {
             console.error('Error polling player list:', err);
@@ -347,7 +330,6 @@ setInterval(async () => {
 }, 15000);
 
 // ========================= DRAINED TABLET GLOBAL OBJECT =========================
-// This object is used by modules to show toasts and access server config.
 if (!window.drainedTablet) {
     window.drainedTablet = {
         showToast: function(msg, type) {

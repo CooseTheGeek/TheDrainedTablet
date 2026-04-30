@@ -9,8 +9,6 @@ class Database {
     }
 
     // ==================== COMBAT LOGS ====================
-
-    // Fetch combat logs for a specific player (PSN ID or Xbox Gamertag)
     async getCombatLogs(playerId) {
         try {
             const res = await fetch(`${this.bridgeUrl}/api/combatlog/${encodeURIComponent(playerId)}`);
@@ -22,7 +20,6 @@ class Database {
         }
     }
 
-    // Save a combat log entry
     async saveCombatLog(entry) {
         try {
             const res = await fetch(`${this.bridgeUrl}/api/combatlog`, {
@@ -38,8 +35,6 @@ class Database {
     }
 
     // ==================== CLAIMS ====================
-
-    // Get all claimable items for a player
     async getClaims(playerId) {
         try {
             const res = await fetch(`${this.bridgeUrl}/api/claims/${encodeURIComponent(playerId)}`);
@@ -51,7 +46,6 @@ class Database {
         }
     }
 
-    // Add a new claim (e.g., after voting, event win)
     async addClaim(playerId, itemShortname, quantity, expiresAt = null) {
         try {
             const res = await fetch(`${this.bridgeUrl}/api/claim`, {
@@ -66,19 +60,19 @@ class Database {
         }
     }
 
-    // Mark a claim as claimed (delete it)
     async removeClaim(claimId) {
-        // We'll implement DELETE endpoint later; for now, we can soft‑delete by expiry.
-        // For simplicity, we'll assume claims are one‑time and removed after claim.
-        // This would require a DELETE endpoint on the bridge.
-        // We'll leave it unimplemented for now.
-        console.warn('removeClaim not yet implemented');
-        return false;
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/claims/${claimId}`, {
+                method: 'DELETE'
+            });
+            return res.ok;
+        } catch (err) {
+            console.error('Database.removeClaim error:', err);
+            return false;
+        }
     }
 
-    // ==================== ZONES (Custom Zones) ====================
-
-    // Get all custom zones
+    // ==================== ZONES ====================
     async getZones() {
         try {
             const res = await fetch(`${this.bridgeUrl}/api/zones`);
@@ -90,7 +84,6 @@ class Database {
         }
     }
 
-    // Save a zone (create or update)
     async saveZone(zone) {
         try {
             const res = await fetch(`${this.bridgeUrl}/api/zones`, {
@@ -105,7 +98,6 @@ class Database {
         }
     }
 
-    // Delete a zone
     async deleteZone(zoneId) {
         try {
             const res = await fetch(`${this.bridgeUrl}/api/zones/${encodeURIComponent(zoneId)}`, {
@@ -119,8 +111,6 @@ class Database {
     }
 
     // ==================== AUDIT LOG ====================
-
-    // Log an admin action (sent to bridge)
     async logAction(username, action, ip = '') {
         try {
             const res = await fetch(`${this.bridgeUrl}/api/audit`, {
@@ -135,7 +125,6 @@ class Database {
         }
     }
 
-    // Get audit logs (master only)
     async getAuditLogs(limit = 100) {
         try {
             const res = await fetch(`${this.bridgeUrl}/api/audit?limit=${limit}`);
@@ -148,7 +137,6 @@ class Database {
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.database = new Database();
 });

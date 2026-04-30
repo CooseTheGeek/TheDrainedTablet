@@ -10,7 +10,6 @@ class Toast {
     }
 
     init() {
-        // Create toast container if not exists
         if (!document.getElementById('toast-container')) {
             this.container = document.createElement('div');
             this.container.id = 'toast-container';
@@ -30,22 +29,15 @@ class Toast {
             <button class="toast-close">&times;</button>
         `;
 
-        // Add to container
         this.container.appendChild(toast);
-
-        // Trigger animation
         setTimeout(() => toast.classList.add('toast-visible'), 10);
 
-        // Auto-remove after duration
         const timeout = setTimeout(() => this.remove(toast), duration);
-
-        // Close button
         toast.querySelector('.toast-close').addEventListener('click', () => {
             clearTimeout(timeout);
             this.remove(toast);
         });
 
-        // Limit number of toasts
         while (this.container.children.length > this.maxToasts) {
             this.remove(this.container.firstChild);
         }
@@ -74,10 +66,8 @@ class Toast {
     info(message, duration) { this.show(message, 'info', duration); }
 }
 
-// Initialize global toast instance
 window.toast = new Toast();
 
-// Also add to tablet for backward compatibility
 if (window.drainedTablet) {
     window.drainedTablet.showToast = (msg, type) => toast.show(msg, type);
 }

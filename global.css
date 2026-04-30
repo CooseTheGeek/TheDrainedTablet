@@ -1,6 +1,6 @@
 /* global.css – DRAINED TABLET ULTIMATE v7.0.0
-   Complete styling: glass‑morphism, responsive design, animations, and 3UNKS branding.
-   Includes light/dark theme variables and mobile breakpoints.
+   Crimson Red theme + live fire background + drifting smoke.
+   Fully responsive, collapsible sidebar.
 */
 
 /* ========== RESET & BASE ========== */
@@ -12,26 +12,67 @@
 }
 
 body {
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    background: #0a0505;
+    color: #f5e6e6;
     line-height: 1.6;
     min-height: 100vh;
     transition: background-color 0.3s, color 0.3s;
     overflow-x: hidden;
+    position: relative;
 }
 
-/* Theme variables (default dark) */
+/* ========== LIVE FIRE & SMOKE BACKGROUND ========== */
+.bg-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Fire animation – multiple layers */
+#fire-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Smoke particles */
+.smoke-particle {
+    position: fixed;
+    background: radial-gradient(circle, rgba(80,40,40,0.3) 0%, rgba(0,0,0,0) 80%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+    animation: drift 20s linear infinite;
+}
+
+@keyframes drift {
+    0% { transform: translateX(-20%) translateY(100%) scale(1); opacity: 0; }
+    10% { opacity: 0.4; }
+    90% { opacity: 0.2; }
+    100% { transform: translateX(120%) translateY(-20%) scale(3); opacity: 0; }
+}
+
+/* Theme variables (crimson red default) */
 :root {
-    --bg-primary: #0B0F14;
-    --bg-secondary: #1A1E2A;
-    --bg-tertiary: #252B3A;
-    --glass-bg: rgba(26, 30, 42, 0.7);
-    --glass-border: rgba(212, 175, 55, 0.15);
+    --bg-primary: #1a0808;
+    --bg-secondary: #2d1212;
+    --bg-tertiary: #3e1a1a;
+    --glass-bg: rgba(30, 10, 10, 0.7);
+    --glass-border: rgba(220, 60, 60, 0.3);
     --glass-blur: 20px;
-    --text-primary: #FFFFFF;
-    --text-secondary: #B0B0B0;
-    --accent-primary: #D4AF37;
-    --accent-secondary: #2A6230;
+    --text-primary: #f5e0e0;
+    --text-secondary: #d0a0a0;
+    --accent-primary: #dc2626;
+    --accent-secondary: #b91c1c;
     --success: #4CAF50;
     --warning: #FFB347;
     --error: #FF5F5F;
@@ -41,17 +82,17 @@ body {
     --transition: 0.2s ease;
 }
 
-/* Light theme */
+/* Light theme variant (optional) */
 .theme-light {
-    --bg-primary: #F5F7FA;
-    --bg-secondary: #E5E9F0;
-    --bg-tertiary: #D8DEE9;
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.1);
-    --text-primary: #1A1E2A;
-    --text-secondary: #4A4F5C;
-    --accent-primary: #B8860B;
-    --accent-secondary: #2A6230;
+    --bg-primary: #fef2f2;
+    --bg-secondary: #fee2e2;
+    --bg-tertiary: #fecaca;
+    --glass-bg: rgba(255, 240, 240, 0.7);
+    --glass-border: rgba(220, 60, 60, 0.2);
+    --text-primary: #2d1a1a;
+    --text-secondary: #5a3a3a;
+    --accent-primary: #dc2626;
+    --accent-secondary: #b91c1c;
 }
 
 /* Compact mode */
@@ -95,7 +136,7 @@ body.reduced-motion * {
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #b38f2f;
+    background: #b91c1c;
 }
 
 /* ========== TYPOGRAPHY ========== */
@@ -205,15 +246,15 @@ code, pre {
     background: var(--bg-tertiary);
 }
 
-/* ========== SIDEBAR ========== */
+/* ========== COLLAPSIBLE SIDEBAR ========== */
 .sidebar {
-    width: 250px;
+    width: 260px;
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
     border-right: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;
-    transition: width 0.3s;
+    transition: width 0.3s ease;
     overflow-y: auto;
     z-index: 5;
 }
@@ -237,6 +278,10 @@ code, pre {
     color: var(--text-primary);
     font-size: 1.2rem;
     cursor: pointer;
+    transition: transform 0.2s;
+}
+.sidebar-collapse:hover {
+    color: var(--accent-primary);
 }
 .sidebar-nav {
     flex: 1;
@@ -272,11 +317,6 @@ code, pre {
     text-align: center;
     font-size: 0.8rem;
 }
-.role-indicator {
-    display: inline-block;
-    width: 24px;
-    height: 24px;
-}
 
 /* ========== MAIN CONTENT ========== */
 .main-content {
@@ -306,7 +346,7 @@ code, pre {
     z-index: 10;
 }
 
-/* ========== SECURITY DOOR ========== */
+/* ========== SECURITY DOOR (unchanged) ========== */
 .security-door {
     position: fixed;
     top: 0;
@@ -1244,7 +1284,7 @@ tr:hover {
 
 /* ID Card */
 .id-card {
-    background: linear-gradient(135deg, #0B0F14 0%, #1A1E2A 100%);
+    background: linear-gradient(135deg, #1a0808 0%, #2d1212 100%);
     border: 3px solid var(--accent-primary);
     border-radius: 20px;
     padding: 1.5rem;
@@ -2002,10 +2042,10 @@ input:checked + .slider:before {
     color: var(--text-primary);
 }
 .role-badge.user { background: #888; color: #fff; }
-.role-badge.master { background: #D4AF37; color: #000; }
-.role-badge.owner { background: #B7410E; color: #fff; }
+.role-badge.master { background: #dc2626; color: #fff; }
+.role-badge.owner { background: #b91c1c; color: #fff; }
 
-/* ========== LEGACY PAGE STYLES (animals, autoMod, etc.) ========== */
+/* ========== LEGACY PAGE STYLES ========== */
 .animals-container,
 .automod-container,
 .defense-container,
@@ -2048,7 +2088,7 @@ input:checked + .slider:before {
     padding: 1rem;
 }
 
-/* Additional elements that might be used across pages */
+/* Additional elements */
 .waiting-overlay {
     display: flex;
     justify-content: center;
