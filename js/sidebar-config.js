@@ -14,7 +14,7 @@ class SidebarManager {
             { id: "combatlog", name: "Combat Log", icon: "⚔️", requiredRole: "user" },
             { id: "idcard", name: "ID Card", icon: "🪪", requiredRole: "user" },
             { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "user" },
-            { id: "more", name: "More Tools", icon: "📊", requiredRole: "master" }, // Only master sees More Tools
+            { id: "more", name: "More Tools", icon: "📊", requiredRole: "user" }, // Only master sees More Tools
             // Admin/master tabs (hidden for regular users)
             { id: "players", name: "Players", icon: "👥", requiredRole: "master" },
             { id: "master", name: "Master Control", icon: "👑", requiredRole: "master" },
@@ -34,7 +34,7 @@ class SidebarManager {
             { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "owner" },
             { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
             { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" },
-            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "master" }
+            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "user" }
         ];
         this.defaultSelectedIds = ["home", "profile", "drained-bases", "settings", "more"];
         this.maxTabs = 6;
