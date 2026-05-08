@@ -41,7 +41,7 @@ class AccessControl {
         if (this.isMasterUser()) {
             return true;
         }
-        return AppState.user?.role === 'owner';
+        return AppState.user?.role === 'master';
     }
 
     guard(requiredRole) {
