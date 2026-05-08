@@ -1,9 +1,8 @@
-// profile.js – DRAINED TABLET ULTIMATE v7.0.0
-// Redesigned modern profile page with live preview, animations, and smooth interactions.
+// profile.js – DRAINED TABLET ULTIMATE v7.0.0 (with null checks)
 
 class Profile {
     constructor() {
-        this.user = AppState.user;
+        this.user = AppState.user || {};
         this.init();
     }
 
@@ -20,12 +19,12 @@ class Profile {
             <div class="profile-modern">
                 <div class="profile-header">
                     <div class="profile-cover" id="cover-photo">
-                        <img src="${this.user.coverPhoto || '/assets/default-cover.jpg'}" alt="Cover">
+                        <img src="${this.user.coverPhoto || '/assets/default-cover.jpg'}" alt="Cover" onerror="this.src='https://via.placeholder.com/1200x200?text=Cover'">
                         <button class="edit-cover-btn" id="edit-cover">✎</button>
                     </div>
                     <div class="profile-avatar-container">
                         <div class="profile-avatar" id="profile-avatar">
-                            <img src="${this.user.avatar || window.DEFAULT_AVATAR}" alt="Avatar">
+                            <img src="${this.user.avatar || window.DEFAULT_AVATAR}" alt="Avatar" onerror="this.src=window.DEFAULT_AVATAR">
                             <button class="edit-avatar-btn" id="edit-avatar">✎</button>
                         </div>
                         <h2 id="display-name">${this.user.username || 'SURVIVOR'}</h2>
@@ -65,14 +64,20 @@ class Profile {
     }
 
     populateUserData() {
-        document.getElementById('display-name').innerText = this.user.username || 'SURVIVOR';
-        document.getElementById('profile-role').innerText = this.user.role || 'user';
-        const platformSelect = document.getElementById('edit-platform');
-        if (platformSelect) platformSelect.value = this.user.platform || 'ps5';
-        const themeSelect = document.getElementById('edit-theme');
-        if (themeSelect) themeSelect.value = localStorage.getItem('tdl_theme') || 'dark';
-        const animationsCheckbox = document.getElementById('edit-animations');
-        if (animationsCheckbox) animationsCheckbox.checked = localStorage.getItem('tdl_animations') !== 'false';
+        const displayNameEl = document.getElementById('display-name');
+        const profileRoleEl = document.getElementById('profile-role');
+        const editNameEl = document.getElementById('edit-name');
+        const editPlatformEl = document.getElementById('edit-platform');
+        const editThemeEl = document.getElementById('edit-theme');
+        const editAnimationsEl = document.getElementById('edit-animations');
+        
+        if (displayNameEl) displayNameEl.innerText = this.user.username || 'SURVIVOR';
+        if (profileRoleEl) profileRoleEl.innerText = this.user.role || 'user';
+        if (editNameEl) editNameEl.value = this.user.username || '';
+        if (editPlatformEl) editPlatformEl.value = this.user.platform || 'ps5';
+        if (editThemeEl) editThemeEl.value = localStorage.getItem('tdl_theme') || 'dark';
+        if (editAnimationsEl) editAnimationsEl.checked = localStorage.getItem('tdl_animations') !== 'false';
+        
         this.loadServers();
     }
 
@@ -89,19 +94,30 @@ class Profile {
     }
 
     attachEvents() {
-        document.getElementById('save-profile')?.addEventListener('click', () => this.saveChanges());
-        document.getElementById('edit-avatar')?.addEventListener('click', () => this.uploadAvatar());
-        document.getElementById('edit-cover')?.addEventListener('click', () => this.uploadCover());
-        document.getElementById('link-discord')?.addEventListener('click', () => this.linkDiscord());
-        document.getElementById('edit-animations')?.addEventListener('change', (e) => {
-            localStorage.setItem('tdl_animations', e.target.checked);
-            if (e.target.checked) document.body.classList.remove('reduced-motion');
-            else document.body.classList.add('reduced-motion');
-        });
-        document.getElementById('edit-theme')?.addEventListener('change', (e) => {
-            localStorage.setItem('tdl_theme', e.target.value);
-            document.body.className = `theme-${e.target.value}`;
-        });
+        const saveBtn = document.getElementById('save-profile');
+        const editAvatarBtn = document.getElementById('edit-avatar');
+        const editCoverBtn = document.getElementById('edit-cover');
+        const linkDiscordBtn = document.getElementById('link-discord');
+        const editAnimations = document.getElementById('edit-animations');
+        const editTheme = document.getElementById('edit-theme');
+        
+        if (saveBtn) saveBtn.addEventListener('click', () => this.saveChanges());
+        if (editAvatarBtn) editAvatarBtn.addEventListener('click', () => this.uploadAvatar());
+        if (editCoverBtn) editCoverBtn.addEventListener('click', () => this.uploadCover());
+        if (linkDiscordBtn) linkDiscordBtn.addEventListener('click', () => this.linkDiscord());
+        if (editAnimations) {
+            editAnimations.addEventListener('change', (e) => {
+                localStorage.setItem('tdl_animations', e.target.checked);
+                if (e.target.checked) document.body.classList.remove('reduced-motion');
+                else document.body.classList.add('reduced-motion');
+            });
+        }
+        if (editTheme) {
+            editTheme.addEventListener('change', (e) => {
+                localStorage.setItem('tdl_theme', e.target.value);
+                document.body.className = `theme-${e.target.value}`;
+            });
+        }
     }
 
     uploadAvatar() {
@@ -116,6 +132,7 @@ class Profile {
                 const avatarImg = document.querySelector('.profile-avatar img');
                 if (avatarImg) avatarImg.src = event.target.result;
                 localStorage.setItem('tdl_avatar', event.target.result);
+                if (AppState.user) AppState.user.avatar = event.target.result;
             };
             reader.readAsDataURL(file);
         };
@@ -151,15 +168,16 @@ class Profile {
         const defaultServer = document.getElementById('default-server')?.value || '';
         
         if (newName) {
-            AppState.user.username = newName;
+            if (AppState.user) AppState.user.username = newName;
             localStorage.setItem('tdl_username', newName);
-            document.getElementById('display-name').innerText = newName;
+            const displayName = document.getElementById('display-name');
+            if (displayName) displayName.innerText = newName;
         }
-        if (newPlatform) {
+        if (newPlatform && AppState.user) {
             AppState.user.platform = newPlatform;
             localStorage.setItem('tdl_platform', newPlatform);
         }
-        if (newPlatformId) {
+        if (newPlatformId && AppState.user) {
             AppState.user.platformId = newPlatformId;
             localStorage.setItem('tdl_platform_id', newPlatformId);
         }

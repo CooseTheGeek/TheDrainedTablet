@@ -1,6 +1,5 @@
 // database.js – DRAINED TABLET ULTIMATE v7.0.0
-// Client‑side interface to the bridge database (combat logs, claims, zones, etc.).
-// All data is stored on the bridge (Supabase) and retrieved via API calls.
+// Client‑side interface to the bridge database.
 
 class Database {
     constructor() {
@@ -135,11 +134,6 @@ class Database {
             return [];
         }
     }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    window.database = new Database();
-});
 
     // ==================== DRAINED BASES ====================
     async getBlueprints() {
@@ -181,3 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
     }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.database = new Database();
+});
