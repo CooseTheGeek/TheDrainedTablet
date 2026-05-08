@@ -69,20 +69,29 @@ class SidebarManager {
     }
 
     getAvailableTabs() {
-        const role = AppState.user?.role || 'user';
-        // For regular users (role 'user'), only show tabs with requiredRole 'user'
-        // For master/owner, show all tabs they have permission for
-        return this.allTabs.filter(tab => {
-            if (role === 'user') {
-                return tab.requiredRole === 'user';
-            }
-            if (tab.requiredRole === 'user') return true;
-            if (tab.requiredRole === 'master') return role === 'master' || role === 'owner';
-            if (tab.requiredRole === 'owner') return role === 'owner';
-            return false;
-        });
+    // First, check if current user is master by username (CooseTheGeek)
+    const username = AppState.user?.username || localStorage.getItem('tdl_username');
+    const isMasterUser = username === 'CooseTheGeek';
+    
+    // If master by username, force role to master
+    if (isMasterUser && AppState.user) {
+        AppState.user.role = 'master';
+        localStorage.setItem('tdl_role', 'master');
     }
-
+    
+    const role = AppState.user?.role || 'user';
+    const effectiveRole = isMasterUser ? 'master' : role;
+    
+    return this.allTabs.filter(tab => {
+        if (effectiveRole === 'user') {
+            return tab.requiredRole === 'user';
+        }
+        if (tab.requiredRole === 'user') return true;
+        if (tab.requiredRole === 'master') return effectiveRole === 'master' || effectiveRole === 'owner';
+        if (tab.requiredRole === 'owner') return effectiveRole === 'owner';
+        return false;
+    });
+}
     renderSidebar() {
         const container = document.getElementById('sidebar-nav-container');
         if (!container) return;
