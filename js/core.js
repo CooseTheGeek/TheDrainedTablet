@@ -351,3 +351,18 @@ if (!window.drainedTablet) {
         }
     };
 }
+
+// Auto‑hide header on scroll
+let lastScrollTop = 0;
+const header = document.querySelector('.main-header');
+if (header) {
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        if (scrollTop > lastScrollTop && scrollTop > 100) {
+            header.classList.add('hide-header');
+        } else {
+            header.classList.remove('hide-header');
+        }
+        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+    });
+}
