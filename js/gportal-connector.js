@@ -1,11 +1,10 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Master: direct RCON entry (no Discord), saves servers locally, connects and updates header.
+// Master: direct RCON entry, saves servers locally, connects and updates AppState.connection.
 
 class GPortalConnector {
     constructor() {
         this.bridgeUrl = AppState.connection.bridgeUrl;
         this.servers = [];
-        this.apiReady = false;
         this.connectedServer = null;
         this.init();
     }
@@ -14,10 +13,8 @@ class GPortalConnector {
         const username = AppState.user?.username || localStorage.getItem('tdl_username');
         this.isMaster = username === 'CooseTheGeek';
         
-        // Master uses local storage only
         if (this.isMaster) {
             this.loadLocalServers();
-            this.apiReady = true;
         }
         
         this.createHTML();
@@ -37,22 +34,27 @@ class GPortalConnector {
         localStorage.setItem('tdl_master_servers', JSON.stringify(this.servers));
     }
 
-    updateHeaderStatus() {
+    updateHeaderStatus(connected = false, serverName = '') {
         const statusDot = document.querySelector('#connection-status .dot');
         const statusText = document.getElementById('conn-status-text');
         if (!statusDot || !statusText) return;
-        if (this.apiReady && this.connectedServer) {
+        
+        if (connected && this.connectedServer) {
             statusDot.className = 'dot online';
             statusText.innerText = `CONNECTED (${this.connectedServer.name || 'Server'})`;
             AppState.connection.status = 'connected';
+            AppState.connection.server = {
+                ip: this.connectedServer.ip,
+                port: this.connectedServer.port,
+                password: this.connectedServer.password,
+                name: this.connectedServer.name
+            };
             if (window.ConnectionManager) ConnectionManager.notify();
-        } else if (this.apiReady) {
-            statusDot.className = 'dot connecting';
-            statusText.innerText = 'CONNECTING...';
         } else {
             statusDot.className = 'dot offline';
             statusText.innerText = 'DISCONNECTED';
             AppState.connection.status = 'disconnected';
+            AppState.connection.server = null;
             if (window.ConnectionManager) ConnectionManager.notify();
         }
     }
@@ -66,7 +68,7 @@ class GPortalConnector {
                 <div class="gportal-header">
                     <h2>🔌 SERVER CONNECTOR (RCON)</h2>
                     <div class="api-status" id="gportal-api-status">
-                        Status: <span class="status-badge ${this.apiReady ? 'online' : 'offline'}">${this.apiReady ? 'Ready' : 'Disconnected'}</span>
+                        Status: <span class="status-badge">Ready</span>
                     </div>
                 </div>
                 <div class="gportal-grid">
@@ -147,8 +149,6 @@ class GPortalConnector {
         if (!server) return;
         
         this.connectedServer = { name: server.name, ip: server.ip, port: server.port, password: server.password };
-        this.apiReady = true;
-        this.updateHeaderStatus();
         await this.testConnection(server.ip, server.port, server.password);
     }
 
@@ -162,18 +162,15 @@ class GPortalConnector {
             const data = await res.json();
             if (data.success) {
                 toast.success('Connection successful');
-                this.apiReady = true;
-                this.updateHeaderStatus();
+                this.updateHeaderStatus(true, this.connectedServer.name);
                 await this.fetchStatus();
             } else {
                 toast.error('Connection failed: ' + (data.error || 'Unknown error'));
-                this.apiReady = false;
-                this.updateHeaderStatus();
+                this.updateHeaderStatus(false);
             }
         } catch (err) {
             toast.error('Connection error: ' + err.message);
-            this.apiReady = false;
-            this.updateHeaderStatus();
+            this.updateHeaderStatus(false);
         }
     }
 
@@ -198,8 +195,6 @@ class GPortalConnector {
             const server = this.servers.find(s => s.id === id);
             if (server) {
                 this.connectedServer = { name: server.name, ip: server.ip, port: server.port, password: server.password };
-                this.apiReady = true;
-                this.updateHeaderStatus();
                 this.testConnection(server.ip, server.port, server.password);
             }
         });
@@ -211,6 +206,10 @@ class GPortalConnector {
             this.saveLocalServers();
             this.renderServers();
             toast.success('Server deleted');
+            if (this.connectedServer && this.connectedServer.id === id) {
+                this.connectedServer = null;
+                this.updateHeaderStatus(false);
+            }
         });
     }
 
@@ -279,7 +278,7 @@ class GPortalConnector {
             this.loadLocalServers();
             this.renderServers();
         }
-        this.updateHeaderStatus();
+        this.updateHeaderStatus(this.connectedServer !== null);
         toast.success('GPortal refreshed');
     }
 }

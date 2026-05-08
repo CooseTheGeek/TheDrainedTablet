@@ -165,6 +165,25 @@ const ConnectionManager = {
     }
 };
 
+notify() {
+    AppState.listeners.forEach(fn => fn());
+    // Also update header status if needed
+    const statusDot = document.querySelector('#connection-status .dot');
+    const statusText = document.getElementById('conn-status-text');
+    if (statusDot && statusText) {
+        if (AppState.connection.status === 'connected') {
+            statusDot.className = 'dot online';
+            statusText.innerText = `CONNECTED`;
+        } else if (AppState.connection.status === 'connecting') {
+            statusDot.className = 'dot connecting';
+            statusText.innerText = 'CONNECTING...';
+        } else {
+            statusDot.className = 'dot offline';
+            statusText.innerText = 'DISCONNECTED';
+        }
+    }
+}
+
 // ========================= USER MANAGEMENT =========================
 const UserManager = {
     setUser(userData) {
