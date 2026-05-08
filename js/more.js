@@ -1,5 +1,5 @@
 // more.js – DRAINED TABLET ULTIMATE v7.0.0
-// Redesigned: categorized grid with search, cleaner layout
+// Redesigned: compact grid that fits on one page, each tool opens its own tab.
 
 class More {
     constructor() {
@@ -26,14 +26,12 @@ class More {
             <div class="more-container">
                 <div class="more-header">
                     <h2>📊 MORE TOOLS</h2>
-                    <p>All additional dashboard features, organized by category</p>
+                    <p>Click any card to open its full dashboard</p>
                     <div class="more-search">
                         <input type="text" id="more-search" placeholder="Search tools...">
                     </div>
                 </div>
-                <div class="more-categories" id="more-categories">
-                    <div class="loading">Loading tools...</div>
-                </div>
+                <div class="more-categories" id="more-categories"></div>
             </div>
         `;
         this.renderCategories();
@@ -48,39 +46,39 @@ class More {
     getTools() {
         return [
             // Server Management
-            { tab: 'status', icon: '📊', name: 'Status', desc: 'Server status overview', category: 'server' },
-            { tab: 'performance', icon: '📊', name: 'Performance', desc: 'Performance monitor', category: 'server' },
+            { tab: 'status', icon: '📊', name: 'Status', desc: 'Server status', category: 'server' },
+            { tab: 'performance', icon: '📊', name: 'Performance', desc: 'Performance', category: 'server' },
             { tab: 'backups', icon: '💾', name: 'Backup', desc: 'Backup/restore', category: 'server' },
             { tab: 'logs', icon: '📜', name: 'Logs', desc: 'Server logs', category: 'server' },
-            { tab: 'scheduler', icon: '📅', name: 'Scheduler', desc: 'Scheduled actions', category: 'server' },
+            { tab: 'scheduler', icon: '📅', name: 'Scheduler', desc: 'Schedule actions', category: 'server' },
             { tab: 'console', icon: '🖥️', name: 'Console', desc: 'RCON console', category: 'server' },
             { tab: 'gportal', icon: '🔌', name: 'GPortal', desc: 'GPortal connector', category: 'server' },
             { tab: 'health', icon: '📡', name: 'Health', desc: 'Connection health', category: 'server' },
             { tab: 'recovery', icon: '🔄', name: 'Recovery', desc: 'Auto-recovery', category: 'server' },
             // Player Management
-            { tab: 'playerHub', icon: '📊', name: 'Player Hub', desc: 'Player statistics hub', category: 'player' },
-            { tab: 'profiling', icon: '🎯', name: 'Profiling', desc: 'Player profiling', category: 'player' },
-            { tab: 'psych', icon: '🧠', name: 'Psychological', desc: 'Psychological profiling', category: 'player' },
-            { tab: 'predictive', icon: '📈', name: 'Predictive', desc: 'Predictive analytics', category: 'player' },
+            { tab: 'playerHub', icon: '📊', name: 'Player Hub', desc: 'Player stats hub', category: 'player' },
+            { tab: 'profiling', icon: '🎯', name: 'Profiling', desc: 'Risk assessment', category: 'player' },
+            { tab: 'psych', icon: '🧠', name: 'Psychological', desc: 'Playstyle analysis', category: 'player' },
+            { tab: 'predictive', icon: '📈', name: 'Predictive', desc: 'Analytics', category: 'player' },
             { tab: 'playerActions', icon: '👢', name: 'Player Actions', desc: 'Warn/kick/ban', category: 'player' },
             { tab: 'clans', icon: '👥', name: 'Clans', desc: 'Clan management', category: 'player' },
             { tab: 'autoMod', icon: '🛡️', name: 'Auto-Mod', desc: 'Auto-moderation', category: 'player' },
             { tab: 'polls', icon: '🗳️', name: 'Polls', desc: 'Community polls', category: 'player' },
             { tab: 'trading', icon: '💰', name: 'Trading', desc: 'Trading floor', category: 'player' },
-            { tab: 'defense', icon: '🛡️', name: 'Defense', desc: 'Base defense simulator', category: 'player' },
+            { tab: 'defense', icon: '🛡️', name: 'Defense', desc: 'Base defense sim', category: 'player' },
             { tab: 'alliance', icon: '🤝', name: 'Alliance', desc: 'Alliance network', category: 'player' },
             // World Management
             { tab: 'world', icon: '🌍', name: 'World', desc: 'World controls', category: 'world' },
             { tab: 'monuments', icon: '🏛️', name: 'Monuments', desc: 'Monument controls', category: 'world' },
             { tab: 'zones', icon: '🗺️', name: 'Zones', desc: 'Zone management', category: 'world' },
             { tab: 'zorp', icon: '🎮', name: 'ZORP', desc: 'ZORP zones', category: 'world' },
-            { tab: 'entities', icon: '🚗', name: 'Entities', desc: 'Entity spawn/management', category: 'world' },
-            { tab: 'spawn', icon: '🎯', name: 'Spawn', desc: 'Spawn items/entities', category: 'world' },
+            { tab: 'entities', icon: '🚗', name: 'Entities', desc: 'Entity spawn', category: 'world' },
+            { tab: 'spawn', icon: '🎯', name: 'Spawn', desc: 'Spawn items', category: 'world' },
             { tab: 'heatmap', icon: '🔥', name: 'Heatmap', desc: 'Activity heatmap', category: 'world' },
             { tab: 'map3d', icon: '🏔️', name: '3D Map', desc: '3D map view', category: 'world' },
             { tab: 'livemap', icon: '🗺️', name: 'Live Map', desc: 'Live player map', category: 'world' },
             // Game Mechanics
-            { tab: 'decay', icon: '⏳', name: 'Decay', desc: 'Decay & upkeep settings', category: 'mechanics' },
+            { tab: 'decay', icon: '⏳', name: 'Decay', desc: 'Decay settings', category: 'mechanics' },
             { tab: 'modifiers', icon: '⚙️', name: 'Modifiers', desc: 'Item modifiers', category: 'mechanics' },
             { tab: 'explosives', icon: '💣', name: 'Explosives', desc: 'Raid balancing', category: 'mechanics' },
             { tab: 'traps', icon: '🪤', name: 'Traps', desc: 'Trap controls', category: 'mechanics' },
@@ -88,22 +86,22 @@ class More {
             { tab: 'economy', icon: '💰', name: 'Economy', desc: 'Economy system', category: 'mechanics' },
             { tab: 'raid', icon: '⚡', name: 'Raid Detector', desc: 'Raid detection', category: 'mechanics' },
             { tab: 'animals', icon: '🐻', name: 'Animals', desc: 'Animal controls', category: 'mechanics' },
-            { tab: 'heli', icon: '🚁', name: 'Helicopter', desc: 'Helicopter controls', category: 'mechanics' },
-            { tab: 'underwater', icon: '🌊', name: 'Underwater', desc: 'Underwater controls', category: 'mechanics' },
+            { tab: 'heli', icon: '🚁', name: 'Helicopter', desc: 'Heli controls', category: 'mechanics' },
+            { tab: 'underwater', icon: '🌊', name: 'Underwater', desc: 'Underwater', category: 'mechanics' },
             { tab: 'halloween', icon: '🎃', name: 'Halloween', desc: 'Halloween event', category: 'mechanics' },
-            // Integration & Settings
-            { tab: 'discord', icon: '🔗', name: 'Discord', desc: 'Discord integration', category: 'integration' },
+            // Integration
+            { tab: 'discord', icon: '🔗', name: 'Discord', desc: 'Discord sync', category: 'integration' },
             { tab: 'voice', icon: '🎤', name: 'Voice', desc: 'Voice commands', category: 'integration' },
             { tab: 'mobile', icon: '📱', name: 'Mobile', desc: 'Mobile sync', category: 'integration' },
-            { tab: 'settings', icon: '⚙️', name: 'Dashboard Settings', desc: 'Dashboard preferences', category: 'integration' },
+            { tab: 'settings', icon: '⚙️', name: 'Settings', desc: 'Dashboard prefs', category: 'integration' },
             { tab: 'theme', icon: '🎨', name: 'Theme Studio', desc: 'Custom themes', category: 'integration' },
             { tab: 'branding', icon: '🏷️', name: 'Branding', desc: 'Server branding', category: 'integration' },
             { tab: 'profile', icon: '👤', name: 'Profile', desc: 'User profile', category: 'integration' },
-            { tab: 'idcard', icon: '🪪', name: 'ID Card', desc: 'ID card generator', category: 'integration' },
+            { tab: 'idcard', icon: '🪪', name: 'ID Card', desc: 'ID card gen', category: 'integration' },
             { tab: 'claims', icon: '📦', name: 'Claims', desc: 'Claim center', category: 'integration' },
             { tab: 'combatlog', icon: '⚔️', name: 'Combat Log', desc: 'Combat log viewer', category: 'integration' },
-            { tab: 'audit', icon: '📋', name: 'Audit Log', desc: 'Admin action log', category: 'integration' },
-            { tab: 'user-management', icon: '👥', name: 'User Management', desc: 'Manage dashboard users', category: 'integration' }
+            { tab: 'audit', icon: '📋', name: 'Audit Log', desc: 'Admin log', category: 'integration' },
+            { tab: 'user-management', icon: '👥', name: 'User Management', desc: 'Manage users', category: 'integration' }
         ];
     }
 
@@ -118,11 +116,11 @@ class More {
         ) : tools;
 
         const categories = {
-            server: { name: '🖥️ Server Management', icon: '🖥️', tools: [] },
-            player: { name: '👥 Player Management', icon: '👥', tools: [] },
-            world: { name: '🌍 World Management', icon: '🌍', tools: [] },
-            mechanics: { name: '⚙️ Game Mechanics', icon: '⚙️', tools: [] },
-            integration: { name: '🔧 Integration & Settings', icon: '🔧', tools: [] }
+            server: { name: '🖥️ Server', icon: '🖥️', tools: [] },
+            player: { name: '👥 Player', icon: '👥', tools: [] },
+            world: { name: '🌍 World', icon: '🌍', tools: [] },
+            mechanics: { name: '⚙️ Mechanics', icon: '⚙️', tools: [] },
+            integration: { name: '🔧 Integration', icon: '🔧', tools: [] }
         };
 
         filtered.forEach(tool => {
@@ -154,8 +152,11 @@ class More {
         container.querySelectorAll('.more-card').forEach(card => {
             card.addEventListener('click', () => {
                 const tab = card.dataset.tab;
-                if (tab && window.switchTab) window.switchTab(tab);
-                else toast.error(`Tab "${tab}" not found`);
+                if (tab && window.switchTab) {
+                    window.switchTab(tab);
+                } else {
+                    toast.error(`Tab "${tab}" not found`);
+                }
             });
         });
     }
