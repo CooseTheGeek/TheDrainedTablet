@@ -1,16 +1,14 @@
 // security.js – DRAINED TABLET ULTIMATE v7.0.0
-// Security door, 2FA, Discord linking, and forgot code.
-// Master code is 0827.
+// Complete rework: Discord OAuth linking, PIN creation, and secure login.
 
 class Security {
     constructor() {
         this.auth = window.authSystem;
-        this.currentCode = '';
+        this.currentPin = '';
         this.attempts = 3;
         this.locked = false;
         this.lockTime = null;
-        this.pendingUser = null;
-        this.pendingRole = null;
+        this.pendingDiscordUser = null;
         this.init();
     }
 
@@ -18,10 +16,7 @@ class Security {
         this.setupNumpad();
         this.setupButtons();
         this.updateDisplay();
-        this.create2FAModal();
-        this.createDiscordModal();
-        this.setupDiscordModalDelegation();
-        this.updateRoleBadge();
+        this.checkPendingDiscord();
     }
 
     setupNumpad() {
@@ -33,9 +28,9 @@ class Security {
                 }
                 const num = e.target.innerText;
                 if (num === 'C') {
-                    this.clearCode();
+                    this.clearPin();
                 } else if (num === 'E') {
-                    this.submitCode();
+                    this.submitPin();
                 } else {
                     this.addDigit(num);
                 }
@@ -44,27 +39,26 @@ class Security {
     }
 
     setupButtons() {
-        document.getElementById('unlock-btn')?.addEventListener('click', () => this.submitCode());
-        document.getElementById('clear-btn')?.addEventListener('click', () => this.clearCode());
-        document.getElementById('forgot-btn')?.addEventListener('click', () => this.forgotCode());
+        document.getElementById('unlock-btn')?.addEventListener('click', () => this.submitPin());
+        document.getElementById('clear-btn')?.addEventListener('click', () => this.clearPin());
     }
 
     addDigit(digit) {
-        if (this.currentCode.length < 4) {
-            this.currentCode += digit;
+        if (this.currentPin.length < 4) {
+            this.currentPin += digit;
             this.updateDisplay();
         }
     }
 
-    clearCode() {
-        this.currentCode = '';
+    clearPin() {
+        this.currentPin = '';
         this.updateDisplay();
     }
 
     updateDisplay() {
         const dots = document.querySelectorAll('.code-dots .dot');
         for (let i = 0; i < dots.length; i++) {
-            if (i < this.currentCode.length) {
+            if (i < this.currentPin.length) {
                 dots[i].classList.add('filled');
             } else {
                 dots[i].classList.remove('filled');
@@ -72,23 +66,21 @@ class Security {
         }
     }
 
-    async submitCode() {
-        if (this.currentCode.length !== 4) {
-            toast.error('Enter 4-digit code');
+    async submitPin() {
+        if (this.currentPin.length !== 4) {
+            toast.error('Enter 4-digit PIN');
             return;
         }
 
         try {
-            const result = await this.auth.login(this.currentCode);
+            const result = await this.auth.login(this.currentPin);
             if (result.success) {
                 this.attempts = 3;
-                this.clearCode();
+                this.clearPin();
                 document.getElementById('attempts').innerText = '3 attempts remaining';
                 
                 AppState.user.role = result.role;
                 AppState.user.username = result.username;
-                this.updateRoleBadge();
-                
                 document.getElementById('security-door').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
                 
@@ -96,15 +88,7 @@ class Security {
                 if (userEl) userEl.innerText = result.username;
                 
                 toast.success(`Welcome, ${result.username}!`);
-
-                if (!localStorage.getItem('discord_linked')) {
-                    setTimeout(() => this.showDiscordModal(), 500);
-                }
-            } else if (result.require2FA) {
-                this.pendingUser = result.username;
-                this.pendingRole = result.role;
-                this.show2FAModal();
-                this.clearCode();
+                this.updateRoleBadge();
             } else {
                 this.failedAttempt();
             }
@@ -117,8 +101,8 @@ class Security {
     failedAttempt() {
         this.attempts--;
         document.getElementById('attempts').innerText = `${this.attempts} attempts remaining`;
-        toast.error('Invalid code');
-        this.clearCode();
+        toast.error('Invalid PIN');
+        this.clearPin();
         if (this.attempts <= 0) {
             this.lockDoor();
         }
@@ -146,167 +130,67 @@ class Security {
         }, 15 * 60 * 1000);
     }
 
-    forgotCode() {
-        this.showDiscordModal();
-    }
-
-    create2FAModal() {
-        if (document.getElementById('2fa-modal')) return;
-        const modalHTML = `
-            <div id="2fa-modal" class="modal hidden">
-                <div class="modal-content">
-                    <h3>🔐 Two-Factor Authentication</h3>
-                    <p>Enter the 6-digit code from your authenticator app.</p>
-                    <div class="form-group">
-                        <input type="text" id="2fa-code" placeholder="123456" maxlength="6" pattern="\\d*">
-                    </div>
-                    <div class="checkbox-item">
-                        <label>
-                            <input type="checkbox" id="trust-device"> Trust this device for 30 days
-                        </label>
-                    </div>
-                    <div class="modal-actions">
-                        <button id="verify-2fa" class="modal-btn primary">Verify</button>
-                        <button id="cancel-2fa" class="modal-btn">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        document.getElementById('verify-2fa')?.addEventListener('click', () => this.verify2FA());
-        document.getElementById('cancel-2fa')?.addEventListener('click', () => {
-            document.getElementById('2fa-modal').classList.add('hidden');
-            this.pendingUser = null;
-        });
-    }
-
-    show2FAModal() {
-        const modal = document.getElementById('2fa-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            document.getElementById('2fa-code').focus();
-        }
-    }
-
-    async verify2FA() {
-        const code = document.getElementById('2fa-code').value.trim();
-        if (!code || code.length !== 6 || !/^\d+$/.test(code)) {
-            toast.error('Enter a valid 6-digit code');
-            return;
-        }
-        const trustDevice = document.getElementById('trust-device').checked;
-        try {
-            const result = await this.auth.verify2FA(this.pendingUser, code, trustDevice);
-            if (result.success) {
-                document.getElementById('2fa-modal').classList.add('hidden');
-                AppState.user.role = result.role;
-                AppState.user.username = result.username;
-                this.updateRoleBadge();
-                document.getElementById('security-door').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                const userEl = document.getElementById('profile-name');
-                if (userEl) userEl.innerText = result.username;
-                toast.success(`Welcome, ${result.username}!`);
-                this.pendingUser = null;
-                if (!localStorage.getItem('discord_linked')) {
-                    setTimeout(() => this.showDiscordModal(), 500);
-                }
-            } else {
-                toast.error('Invalid 2FA code');
+    async checkPendingDiscord() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        if (code) {
+            try {
+                const response = await this.exchangeDiscordCode(code);
+                this.pendingDiscordUser = response.user;
+                this.showPinCreationModal();
+                window.history.replaceState({}, '', window.location.pathname);
+            } catch (error) {
+                toast.error('Discord authentication failed: ' + error.message);
             }
-        } catch (err) {
-            toast.error(err.message);
         }
     }
 
-    createDiscordModal() {
-        if (document.getElementById('discord-modal')) return;
-        const modalHTML = `
-            <div id="discord-modal" class="modal hidden">
-                <div class="modal-content">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h3 style="margin:0;">🔗 Link Discord Account</h3>
-                        <button id="discord-close-btn" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
-                    </div>
-                    <p>Connect your Discord to enable notifications and direct messaging.</p>
-                    <button id="discord-link-btn" class="modal-btn primary">Link Discord</button>
-                    <button id="discord-skip-btn" class="modal-btn">Skip</button>
-                    <hr>
-                    <h4>Forgot your code?</h4>
-                    <p>An email will be sent to the master. You can also DM CooseTheGeek directly.</p>
-                    <button id="forgot-email-btn" class="modal-btn">Send Email</button>
-                    <button id="forgot-discord-dm-btn" class="modal-btn">DM Master on Discord</button>
-                    <div class="modal-actions" style="margin-top: 1rem;">
-                        <button id="discord-cancel-btn" class="modal-btn">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
-
-    setupDiscordModalDelegation() {
-        const modal = document.getElementById('discord-modal');
-        if (!modal) return;
-        modal.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-            const id = target.id;
-            if (id === 'discord-close-btn' || id === 'discord-cancel-btn') {
-                modal.classList.add('hidden');
-            } else if (id === 'discord-skip-btn') {
-                localStorage.setItem('discord_linked', 'skipped');
-                modal.classList.add('hidden');
-                toast.info('Discord linking skipped');
-            } else if (id === 'discord-link-btn') {
-                window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
-            } else if (id === 'forgot-email-btn') {
-                this.sendForgotEmail();
-            } else if (id === 'forgot-discord-dm-btn') {
-                this.dmMaster();
-            }
-        });
-    }
-
-    showDiscordModal() {
-        const modal = document.getElementById('discord-modal');
-        if (modal && localStorage.getItem('discord_linked') !== 'skipped') {
-            modal.classList.remove('hidden');
-        }
-    }
-
-    linkDiscord() {
-        window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
-    }
-
-    sendForgotEmail() {
-        fetch('https://drained-bridge.onrender.com/api/forgot-code', {
+    async exchangeDiscordCode(code) {
+        const response = await fetch('https://drained-bridge.onrender.com/api/discord/callback', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: AppState.user?.username || 'unknown' })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) toast.info('Email sent to master.');
-            else toast.error('Failed to send email.');
-        })
-        .catch(() => toast.error('Network error.'));
-        document.getElementById('discord-modal').classList.add('hidden');
-    }
-
-    dmMaster() {
-        const masterDiscordId = '546976779534073882';
-        window.open(`https://discord.com/users/${masterDiscordId}`, '_blank');
-        document.getElementById('discord-modal').classList.add('hidden');
-    }
-
-    checkDiscordReturn() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('discord') === 'linked') {
-            localStorage.setItem('discord_linked', 'true');
-            toast.success('Discord linked successfully!');
-            window.history.replaceState({}, '', window.location.pathname);
+            body: JSON.stringify({ code })
+        });
+        if (!response.ok) {
+            throw new Error('Failed to authenticate with Discord');
         }
+        return await response.json();
+    }
+
+    showPinCreationModal() {
+        const modal = document.createElement('div');
+        modal.id = 'pin-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>🔐 Set Your PIN</h3>
+                <p>Welcome ${this.pendingDiscordUser.username}! Choose a 4-digit PIN to secure your account.</p>
+                <div class="form-group">
+                    <input type="password" id="new-pin" maxlength="4" placeholder="Enter 4-digit PIN" autocomplete="off">
+                </div>
+                <div class="modal-actions">
+                    <button id="save-pin" class="modal-btn primary">Save PIN</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+        
+        document.getElementById('save-pin').addEventListener('click', async () => {
+            const pin = document.getElementById('new-pin').value;
+            if (!pin || pin.length !== 4 || !/^\d+$/.test(pin)) {
+                toast.error('PIN must be 4 digits');
+                return;
+            }
+            
+            try {
+                await this.auth.register(this.pendingDiscordUser.id, this.pendingDiscordUser.username, this.pendingDiscordUser.avatar, pin);
+                modal.remove();
+                toast.success('PIN set successfully! Please log in.');
+            } catch (error) {
+                toast.error(error.message);
+            }
+        });
     }
 
     updateRoleBadge() {
@@ -320,5 +204,4 @@ class Security {
 
 document.addEventListener('DOMContentLoaded', () => {
     window.security = new Security();
-    window.security.checkDiscordReturn();
 });

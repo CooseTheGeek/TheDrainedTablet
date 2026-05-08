@@ -1,10 +1,21 @@
 // sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
-// Manages the customizable sidebar navigation.
+// Manages customizable sidebar navigation. For regular users, only player tabs appear.
 
 class SidebarManager {
     constructor() {
+        // All possible tabs with required role
         this.allTabs = [
             { id: "home", name: "Home", icon: "🏠", requiredRole: "user" },
+            // Player tabs (visible to everyone)
+            { id: "profile", name: "Profile", icon: "👤", requiredRole: "user" },
+            { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user" },
+            { id: "shop", name: "Shop", icon: "🏪", requiredRole: "user" },
+            { id: "claims", name: "Claims", icon: "📦", requiredRole: "user" },
+            { id: "combatlog", name: "Combat Log", icon: "⚔️", requiredRole: "user" },
+            { id: "idcard", name: "ID Card", icon: "🪪", requiredRole: "user" },
+            { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "user" },
+            { id: "more", name: "More Tools", icon: "📊", requiredRole: "master" }, // Only master sees More Tools
+            // Admin/master tabs (hidden for regular users)
             { id: "players", name: "Players", icon: "👥", requiredRole: "master" },
             { id: "master", name: "Master Control", icon: "👑", requiredRole: "master" },
             { id: "economy", name: "Economy", icon: "💰", requiredRole: "master" },
@@ -23,14 +34,9 @@ class SidebarManager {
             { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "owner" },
             { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
             { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" },
-            { id: "profile", name: "Profile", icon: "👤", requiredRole: "user" },
-            { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "master" },
-            { id: "shop", name: "Shop", icon: "🏪", requiredRole: "user" },
-            { id: "more", name: "More Tools", icon: "📊", requiredRole: "master" },
-            { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user" }
+            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "master" }
         ];
-        this.settingsTab = { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "master" };
-        this.defaultSelectedIds = ["home", "players", "livemap", "items", "kits", "drained-bases"];
+        this.defaultSelectedIds = ["home", "profile", "drained-bases", "shop", "claims"];
         this.maxTabs = 6;
         this.selectedIds = [];
         this.access = window.accessControl;
@@ -64,10 +70,15 @@ class SidebarManager {
 
     getAvailableTabs() {
         const role = AppState.user?.role || 'user';
+        // For regular users (role 'user'), only show tabs with requiredRole 'user'
+        // For master/owner, show all tabs they have permission for
         return this.allTabs.filter(tab => {
+            if (role === 'user') {
+                return tab.requiredRole === 'user';
+            }
             if (tab.requiredRole === 'user') return true;
-            if (tab.requiredRole === 'master') return this.access.hasRole('master');
-            if (tab.requiredRole === 'owner') return this.access.hasRole('owner');
+            if (tab.requiredRole === 'master') return role === 'master' || role === 'owner';
+            if (tab.requiredRole === 'owner') return role === 'owner';
             return false;
         });
     }
@@ -79,11 +90,15 @@ class SidebarManager {
         let html = '';
         for (const id of this.selectedIds) {
             const tab = this.allTabs.find(t => t.id === id);
-            if (tab) {
+            // Only show if tab is available for current role
+            if (tab && this.getAvailableTabs().find(t => t.id === id)) {
                 html += `<a href="#" class="nav-item" data-tab="${tab.id}"><span class="nav-icon">${tab.icon}</span> <span class="nav-text">${tab.name}</span></a>`;
             }
         }
-        html += `<a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>`;
+        // Settings only shown for master/owner
+        if (this.getAvailableTabs().find(t => t.id === 'settings')) {
+            html += `<a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>`;
+        }
         container.innerHTML = html;
         this.highlightActiveTab();
     }

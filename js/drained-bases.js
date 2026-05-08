@@ -1,5 +1,6 @@
 // drained-bases.js – DRAINED TABLET ULTIMATE v7.0.0
-// Shop‑style blueprint system with master bypass, economy integration, auto-deploy offset.
+// Shop‑style blueprint system with Rust item images, economy integration, master free purchase.
+// Auto‑deploys base at buyer's position with offset. Supports 2x1, 2x2, 3x3.
 
 class DrainedBases {
     constructor() {
@@ -232,10 +233,8 @@ class DrainedBases {
         
         const isMaster = window.accessControl && window.accessControl.isMasterUser();
         
-        // Master bypass: no platform ID, no scrap deduction
         if (isMaster) {
             if (!confirm(`Purchase "${bp.name}" for FREE as Master?`)) return;
-            // Record purchase locally
             const purchaseRecord = { blueprint_id: bp.id, deployed_at: null, purchased_at: new Date().toISOString() };
             this.purchases.push(purchaseRecord);
             this.saveMasterPurchases();
@@ -245,7 +244,6 @@ class DrainedBases {
             return;
         }
         
-        // Normal player flow
         const playerId = AppState.user.platformId;
         if (!playerId) {
             toast.error('Platform ID not set. Go to Profile to add your PSN ID / Gamertag.');
@@ -310,7 +308,6 @@ class DrainedBases {
         }
         
         if (successCount > 0) {
-            // Mark as deployed
             if (window.accessControl && window.accessControl.isMasterUser()) {
                 const purchase = this.purchases.find(p => p.blueprint_id === blueprintId && !p.deployed_at);
                 if (purchase) purchase.deployed_at = new Date().toISOString();
@@ -349,4 +346,6 @@ class DrainedBases {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => { window.drainedBases = new DrainedBases(); });
+document.addEventListener('DOMContentLoaded', () => {
+    window.drainedBases = new DrainedBases();
+});

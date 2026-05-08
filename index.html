@@ -16,18 +16,18 @@
 <body>
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- SECURITY DOOR -->
+    <!-- SECURITY DOOR (SIMPLIFIED PIN ENTRY) -->
     <div id="security-door" class="security-door">
         <div class="door-container glass-panel">
             <div class="door-header">
                 <h1>🔒 THE DRAINED TABLET</h1>
-                <p>Enter your 4‑digit access code</p>
+                <p>Enter your 4‑digit PIN</p>
             </div>
             <div class="code-dots">
-                <span class="dot" id="dot1"></span>
-                <span class="dot" id="dot2"></span>
-                <span class="dot" id="dot3"></span>
-                <span class="dot" id="dot4"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
             </div>
             <div class="numpad">
                 <div class="numpad-row"><button class="numpad-btn" data-num="1">1</button><button class="numpad-btn" data-num="2">2</button><button class="numpad-btn" data-num="3">3</button></div>
@@ -38,11 +38,9 @@
             <div class="door-actions">
                 <button id="unlock-btn" class="door-btn">UNLOCK</button>
                 <button id="clear-btn" class="door-btn">CLEAR</button>
-                <button id="forgot-btn" class="door-btn">FORGOT CODE</button>
             </div>
             <div class="door-footer">
                 <p id="attempts">3 attempts remaining</p>
-                <p id="last-attempt">Last: Never</p>
             </div>
         </div>
     </div>
@@ -104,7 +102,7 @@
                 <div id="tab-more" class="tab-pane"></div>
                 <div id="tab-resources" class="tab-pane"></div>
                 <div id="tab-drained-bases" class="tab-pane"></div>
-                <!-- All additional panes -->
+                <!-- All additional panes (shortened for brevity, but all exist) -->
                 <div id="tab-animals" class="tab-pane"></div>
                 <div id="tab-autoMod" class="tab-pane"></div>
                 <div id="tab-defense" class="tab-pane"></div>
@@ -170,7 +168,7 @@
     <div id="role-modal" class="modal hidden"><div class="modal-content"><h3>👤 Select Your Role</h3><p>Choose your initial role.</p><div class="role-option" data-role="user"><input type="radio" name="role" value="user" id="role-user"><label for="role-user">👤 User</label><span>Basic access</span></div><div class="role-option" data-role="master"><input type="radio" name="role" value="master" id="role-master"><label for="role-master">👑 Master</label><span>Full control</span></div><div class="role-option" data-role="owner"><input type="radio" name="role" value="owner" id="role-owner"><label for="role-owner">🔒 Owner</label><span>RCON commands</span></div><div class="modal-actions"><button id="set-role" class="modal-btn primary">Set Role</button><button id="skip-role" class="modal-btn">Skip</button></div></div></div>
     <div id="discord-modal" class="modal hidden"><div class="modal-content"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">🔗 Link Discord Account</h3><button id="discord-close-btn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">&times;</button></div><p>Connect your Discord to enable notifications.</p><button id="discord-link-btn" class="modal-btn primary">Link Discord</button><button id="discord-skip-btn" class="modal-btn">Skip</button><hr><h4>Forgot your code?</h4><p>DM CooseTheGeek on Discord.</p><button id="forgot-discord-dm-btn" class="modal-btn">DM Master</button><div class="modal-actions"><button id="discord-cancel-btn" class="modal-btn">Cancel</button></div></div></div>
 
-    <!-- SCRIPTS (all modules + drained-bases.js) -->
+    <!-- SCRIPTS (all modules, full list) -->
     <script src="js/core.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
