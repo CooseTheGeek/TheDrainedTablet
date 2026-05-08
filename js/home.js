@@ -1,27 +1,58 @@
 // home.js – DRAINED TABLET ULTIMATE v7.0.0
-// Rust character dress‑up system with working item gallery and canvas.
+// Rust character dress‑up system with guaranteed item list.
 
 class Home {
     constructor() {
         this.tablet = window.drainedTablet;
         this.access = window.accessControl;
-        this.items = [];
         this.equipment = this.loadEquipment();
         this.canvas = null;
         this.ctx = null;
+        this.items = this.getFallbackItems(); // start with fallback, will merge with database if available
         this.init();
+    }
+
+    getFallbackItems() {
+        return [
+            { shortname: "rock", name: "Rock", category: "Tools" },
+            { shortname: "torch", name: "Torch", category: "Tools" },
+            { shortname: "hatchet", name: "Hatchet", category: "Tools" },
+            { shortname: "pickaxe", name: "Pickaxe", category: "Tools" },
+            { shortname: "rifle.ak", name: "AK-47", category: "Weapons" },
+            { shortname: "rifle.bolt", name: "Bolt Rifle", category: "Weapons" },
+            { shortname: "smg.mp5", name: "MP5", category: "Weapons" },
+            { shortname: "pistol.revolver", name: "Revolver", category: "Weapons" },
+            { shortname: "explosive.timed", name: "C4", category: "Weapons" },
+            { shortname: "grenade.f1", name: "F1 Grenade", category: "Weapons" },
+            { shortname: "wood", name: "Wood", category: "Resources" },
+            { shortname: "stones", name: "Stone", category: "Resources" },
+            { shortname: "metal.fragments", name: "Metal Fragments", category: "Resources" },
+            { shortname: "cloth", name: "Cloth", category: "Resources" },
+            { shortname: "leather", name: "Leather", category: "Resources" },
+            { shortname: "hoodie", name: "Hoodie", category: "Attire" },
+            { shortname: "pants", name: "Pants", category: "Attire" },
+            { shortname: "shoes.boots", name: "Boots", category: "Attire" },
+            { shortname: "metal.facemask", name: "Metal Facemask", category: "Attire" },
+            { shortname: "metal.plate.torso", name: "Metal Chestplate", category: "Attire" },
+            { shortname: "wood.armor.helmet", name: "Wood Helmet", category: "Attire" },
+            { shortname: "wood.armor.jacket", name: "Wood Chestplate", category: "Attire" },
+            { shortname: "bandage", name: "Bandage", category: "Medical" },
+            { shortname: "syringe.medical", name: "Medical Syringe", category: "Medical" }
+        ];
     }
 
     loadEquipment() {
         const saved = localStorage.getItem('tdl_dressed_character');
-        return saved ? JSON.parse(saved) : {
-            head: null,
-            torso: null,
-            legs: null,
-            feet: null,
-            mainhand: null,
-            offhand: null
-        };
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch(e) { return this.getDefaultEquipment(); }
+        }
+        return this.getDefaultEquipment();
+    }
+
+    getDefaultEquipment() {
+        return { head: null, torso: null, legs: null, feet: null, mainhand: null, offhand: null };
     }
 
     saveEquipment() {
@@ -29,8 +60,8 @@ class Home {
     }
 
     async init() {
-        // Wait for items database to be ready
-        await this.loadItemsDatabase();
+        // Try to merge with items database if available
+        await this.mergeWithDatabase();
         this.createHTML();
         this.attachEvents();
         this.startServerUpdates();
@@ -39,41 +70,25 @@ class Home {
         });
     }
 
-    loadItemsDatabase() {
+    mergeWithDatabase() {
         return new Promise((resolve) => {
-            if (window.itemsDatabase && window.itemsDatabase.length > 0) {
-                this.items = window.itemsDatabase;
-                resolve();
-            } else if (window.items && window.items.items && window.items.items.length > 0) {
-                this.items = window.items.items;
-                resolve();
-            } else {
-                // Fallback: wait for items.js to load
-                const checkInterval = setInterval(() => {
-                    if (window.itemsDatabase && window.itemsDatabase.length > 0) {
-                        this.items = window.itemsDatabase;
-                        clearInterval(checkInterval);
-                        resolve();
-                    } else if (window.items && window.items.items && window.items.items.length > 0) {
-                        this.items = window.items.items;
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 200);
-                setTimeout(() => {
-                    clearInterval(checkInterval);
-                    if (this.items.length === 0) {
-                        console.warn('Items database not loaded, using fallback items');
-                        this.items = [
-                            { shortname: 'rock', name: 'Rock', category: 'Tools' },
-                            { shortname: 'torch', name: 'Torch', category: 'Tools' },
-                            { shortname: 'hatchet', name: 'Hatchet', category: 'Tools' },
-                            { shortname: 'rifle.ak', name: 'AK-47', category: 'Weapons' }
-                        ];
-                        resolve();
-                    }
-                }, 3000);
-            }
+            let attempts = 0;
+            const check = () => {
+                attempts++;
+                if (window.itemsDatabase && window.itemsDatabase.length) {
+                    this.items = window.itemsDatabase;
+                    resolve();
+                } else if (window.items && window.items.items && window.items.items.length) {
+                    this.items = window.items.items;
+                    resolve();
+                } else if (attempts > 20) {
+                    // keep fallback items
+                    resolve();
+                } else {
+                    setTimeout(check, 200);
+                }
+            };
+            check();
         });
     }
 
@@ -123,8 +138,10 @@ class Home {
         `;
 
         this.canvas = document.getElementById('character-canvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.drawCharacter();
+        if (this.canvas) {
+            this.ctx = this.canvas.getContext('2d');
+            this.drawCharacter();
+        }
         this.populateItemGallery();
     }
 
@@ -132,7 +149,7 @@ class Home {
         if (!this.ctx) return;
         this.ctx.clearRect(0, 0, 400, 500);
         
-        // Draw base Rust survivor silhouette (improved)
+        // Base survivor silhouette
         this.ctx.fillStyle = '#3a5e3a';
         // Body
         this.ctx.fillRect(150, 100, 100, 200);
@@ -141,17 +158,15 @@ class Home {
         this.ctx.beginPath();
         this.ctx.ellipse(200, 80, 35, 45, 0, 0, Math.PI * 2);
         this.ctx.fill();
-        // Left arm
+        // Arms
         this.ctx.fillStyle = '#3a5e3a';
         this.ctx.fillRect(120, 130, 30, 90);
-        // Right arm
         this.ctx.fillRect(250, 130, 30, 90);
-        // Left leg
+        // Legs
         this.ctx.fillRect(165, 300, 30, 100);
-        // Right leg
         this.ctx.fillRect(205, 300, 30, 100);
         
-        // Draw equipped items (layer images)
+        // Equipped items
         this.drawItemOnSlot('head', 165, 40, 70, 70);
         this.drawItemOnSlot('torso', 155, 100, 90, 120);
         this.drawItemOnSlot('legs', 165, 220, 70, 90);
@@ -170,10 +185,9 @@ class Home {
             this.ctx.drawImage(img, x, y, w, h);
         };
         img.onerror = () => {
-            // Fallback text
             this.ctx.fillStyle = '#fff';
             this.ctx.font = '10px monospace';
-            this.ctx.fillText(shortname, x + 5, y + 20);
+            this.ctx.fillText(shortname.slice(0, 8), x + 5, y + 20);
         };
     }
 
@@ -208,8 +222,18 @@ class Home {
     showSlotMenu(itemShortname) {
         const modal = document.createElement('div');
         modal.className = 'modal';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.8)';
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '10000';
         modal.innerHTML = `
-            <div class="modal-content">
+            <div class="modal-content" style="background: var(--glass-bg); backdrop-filter: blur(10px); border-radius: 24px; padding: 2rem; max-width: 400px; width: 90%;">
                 <h3>Equip to slot</h3>
                 <div class="slot-buttons">
                     <button data-slot="head">🧢 Head</button>
@@ -219,11 +243,10 @@ class Home {
                     <button data-slot="mainhand">⚔️ Main Hand</button>
                     <button data-slot="offhand">🛡️ Off Hand</button>
                 </div>
-                <div class="modal-actions"><button id="cancel-slot">Cancel</button></div>
+                <div class="modal-actions" style="margin-top: 1rem;"><button id="cancel-slot">Cancel</button></div>
             </div>
         `;
         document.body.appendChild(modal);
-        modal.classList.remove('hidden');
         modal.querySelectorAll('.slot-buttons button').forEach(btn => {
             btn.addEventListener('click', () => {
                 const slot = btn.dataset.slot;
