@@ -1,5 +1,5 @@
 // drained-bases.js – DRAINED TABLET ULTIMATE v7.0.0
-// Player blueprint system: purchase, deploy, manage.
+// Player blueprint system: purchase, deploy, manage. Supports 2x1, 2x2, 3x3 with offsets.
 
 class DrainedBases {
     constructor() {
@@ -22,14 +22,68 @@ class DrainedBases {
         });
     }
 
+    getDefaultBlueprints() {
+        return [
+            {
+                id: 1,
+                name: "2x1 Starter",
+                description: "Compact starter base with airlock, TC, and sleeping bag.",
+                price: 250,
+                blocks: [
+                    { shortname: "wall.frame", x: 0, y: 0, z: 0 },
+                    { shortname: "floor", x: 0, y: 0, z: 1 },
+                    { shortname: "door.hinged.wood", x: 0, y: 0, z: -1 },
+                    { shortname: "cupboard.tool", x: 0, y: 0, z: 1 },
+                    { shortname: "sleepingbag", x: 1, y: 0, z: 0 }
+                ]
+            },
+            {
+                id: 2,
+                name: "2x2 Medium Base",
+                description: "Spacious 2x2 with airlock, TC, bags, and storage.",
+                price: 500,
+                blocks: [
+                    { shortname: "wall.frame", x: 0, y: 0, z: 0 },
+                    { shortname: "floor", x: 0, y: 0, z: 1 },
+                    { shortname: "floor", x: 1, y: 0, z: 0 },
+                    { shortname: "floor", x: 1, y: 0, z: 1 },
+                    { shortname: "door.hinged.wood", x: 0, y: 0, z: -1 },
+                    { shortname: "cupboard.tool", x: 1, y: 0, z: 1 },
+                    { shortname: "sleepingbag", x: 0, y: 0, z: 2 },
+                    { shortname: "sleepingbag", x: 2, y: 0, z: 0 },
+                    { shortname: "box.wooden", x: 0, y: 0, z: 2 }
+                ]
+            },
+            {
+                id: 3,
+                name: "3x3 Fortress",
+                description: "Large 3x3 with honeycomb potential, TC, multiple bags, storage.",
+                price: 1000,
+                blocks: [
+                    { shortname: "floor", x: 0, y: 0, z: 0 }, { shortname: "floor", x: 1, y: 0, z: 0 }, { shortname: "floor", x: 2, y: 0, z: 0 },
+                    { shortname: "floor", x: 0, y: 0, z: 1 }, { shortname: "floor", x: 1, y: 0, z: 1 }, { shortname: "floor", x: 2, y: 0, z: 1 },
+                    { shortname: "floor", x: 0, y: 0, z: 2 }, { shortname: "floor", x: 1, y: 0, z: 2 }, { shortname: "floor", x: 2, y: 0, z: 2 },
+                    { shortname: "wall.frame", x: 0, y: 0, z: -1 },
+                    { shortname: "door.hinged.wood", x: 1, y: 0, z: -1 },
+                    { shortname: "cupboard.tool", x: 1, y: 0, z: 1 },
+                    { shortname: "sleepingbag", x: 0, y: 0, z: 3 }, { shortname: "sleepingbag", x: 2, y: 0, z: 3 },
+                    { shortname: "box.wooden", x: 0, y: 0, z: 3 }, { shortname: "box.wooden", x: 2, y: 0, z: 3 }
+                ]
+            }
+        ];
+    }
+
     async loadBlueprints() {
         try {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/drained/blueprints`);
             if (!res.ok) throw new Error('Failed to fetch blueprints');
             this.blueprints = await res.json();
+            if (!this.blueprints || this.blueprints.length === 0) {
+                this.blueprints = this.getDefaultBlueprints();
+            }
         } catch (err) {
-            console.error('Failed to load blueprints', err);
-            this.blueprints = [];
+            console.warn('Using fallback blueprints', err);
+            this.blueprints = this.getDefaultBlueprints();
         }
     }
 
@@ -72,7 +126,6 @@ class DrainedBases {
                 </div>
             </div>
 
-            <!-- Deploy Confirmation Modal -->
             <div id="deploy-modal" class="modal hidden">
                 <div class="modal-content">
                     <h3>🏗️ Deploy Base</h3>
@@ -100,7 +153,8 @@ class DrainedBases {
         try {
             const res = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
             const balance = parseInt(res) || 0;
-            document.getElementById('bps-player-balance').innerText = balance;
+            const el = document.getElementById('bps-player-balance');
+            if (el) el.innerText = balance;
         } catch (err) {
             document.getElementById('bps-player-balance').innerText = '?';
         }
@@ -109,19 +163,20 @@ class DrainedBases {
     renderGallery() {
         const container = document.getElementById('bps-gallery');
         if (!container) return;
-        if (this.blueprints.length === 0) {
+        if (!this.blueprints.length) {
             container.innerHTML = '<div class="no-blueprints">No blueprints available</div>';
             return;
         }
 
         container.innerHTML = this.blueprints.map(bp => {
             const owned = this.purchases.some(p => p.blueprint_id === bp.id && !p.deployed_at);
+            const blockCount = bp.blocks ? bp.blocks.length : 0;
             return `
                 <div class="bp-card" data-id="${bp.id}">
                     <div class="bp-icon">🏠</div>
                     <div class="bp-name">${this.escapeHtml(bp.name)}</div>
                     <div class="bp-desc">${this.escapeHtml(bp.description || '')}</div>
-                    <div class="bp-price">💰 ${bp.price} scrap</div>
+                    <div class="bp-specs"><span>📦 ${blockCount} blocks</span><span>💰 ${bp.price} scrap</span></div>
                     <div class="bp-actions">
                         ${owned ? 
                             `<button class="bp-btn deploy-bp" data-id="${bp.id}">🏗️ Deploy</button>` :
@@ -173,7 +228,6 @@ class DrainedBases {
             return;
         }
 
-        // Check balance first
         try {
             const balanceRes = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
             const balance = parseInt(balanceRes) || 0;
@@ -186,7 +240,6 @@ class DrainedBases {
             return;
         }
 
-        // Attempt purchase via bridge (deduct scrap)
         try {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/drained/purchase`, {
                 method: 'POST',
@@ -225,7 +278,6 @@ class DrainedBases {
             return;
         }
 
-        // Get player position
         let position = null;
         try {
             const posRaw = await ConnectionManager.executeCommand(`player.position "${playerName}"`);
@@ -245,10 +297,12 @@ class DrainedBases {
             return;
         }
 
-        // Spawn each block
+        // Offset the entire base slightly forward (z+2) so it doesn't spawn inside the player
+        const offsetX = 2;
+        const offsetZ = 2;
         let successCount = 0;
         for (const block of bp.blocks) {
-            const cmd = `spawn ${block.shortname} ${position.x + block.x} ${position.y + block.y + 0.5} ${position.z + block.z}`;
+            const cmd = `spawn ${block.shortname} ${position.x + block.x + offsetX} ${position.y + block.y + 0.5} ${position.z + block.z + offsetZ}`;
             try {
                 await ConnectionManager.executeCommand(cmd);
                 successCount++;
@@ -259,7 +313,6 @@ class DrainedBases {
         }
 
         if (successCount > 0) {
-            // Mark as deployed
             try {
                 await fetch(`${AppState.connection.bridgeUrl}/api/drained/deploy`, {
                     method: 'POST',

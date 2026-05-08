@@ -79,7 +79,7 @@
             </aside>
 
             <main class="main-content" id="main-content">
-                <!-- Tab panes -->
+                <!-- Tab panes (all original restored) -->
                 <div id="tab-home" class="tab-pane active"></div>
                 <div id="tab-players" class="tab-pane"></div>
                 <div id="tab-master" class="tab-pane"></div>
@@ -104,7 +104,7 @@
                 <div id="tab-more" class="tab-pane"></div>
                 <div id="tab-resources" class="tab-pane"></div>
                 <div id="tab-drained-bases" class="tab-pane"></div>
-                <!-- All other existing panes remain -->
+                <!-- All additional panes -->
                 <div id="tab-animals" class="tab-pane"></div>
                 <div id="tab-autoMod" class="tab-pane"></div>
                 <div id="tab-defense" class="tab-pane"></div>
@@ -167,10 +167,10 @@
     <!-- MODALS -->
     <div id="error-modal" class="modal hidden"><div class="modal-content"><h3>❌ Error</h3><p id="error-message"></p><div class="modal-actions"><button id="error-close" class="modal-btn">OK</button></div></div></div>
     <div id="confirm-modal" class="modal hidden"><div class="modal-content"><h3>⚠️ Confirm</h3><p id="confirm-message"></p><div class="modal-actions"><button id="confirm-yes" class="modal-btn primary">Yes</button><button id="confirm-no" class="modal-btn">No</button></div></div></div>
-    <div id="role-modal" class="modal hidden"><div class="modal-content"><h3>👤 Select Your Role</h3><p>Choose your initial role. You can change this later in User Management.</p><div class="role-option" data-role="user"><input type="radio" name="role" value="user" id="role-user"><label for="role-user">👤 User</label><span>Basic access – view only</span></div><div class="role-option" data-role="master"><input type="radio" name="role" value="master" id="role-master"><label for="role-master">👑 Master</label><span>Full control</span></div><div class="role-option" data-role="owner"><input type="radio" name="role" value="owner" id="role-owner"><label for="role-owner">🔒 Owner</label><span>RCON commands</span></div><div class="modal-actions"><button id="set-role" class="modal-btn primary">Set Role</button><button id="skip-role" class="modal-btn">Skip</button></div></div></div>
-    <div id="discord-modal" class="modal hidden"><div class="modal-content"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">🔗 Link Discord Account</h3><button id="discord-close-btn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">&times;</button></div><p>Connect your Discord to enable notifications.</p><button id="discord-link-btn" class="modal-btn primary">Link Discord</button><button id="discord-skip-btn" class="modal-btn">Skip</button><hr><h4>Forgot your code?</h4><p>DM CooseTheGeek on Discord.</p><button id="forgot-discord-dm-btn" class="modal-btn">DM Master</button><div class="modal-actions" style="margin-top:1rem;"><button id="discord-cancel-btn" class="modal-btn">Cancel</button></div></div></div>
+    <div id="role-modal" class="modal hidden"><div class="modal-content"><h3>👤 Select Your Role</h3><p>Choose your initial role.</p><div class="role-option" data-role="user"><input type="radio" name="role" value="user" id="role-user"><label for="role-user">👤 User</label><span>Basic access</span></div><div class="role-option" data-role="master"><input type="radio" name="role" value="master" id="role-master"><label for="role-master">👑 Master</label><span>Full control</span></div><div class="role-option" data-role="owner"><input type="radio" name="role" value="owner" id="role-owner"><label for="role-owner">🔒 Owner</label><span>RCON commands</span></div><div class="modal-actions"><button id="set-role" class="modal-btn primary">Set Role</button><button id="skip-role" class="modal-btn">Skip</button></div></div></div>
+    <div id="discord-modal" class="modal hidden"><div class="modal-content"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;">🔗 Link Discord Account</h3><button id="discord-close-btn" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">&times;</button></div><p>Connect your Discord to enable notifications.</p><button id="discord-link-btn" class="modal-btn primary">Link Discord</button><button id="discord-skip-btn" class="modal-btn">Skip</button><hr><h4>Forgot your code?</h4><p>DM CooseTheGeek on Discord.</p><button id="forgot-discord-dm-btn" class="modal-btn">DM Master</button><div class="modal-actions"><button id="discord-cancel-btn" class="modal-btn">Cancel</button></div></div></div>
 
-    <!-- SCRIPTS -->
+    <!-- SCRIPTS (all modules + drained-bases.js) -->
     <script src="js/core.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
