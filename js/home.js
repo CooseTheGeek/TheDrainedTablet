@@ -1,32 +1,39 @@
-// home.js – DRAINED TABLET ULTIMATE v7.0.0 (with GPortal player count)
+// home.js – DRAINED TABLET ULTIMATE v7.0.0
+// Replaces CPU/RAM/players with Rust character dress‑up system.
 
 class Home {
     constructor() {
         this.tablet = window.drainedTablet;
         this.access = window.accessControl;
-        this.stats = {
-            fps: 0,
-            cpu: 0,
-            memory: 0,
-            players: 0,
-            maxPlayers: 100,
-            uptime: '0d 0h 0m',
-            entities: 0
-        };
-        this.recentEvents = [];
-        this.playerHistory = [];
-        this.updateInterval = null;
+        this.items = window.itemsDatabase || window.items?.items || [];
+        this.equipment = this.loadEquipment();
+        this.canvas = null;
+        this.ctx = null;
         this.init();
+    }
+
+    loadEquipment() {
+        const saved = localStorage.getItem('tdl_dressed_character');
+        return saved ? JSON.parse(saved) : {
+            head: null,
+            torso: null,
+            legs: null,
+            feet: null,
+            mainhand: null,
+            offhand: null
+        };
+    }
+
+    saveEquipment() {
+        localStorage.setItem('tdl_dressed_character', JSON.stringify(this.equipment));
     }
 
     init() {
         this.createHTML();
         this.attachEvents();
-        this.startUpdates();
+        this.startServerUpdates();
         window.addEventListener('tab-changed', (e) => {
-            if (e.detail.tab === 'home') {
-                this.refresh();
-            }
+            if (e.detail.tab === 'home') this.refresh();
         });
     }
 
@@ -37,210 +44,182 @@ class Home {
         tab.innerHTML = `
             <div class="home-container">
                 <div class="home-header">
-                    <h2>🏠 DASHBOARD</h2>
+                    <h2>🏠 RUST CHARACTER STUDIO</h2>
                     <button id="home-refresh" class="home-btn">🔄 REFRESH</button>
                 </div>
-                <div class="home-grid" id="home-grid"></div>
-                <div class="home-row">
-                    <div class="home-card" id="recent-events-card">
-                        <h3>📋 RECENT EVENTS</h3>
-                        <div id="recent-events-list" class="events-list">Waiting for connection...</div>
+
+                <div class="character-studio">
+                    <div class="character-canvas-container">
+                        <canvas id="character-canvas" width="400" height="500"></canvas>
+                        <div class="character-stats">
+                            <div class="stat">❤️ Health: 100</div>
+                            <div class="stat">🍖 Food: 100</div>
+                            <div class="stat">💧 Water: 100</div>
+                        </div>
                     </div>
-                    <div class="home-card" id="quick-actions-card">
-                        <h3>⚡ QUICK ACTIONS</h3>
-                        <div class="quick-actions-grid" id="quick-actions"></div>
+
+                    <div class="equipment-slots">
+                        <div class="slot" data-slot="head">🧢 Head</div>
+                        <div class="slot" data-slot="torso">👕 Torso</div>
+                        <div class="slot" data-slot="legs">👖 Legs</div>
+                        <div class="slot" data-slot="feet">👟 Feet</div>
+                        <div class="slot" data-slot="mainhand">⚔️ Main Hand</div>
+                        <div class="slot" data-slot="offhand">🛡️ Off Hand</div>
+                    </div>
+
+                    <div class="item-gallery">
+                        <h3>📦 Available Items</h3>
+                        <input type="text" id="item-search" placeholder="Search items...">
+                        <div id="item-list" class="item-list"></div>
                     </div>
                 </div>
-                <div class="home-card" id="player-activity-card">
-                    <h3>📈 PLAYER ACTIVITY (LAST 24H)</h3>
-                    <canvas id="activity-chart" width="800" height="200"></canvas>
+
+                <div class="server-stats-bar">
+                    <div class="stat-card">👥 Online: <span id="player-count">0</span></div>
+                    <div class="stat-card">🕒 Uptime: <span id="uptime">0d 0h 0m</span></div>
+                    <div class="stat-card">🗺️ Map: 3500</div>
                 </div>
             </div>
         `;
 
-        this.renderGauges();
-        this.renderQuickActions();
+        this.canvas = document.getElementById('character-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.drawCharacter();
+        this.populateItemGallery();
+    }
+
+    drawCharacter() {
+        if (!this.ctx) return;
+        this.ctx.clearRect(0, 0, 400, 500);
+        
+        // Base silhouette (placeholder – you can replace with a Rust character outline)
+        this.ctx.fillStyle = '#2c3e2f';
+        this.ctx.fillRect(150, 100, 100, 250); // body
+        this.ctx.fillRect(120, 150, 40, 80);  // left arm
+        this.ctx.fillRect(240, 150, 40, 80);  // right arm
+        this.ctx.fillRect(170, 350, 60, 80);  // legs
+        
+        // Draw equipped items as images on top
+        this.drawItemOnSlot('head', 175, 70, 50, 50);
+        this.drawItemOnSlot('torso', 170, 130, 60, 80);
+        this.drawItemOnSlot('legs', 170, 230, 60, 80);
+        this.drawItemOnSlot('feet', 170, 320, 60, 40);
+        this.drawItemOnSlot('mainhand', 100, 200, 50, 50);
+        this.drawItemOnSlot('offhand', 250, 200, 50, 50);
+    }
+
+    drawItemOnSlot(slot, x, y, w, h) {
+        const itemShortname = this.equipment[slot];
+        if (!itemShortname) return;
+        const img = new Image();
+        const shortnameFormatted = itemShortname.replace(/\./g, '-');
+        img.src = `https://www.corrosionhour.com/img/items/${shortnameFormatted}.png`;
+        img.onload = () => {
+            this.ctx.drawImage(img, x, y, w, h);
+        };
+        img.onerror = () => {
+            // fallback text
+            this.ctx.fillStyle = '#aaa';
+            this.ctx.font = '10px monospace';
+            this.ctx.fillText(itemShortname, x + 5, y + 20);
+        };
+    }
+
+    populateItemGallery() {
+        const container = document.getElementById('item-list');
+        if (!container) return;
+        const searchInput = document.getElementById('item-search');
+        const filterItems = () => {
+            const query = searchInput.value.toLowerCase();
+            const filtered = this.items.filter(i => 
+                i.name.toLowerCase().includes(query) || 
+                i.shortname.toLowerCase().includes(query)
+            ).slice(0, 100);
+            container.innerHTML = filtered.map(item => `
+                <div class="item-card" data-shortname="${item.shortname}">
+                    <img src="https://www.corrosionhour.com/img/items/${item.shortname.replace(/\./g, '-')}.png" 
+                         onerror="this.src='https://via.placeholder.com/32?text=?'">
+                    <span>${item.name}</span>
+                </div>
+            `).join('');
+            container.querySelectorAll('.item-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const shortname = card.dataset.shortname;
+                    this.showSlotMenu(shortname);
+                });
+            });
+        };
+        searchInput.addEventListener('input', filterItems);
+        filterItems();
+    }
+
+    showSlotMenu(itemShortname) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>Equip to slot</h3>
+                <div class="slot-buttons">
+                    <button data-slot="head">🧢 Head</button>
+                    <button data-slot="torso">👕 Torso</button>
+                    <button data-slot="legs">👖 Legs</button>
+                    <button data-slot="feet">👟 Feet</button>
+                    <button data-slot="mainhand">⚔️ Main Hand</button>
+                    <button data-slot="offhand">🛡️ Off Hand</button>
+                </div>
+                <div class="modal-actions"><button id="cancel-slot">Cancel</button></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+        modal.querySelectorAll('.slot-buttons button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const slot = btn.dataset.slot;
+                this.equipment[slot] = itemShortname;
+                this.saveEquipment();
+                this.drawCharacter();
+                modal.remove();
+                toast.success(`Equipped ${itemShortname} to ${slot}`);
+            });
+        });
+        modal.querySelector('#cancel-slot').addEventListener('click', () => modal.remove());
     }
 
     attachEvents() {
         document.getElementById('home-refresh')?.addEventListener('click', () => this.refresh());
-    }
-
-    renderGauges() {
-        const grid = document.getElementById('home-grid');
-        if (!grid) return;
-        grid.innerHTML = `
-            <div class="gauge-card" id="gauge-cpu">
-                <div class="gauge-title">CPU</div>
-                <div class="gauge-value" id="cpu-value">0%</div>
-                <div class="gauge-progress"><div class="gauge-fill" id="cpu-fill" style="width:0%"></div></div>
-            </div>
-            <div class="gauge-card" id="gauge-ram">
-                <div class="gauge-title">RAM</div>
-                <div class="gauge-value" id="ram-value">0%</div>
-                <div class="gauge-progress"><div class="gauge-fill" id="ram-fill" style="width:0%"></div></div>
-            </div>
-            <div class="gauge-card" id="gauge-players">
-                <div class="gauge-title">PLAYERS</div>
-                <div class="gauge-value" id="players-value">0/100</div>
-                <div class="gauge-progress"><div class="gauge-fill" id="players-fill" style="width:0%"></div></div>
-            </div>
-            <div class="gauge-card" id="gauge-tps">
-                <div class="gauge-title">FPS</div>
-                <div class="gauge-value" id="fps-value">0</div>
-                <div class="gauge-progress"><div class="gauge-fill" id="fps-fill" style="width:0%"></div></div>
-            </div>
-        `;
-    }
-
-    renderQuickActions() {
-        const actionsDiv = document.getElementById('quick-actions');
-        if (!actionsDiv) return;
-        let actions = [
-            { label: 'Restart', command: 'global.restart', icon: '🔄', role: 'owner' },
-            { label: 'Save', command: 'server.save', icon: '💾', role: 'master' },
-            { label: 'Backup', command: 'gportal.backup.create', icon: '📦', role: 'owner' },
-            { label: 'Broadcast', command: 'say', icon: '📢', role: 'master', needsInput: true },
-            { label: 'Airdrop', command: 'airdrop.drop', icon: '📡', role: 'master' },
-            { label: 'Heli', command: 'heli.call', icon: '🚁', role: 'master' }
-        ];
-        let html = '';
-        actions.forEach(action => {
-            if (this.access?.hasRole(action.role)) {
-                html += `<button class="quick-action" data-cmd="${action.command}" ${action.needsInput ? 'data-needs-input' : ''}>${action.icon} ${action.label}</button>`;
-            }
-        });
-        actionsDiv.innerHTML = html;
-        actionsDiv.querySelectorAll('.quick-action').forEach(btn => {
-            btn.addEventListener('click', () => this.executeQuickAction(btn));
+        // Slot clicks to clear equipment
+        document.querySelectorAll('.equipment-slots .slot').forEach(slotDiv => {
+            slotDiv.addEventListener('click', () => {
+                const slot = slotDiv.dataset.slot;
+                if (this.equipment[slot]) {
+                    if (confirm(`Remove ${this.equipment[slot]} from ${slot}?`)) {
+                        this.equipment[slot] = null;
+                        this.saveEquipment();
+                        this.drawCharacter();
+                        toast.info(`Cleared ${slot} slot`);
+                    }
+                }
+            });
         });
     }
 
-    async executeQuickAction(btn) {
-        const cmd = btn.dataset.cmd;
-        let fullCmd = cmd;
-        if (btn.hasAttribute('data-needs-input')) {
-            const msg = prompt('Enter message:');
-            if (!msg) return;
-            fullCmd = `${cmd} "${msg}"`;
-        }
-        try {
-            await ConnectionManager.executeCommand(fullCmd);
-            toast.success('Command executed');
-        } catch (err) {
-            toast.error(err.message);
-        }
-    }
-
-    startUpdates() {
-        this.updateInterval = setInterval(() => this.updateStats(), 5000);
-    }
-
-    async updateStats() {
-        const gportalReady = window.gportalConnector && window.gportalConnector.apiReady;
-        const connected = AppState.connection.status === 'connected' || gportalReady;
-
-        if (!connected) {
-            this.showDisconnected();
-            return;
-        }
-
-        this.stats.players = (AppState.players || []).length;
-
-        if (gportalReady) {
-            try {
-                const fps = await ConnectionManager.executeCommand('server.fps');
-                const cpu = await ConnectionManager.executeCommand('server.cpu');
-                const mem = await ConnectionManager.executeCommand('server.memory');
-                const maxPlayers = AppState.connection.server?.maxPlayers || 100;
-                const uptime = await ConnectionManager.executeCommand('server.uptime');
-                const entities = await ConnectionManager.executeCommand('entity.count');
-                
-                this.stats.fps = parseInt(fps) || 0;
-                this.stats.cpu = parseInt(cpu) || 0;
-                this.stats.memory = parseInt(mem) || 0;
-                this.stats.maxPlayers = maxPlayers;
-                this.stats.uptime = uptime || '0d 0h 0m';
-                this.stats.entities = parseInt(entities) || 0;
-            } catch (err) {
-                console.warn('Failed to update stats via GPortal:', err);
+    async startServerUpdates() {
+        setInterval(async () => {
+            if (AppState.connection.status === 'connected') {
+                try {
+                    const players = AppState.players.length;
+                    const uptime = await ConnectionManager.executeCommand('server.uptime');
+                    document.getElementById('player-count').innerText = players;
+                    document.getElementById('uptime').innerText = uptime || '0d 0h 0m';
+                } catch (e) {}
             }
-        } else if (AppState.connection.status === 'connected') {
-            try {
-                const fps = await ConnectionManager.executeCommand('server.fps');
-                const cpu = await ConnectionManager.executeCommand('server.cpu');
-                const mem = await ConnectionManager.executeCommand('server.memory');
-                const maxPlayers = AppState.connection.server?.maxPlayers || 100;
-                const uptime = await ConnectionManager.executeCommand('server.uptime');
-                const entities = await ConnectionManager.executeCommand('entity.count');
-                
-                this.stats.fps = parseInt(fps) || 0;
-                this.stats.cpu = parseInt(cpu) || 0;
-                this.stats.memory = parseInt(mem) || 0;
-                this.stats.maxPlayers = maxPlayers;
-                this.stats.uptime = uptime || '0d 0h 0m';
-                this.stats.entities = parseInt(entities) || 0;
-            } catch (err) {
-                console.warn('Failed to update stats via RCON:', err);
-            }
-        } else {
-            this.showDisconnected();
-            return;
-        }
-
-        this.updateGauges();
-        this.updateEvents();
-        this.updateChart();
-    }
-
-    showDisconnected() {
-        const ids = ['cpu-value', 'ram-value', 'players-value', 'fps-value'];
-        ids.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = '--';
-        });
-        const eventsEl = document.getElementById('recent-events-list');
-        if (eventsEl) eventsEl.innerHTML = 'Waiting for connection...';
-    }
-
-    updateGauges() {
-        const setText = (id, text) => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = text;
-        };
-        const setWidth = (id, width) => {
-            const el = document.getElementById(id);
-            if (el) el.style.width = width + '%';
-        };
-        setText('cpu-value', this.stats.cpu + '%');
-        setWidth('cpu-fill', this.stats.cpu);
-        setText('ram-value', this.stats.memory + '%');
-        setWidth('ram-fill', this.stats.memory);
-        setText('players-value', this.stats.players + '/' + this.stats.maxPlayers);
-        setWidth('players-fill', (this.stats.players / this.stats.maxPlayers * 100));
-        setText('fps-value', this.stats.fps);
-        setWidth('fps-fill', (this.stats.fps / 60 * 100));
-    }
-
-    async updateEvents() {
-        const list = document.getElementById('recent-events-list');
-        if (!list) return;
-        list.innerHTML = '<div class="event-item">Airdrop dropped (2m ago)</div><div class="event-item">PlayerX killed PlayerY (5m ago)</div>';
-    }
-
-    updateChart() {
-        const canvas = document.getElementById('activity-chart');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle = '#FFB100';
-        ctx.font = '12px monospace';
-        ctx.fillText('Chart would show player count over time', 10, 100);
+        }, 5000);
     }
 
     refresh() {
-        this.updateStats();
-        toast.success('Home refreshed');
+        this.drawCharacter();
+        this.populateItemGallery();
+        toast.success('Character studio refreshed');
     }
 }
 
