@@ -1,14 +1,10 @@
-// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (with temporary master override)
+// access-control.js – DRAINED TABLET ULTIMATE v7.0.0
 
 class AccessControl {
     constructor() {
         this.tablet = window.drainedTablet;
         this.auth = window.authSystem;
-        this.roleHierarchy = {
-            user: 1,
-            owner: 2,
-            master: 3
-        };
+        this.roleHierarchy = { user: 1, owner: 2, master: 3 };
         this.init();
     }
 
@@ -16,32 +12,26 @@ class AccessControl {
         console.log('AccessControl initialized');
     }
 
-    // Temporary override for CooseTheGeek
     isMasterUser() {
-        const username = AppState.user?.username || localStorage.getItem('tdl_username');
+        // Safely access AppState
+        const username = window.AppState?.user?.username || localStorage.getItem('tdl_username');
         return username === 'CooseTheGeek';
     }
 
     hasRole(requiredRole) {
-        if (this.isMasterUser()) {
-            return true;
-        }
-        const currentRole = AppState.user?.role || 'user';
+        if (this.isMasterUser()) return true;
+        const currentRole = window.AppState?.user?.role || 'user';
         return this.roleHierarchy[currentRole] >= this.roleHierarchy[requiredRole];
     }
 
     isMaster() {
-        if (this.isMasterUser()) {
-            return true;
-        }
-        return AppState.user?.role === 'master';
+        if (this.isMasterUser()) return true;
+        return window.AppState?.user?.role === 'master';
     }
 
     isOwner() {
-        if (this.isMasterUser()) {
-            return true;
-        }
-        return AppState.user?.role === 'master';
+        if (this.isMasterUser()) return true;
+        return window.AppState?.user?.role === 'owner';
     }
 
     guard(requiredRole) {

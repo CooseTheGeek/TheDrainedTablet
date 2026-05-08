@@ -1,7 +1,8 @@
-// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with GPortal connection handling, console‑compatible)
+// core.js – DRAINED TABLET ULTIMATE v7.0.0
+// Defines global AppState, ConnectionManager, UserManager, LayoutManager, utilities.
 
 // ========================= GLOBAL STATE =========================
-const AppState = {
+window.AppState = {
     user: {
         username: localStorage.getItem('tdl_username') || null,
         role: localStorage.getItem('tdl_role') || null,
@@ -33,13 +34,12 @@ const AppState = {
 };
 
 // ========================= CONNECTION MANAGEMENT =========================
-const ConnectionManager = {
+window.ConnectionManager = {
     async checkHealth() {
-        console.log('📡 Checking bridge health...');
         try {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/health`);
             if (!res.ok) throw new Error('Bridge unreachable');
-            const data = await res.json();
+            await res.json();
             AppState.connection.status = 'connected';
             AppState.connection.lastPing = Date.now();
             AppState.connection.error = null;
@@ -57,8 +57,7 @@ const ConnectionManager = {
         AppState.connection.status = 'connecting';
         this.notify();
         try {
-            const url = `${AppState.connection.bridgeUrl}/api/connect`;
-            const res = await fetch(url, {
+            const res = await fetch(`${AppState.connection.bridgeUrl}/api/connect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(credentials)
@@ -91,45 +90,18 @@ const ConnectionManager = {
     },
 
     async executeCommand(command) {
-        console.log('⚡ Executing RCON command:', command);
-        
-        if (window.gportalConnector && window.gportalConnector.apiReady) {
-            try {
-                const res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    return data.result || 'Command executed (no output)';
-                } else {
-                    throw new Error(data.error || 'GPortal command failed');
-                }
-            } catch (err) {
-                console.error('GPortal command error:', err);
-                throw err;
-            }
-        }
-
-        if (AppState.connection.status !== 'connected') {
+        if (AppState.connection.status !== 'connected' || !AppState.connection.server) {
             throw new Error('Not connected to any server');
         }
-
+        const { ip, port, password } = AppState.connection.server;
         try {
-            const url = `${AppState.connection.bridgeUrl}/api/command`;
-            const res = await fetch(url, {
+            const res = await fetch(`${AppState.connection.bridgeUrl}/api/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ip: AppState.connection.server.ip,
-                    port: AppState.connection.server.port,
-                    password: AppState.connection.server.password,
-                    command
-                })
+                body: JSON.stringify({ ip, port, password, command })
             });
             const data = await res.json();
-            if (!data.success) throw new Error(data.error || 'Command execution failed');
+            if (!data.success) throw new Error(data.error || 'Command failed');
             return data.result;
         } catch (err) {
             throw err;
@@ -155,6 +127,21 @@ const ConnectionManager = {
 
     notify() {
         AppState.listeners.forEach(fn => fn());
+        // Also update UI status indicators
+        const statusDot = document.querySelector('#connection-status .dot');
+        const statusText = document.getElementById('conn-status-text');
+        if (statusDot && statusText) {
+            if (AppState.connection.status === 'connected') {
+                statusDot.className = 'dot online';
+                statusText.innerText = 'CONNECTED';
+            } else if (AppState.connection.status === 'connecting') {
+                statusDot.className = 'dot connecting';
+                statusText.innerText = 'CONNECTING...';
+            } else {
+                statusDot.className = 'dot offline';
+                statusText.innerText = 'DISCONNECTED';
+            }
+        }
     },
 
     subscribe(listener) {
@@ -165,27 +152,8 @@ const ConnectionManager = {
     }
 };
 
-notify() {
-    AppState.listeners.forEach(fn => fn());
-    // Also update header status if needed
-    const statusDot = document.querySelector('#connection-status .dot');
-    const statusText = document.getElementById('conn-status-text');
-    if (statusDot && statusText) {
-        if (AppState.connection.status === 'connected') {
-            statusDot.className = 'dot online';
-            statusText.innerText = `CONNECTED`;
-        } else if (AppState.connection.status === 'connecting') {
-            statusDot.className = 'dot connecting';
-            statusText.innerText = 'CONNECTING...';
-        } else {
-            statusDot.className = 'dot offline';
-            statusText.innerText = 'DISCONNECTED';
-        }
-    }
-}
-
 // ========================= USER MANAGEMENT =========================
-const UserManager = {
+window.UserManager = {
     setUser(userData) {
         AppState.user = { ...AppState.user, ...userData };
         if (userData.username) localStorage.setItem('tdl_username', userData.username);
@@ -226,7 +194,7 @@ const UserManager = {
 };
 
 // ========================= LAYOUT MANAGEMENT =========================
-const LayoutManager = {
+window.LayoutManager = {
     saveLayout(layout) {
         AppState.layout = layout;
         localStorage.setItem('tdl_layout', JSON.stringify(layout));
@@ -239,19 +207,6 @@ const LayoutManager = {
         ConnectionManager.notify();
     }
 };
-
-// ========================= PLATFORM ICONS =========================
-const PlatformIcons = {
-    ps5: '<svg class="platform-icon ps5" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="3"/></svg>',
-    xbox: '<svg class="platform-icon xbox" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><rect x="9" y="9" width="6" height="6"/></svg>'
-};
-
-// ========================= EXPORT =========================
-window.AppState = AppState;
-window.ConnectionManager = ConnectionManager;
-window.UserManager = UserManager;
-window.LayoutManager = LayoutManager;
-window.PlatformIcons = PlatformIcons;
 
 // ========================= UTILITIES =========================
 function formatUptime(seconds) {
@@ -270,118 +225,22 @@ function sanitizeInput(input) {
     return input.replace(/[<>]/g, '');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DRAINED TABLET core loaded');
-});
-
-// ========================= GPortal Player List Polling (console‑compatible) =========================
-setInterval(async () => {
-    if (window.gportalConnector && window.gportalConnector.apiReady) {
-        try {
-            const res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: 'playerlist' })
-            });
-            const data = await res.json();
-            let players = [];
-
-            if (data.success && data.result) {
-                const raw = data.result;
-                if (Array.isArray(raw)) {
-                    players = raw.map(p => ({
-                        name: p.DisplayName || p.name || p.displayName || 'Unknown',
-                        online: true,
-                        playtime: 'N/A',
-                        position: null
-                    }));
-                } else if (typeof raw === 'string') {
-                    try {
-                        const parsed = JSON.parse(raw);
-                        if (Array.isArray(parsed)) {
-                            players = parsed.map(p => ({
-                                name: p.DisplayName || p.name || p.displayName || 'Unknown',
-                                online: true,
-                                playtime: 'N/A',
-                                position: null
-                            }));
-                        } else {
-                            players = [{
-                                name: parsed.DisplayName || parsed.name || parsed.displayName || 'Unknown',
-                                online: true,
-                                playtime: 'N/A',
-                                position: null
-                            }];
-                        }
-                    } catch {
-                        const lines = raw.split('\n').filter(l => l.trim());
-                        players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
-                    }
-                }
-            }
-
-            if (players.length === 0) {
-                const statusRes = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: 'status' })
-                });
-                const statusData = await statusRes.json();
-                if (statusData.success && statusData.result) {
-                    const statusText = statusData.result;
-                    const match = statusText.match(/players:?\s*(\d+)/i) || statusText.match(/players\s*\((\d+)/i);
-                    if (match) {
-                        const count = parseInt(match[1]);
-                        for (let i = 0; i < count; i++) {
-                            players.push({ name: `Player ${i+1}`, online: true, playtime: 'N/A', position: null });
-                        }
-                    }
-                }
-            }
-
-            AppState.players = players;
-            window.dispatchEvent(new CustomEvent('players-updated', { detail: { players } }));
-            ConnectionManager.notify();
-        } catch (err) {
-            console.error('Error polling player list:', err);
-        }
+window.drainedTablet = {
+    showToast: function(msg, type) {
+        if (window.toast) window.toast.show(msg, type);
+        else console.log(`[Toast] ${type}: ${msg}`);
+    },
+    showError: function(msg) {
+        if (window.toast) window.toast.error(msg);
+        else console.error(msg);
+    },
+    connected: false,
+    serverConfig: {
+        ip: null, port: null, password: null,
+        name: 'The Drained Land\'s 2X',
+        mapSize: 3500,
+        mapSeed: 10325
     }
-}, 15000);
+};
 
-// ========================= DRAINED TABLET GLOBAL OBJECT =========================
-if (!window.drainedTablet) {
-    window.drainedTablet = {
-        showToast: function(msg, type) {
-            if (window.toast) window.toast.show(msg, type);
-            else console.log(`[Toast] ${type}: ${msg}`);
-        },
-        showError: function(msg) {
-            if (window.toast) window.toast.error(msg);
-            else console.error(msg);
-        },
-        connected: false,
-        serverConfig: {
-            ip: null,
-            port: null,
-            password: null,
-            name: 'The Drained Land\'s 2X',
-            mapSize: 3500,
-            mapSeed: 10325
-        }
-    };
-}
-
-// Auto‑hide header on scroll
-let lastScrollTop = 0;
-const header = document.querySelector('.main-header');
-if (header) {
-    window.addEventListener('scroll', () => {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        if (scrollTop > lastScrollTop && scrollTop > 100) {
-            header.classList.add('hide-header');
-        } else {
-            header.classList.remove('hide-header');
-        }
-        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-    });
-}
+console.log('🚀 DRAINED TABLET core loaded');
