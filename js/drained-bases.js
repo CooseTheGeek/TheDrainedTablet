@@ -1,5 +1,5 @@
 // drained-bases.js – DRAINED TABLET ULTIMATE v7.0.0
-// Shop‑style blueprint system with Rust item images, economy integration, master free purchase.
+// Shop‑style blueprint system with master bypass, economy integration, auto-deploy offset.
 
 class DrainedBases {
     constructor() {
@@ -7,6 +7,7 @@ class DrainedBases {
         this.access = window.accessControl;
         this.blueprints = [];
         this.purchases = [];
+        this.deployingId = null;
         this.init();
     }
 
@@ -23,9 +24,61 @@ class DrainedBases {
 
     getDefaultBlueprints() {
         return [
-            { id: 1, name: "2x1 Starter", description: "Compact starter base with airlock, TC, sleeping bag.", price: 250, blocks: 5, shortname: "2x1_starter", image: "https://www.corrosionhour.com/img/items/wood.png" },
-            { id: 2, name: "2x2 Medium Base", description: "Spacious 2x2 with storage and bags.", price: 500, blocks: 9, shortname: "2x2_medium", image: "https://www.corrosionhour.com/img/items/metal.fragments.png" },
-            { id: 3, name: "3x3 Fortress", description: "Large 3x3 with honeycomb potential.", price: 1000, blocks: 16, shortname: "3x3_fortress", image: "https://www.corrosionhour.com/img/items/hq.metal.ore.png" }
+            { 
+                id: 1, 
+                name: "2x1 Starter", 
+                description: "Compact starter base with airlock, TC, and sleeping bag.", 
+                price: 250, 
+                blocks: 5, 
+                shortname: "2x1_starter", 
+                image: "https://www.corrosionhour.com/img/items/wood.png",
+                blockData: [
+                    { shortname: "wall.frame", x: 0, y: 0, z: 0 },
+                    { shortname: "floor", x: 0, y: 0, z: 1 },
+                    { shortname: "door.hinged.wood", x: 0, y: 0, z: -1 },
+                    { shortname: "cupboard.tool", x: 0, y: 0, z: 1 },
+                    { shortname: "sleepingbag", x: 1, y: 0, z: 0 }
+                ]
+            },
+            { 
+                id: 2, 
+                name: "2x2 Medium Base", 
+                description: "Spacious 2x2 with airlock, TC, bags, and storage.", 
+                price: 500, 
+                blocks: 9, 
+                shortname: "2x2_medium", 
+                image: "https://www.corrosionhour.com/img/items/metal.fragments.png",
+                blockData: [
+                    { shortname: "wall.frame", x: 0, y: 0, z: 0 },
+                    { shortname: "floor", x: 0, y: 0, z: 1 },
+                    { shortname: "floor", x: 1, y: 0, z: 0 },
+                    { shortname: "floor", x: 1, y: 0, z: 1 },
+                    { shortname: "door.hinged.wood", x: 0, y: 0, z: -1 },
+                    { shortname: "cupboard.tool", x: 1, y: 0, z: 1 },
+                    { shortname: "sleepingbag", x: 0, y: 0, z: 2 },
+                    { shortname: "sleepingbag", x: 2, y: 0, z: 0 },
+                    { shortname: "box.wooden", x: 0, y: 0, z: 2 }
+                ]
+            },
+            { 
+                id: 3, 
+                name: "3x3 Fortress", 
+                description: "Large 3x3 with honeycomb potential, TC, multiple bags, storage.", 
+                price: 1000, 
+                blocks: 16, 
+                shortname: "3x3_fortress", 
+                image: "https://www.corrosionhour.com/img/items/hq.metal.ore.png",
+                blockData: [
+                    { shortname: "floor", x: 0, y: 0, z: 0 }, { shortname: "floor", x: 1, y: 0, z: 0 }, { shortname: "floor", x: 2, y: 0, z: 0 },
+                    { shortname: "floor", x: 0, y: 0, z: 1 }, { shortname: "floor", x: 1, y: 0, z: 1 }, { shortname: "floor", x: 2, y: 0, z: 1 },
+                    { shortname: "floor", x: 0, y: 0, z: 2 }, { shortname: "floor", x: 1, y: 0, z: 2 }, { shortname: "floor", x: 2, y: 0, z: 2 },
+                    { shortname: "wall.frame", x: 0, y: 0, z: -1 },
+                    { shortname: "door.hinged.wood", x: 1, y: 0, z: -1 },
+                    { shortname: "cupboard.tool", x: 1, y: 0, z: 1 },
+                    { shortname: "sleepingbag", x: 0, y: 0, z: 3 }, { shortname: "sleepingbag", x: 2, y: 0, z: 3 },
+                    { shortname: "box.wooden", x: 0, y: 0, z: 3 }, { shortname: "box.wooden", x: 2, y: 0, z: 3 }
+                ]
+            }
         ];
     }
 
@@ -34,7 +87,16 @@ class DrainedBases {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/drained/blueprints`);
             if (!res.ok) throw new Error();
             this.blueprints = await res.json();
-            if (!this.blueprints || this.blueprints.length === 0) this.blueprints = this.getDefaultBlueprints();
+            if (!this.blueprints || this.blueprints.length === 0) {
+                this.blueprints = this.getDefaultBlueprints();
+            } else {
+                // Ensure blockData is present
+                this.blueprints = this.blueprints.map(bp => {
+                    const defaultBp = this.getDefaultBlueprints().find(d => d.id === bp.id);
+                    if (defaultBp && !bp.blockData) bp.blockData = defaultBp.blockData;
+                    return bp;
+                });
+            }
         } catch (err) {
             this.blueprints = this.getDefaultBlueprints();
         }
@@ -42,12 +104,29 @@ class DrainedBases {
 
     async loadMyPurchases() {
         const playerId = AppState.user.platformId;
-        if (!playerId) { this.purchases = []; return; }
+        if (!playerId) {
+            // Master still can have purchases stored under 'master' key
+            if (window.accessControl && window.accessControl.isMasterUser()) {
+                const masterPurchases = localStorage.getItem('tdl_master_purchases');
+                this.purchases = masterPurchases ? JSON.parse(masterPurchases) : [];
+                return;
+            }
+            this.purchases = [];
+            return;
+        }
         try {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/drained/purchases/${encodeURIComponent(playerId)}`);
             if (!res.ok) throw new Error();
             this.purchases = await res.json();
-        } catch (err) { this.purchases = []; }
+        } catch (err) { 
+            this.purchases = [];
+        }
+    }
+
+    saveMasterPurchases() {
+        if (window.accessControl && window.accessControl.isMasterUser()) {
+            localStorage.setItem('tdl_master_purchases', JSON.stringify(this.purchases));
+        }
     }
 
     createHTML() {
@@ -79,12 +158,22 @@ class DrainedBases {
     }
 
     async fetchBalance() {
+        const isMaster = window.accessControl && window.accessControl.isMasterUser();
+        if (isMaster) {
+            document.getElementById('bps-player-balance').innerText = '∞ (MASTER)';
+            return;
+        }
         const playerId = AppState.user.platformId;
-        if (!playerId) { document.getElementById('bps-player-balance').innerText = '?'; return; }
+        if (!playerId) { 
+            document.getElementById('bps-player-balance').innerText = '? (Set Platform ID)';
+            return;
+        }
         try {
             const res = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
             document.getElementById('bps-player-balance').innerText = parseInt(res) || 0;
-        } catch { document.getElementById('bps-player-balance').innerText = '?'; }
+        } catch { 
+            document.getElementById('bps-player-balance').innerText = '?';
+        }
     }
 
     updatePlayerDropdown() {
@@ -92,13 +181,14 @@ class DrainedBases {
         if (!select) return;
         const players = AppState.players || [];
         select.innerHTML = '<option value="">Select a player...</option>' + players.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+        if (players.length === 0) select.innerHTML = '<option value="">No players online</option>';
     }
 
     renderGallery() {
         const container = document.getElementById('bps-gallery');
         if (!container) return;
         if (!this.blueprints.length) { container.innerHTML = '<div class="no-blueprints">No blueprints available</div>'; return; }
-        const isMaster = window.accessControl?.isMasterUser() || false;
+        const isMaster = window.accessControl && window.accessControl.isMasterUser();
         container.innerHTML = this.blueprints.map(bp => {
             const owned = this.purchases.some(p => p.blueprint_id === bp.id && !p.deployed_at);
             const priceDisplay = isMaster ? 'FREE (Master)' : `${bp.price} scrap`;
@@ -119,8 +209,8 @@ class DrainedBases {
     }
 
     getItemImage(identifier) {
-        if (identifier.startsWith('http')) return identifier;
-        const shortname = identifier.replace(/_/g, '-');
+        if (identifier && identifier.startsWith('http')) return identifier;
+        const shortname = (identifier || 'wood').replace(/_/g, '-');
         return `https://www.corrosionhour.com/img/items/${shortname}.png`;
     }
 
@@ -139,34 +229,48 @@ class DrainedBases {
     async purchaseBlueprint(blueprintId) {
         const bp = this.blueprints.find(b => b.id === blueprintId);
         if (!bp) return;
-        const playerId = AppState.user.platformId;
-        if (!playerId) { toast.error('Platform ID not set. Go to Profile to add your PSN ID / Gamertag.'); return; }
-        const isMaster = window.accessControl?.isMasterUser() || false;
-
-        if (!isMaster) {
-            try {
-                const balanceRes = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
-                const balance = parseInt(balanceRes) || 0;
-                if (balance < bp.price) { toast.error(`You need ${bp.price} scrap. You have ${balance}.`); return; }
-            } catch { toast.error('Could not verify balance'); return; }
+        
+        const isMaster = window.accessControl && window.accessControl.isMasterUser();
+        
+        // Master bypass: no platform ID, no scrap deduction
+        if (isMaster) {
+            if (!confirm(`Purchase "${bp.name}" for FREE as Master?`)) return;
+            // Record purchase locally
+            const purchaseRecord = { blueprint_id: bp.id, deployed_at: null, purchased_at: new Date().toISOString() };
+            this.purchases.push(purchaseRecord);
+            this.saveMasterPurchases();
+            toast.success(`Blueprint "${bp.name}" purchased for free (Master)`);
+            this.renderGallery();
+            this.renderOwned();
+            return;
         }
-
-        if (!confirm(`Purchase "${bp.name}" ${isMaster ? 'for free' : `for ${bp.price} scrap`}?`)) return;
-
+        
+        // Normal player flow
+        const playerId = AppState.user.platformId;
+        if (!playerId) {
+            toast.error('Platform ID not set. Go to Profile to add your PSN ID / Gamertag.');
+            return;
+        }
+        
+        if (!confirm(`Purchase "${bp.name}" for ${bp.price} scrap?`)) return;
+        
         try {
-            if (!isMaster) {
-                await ConnectionManager.executeCommand(`economy.remove "${playerId}" ${bp.price}`);
-            }
+            const balanceRes = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
+            const balance = parseInt(balanceRes) || 0;
+            if (balance < bp.price) { toast.error(`You need ${bp.price} scrap. You have ${balance}.`); return; }
+        } catch { toast.error('Could not verify balance'); return; }
+        
+        try {
+            await ConnectionManager.executeCommand(`economy.remove "${playerId}" ${bp.price}`);
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/drained/purchase`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId, blueprintId: bp.id, price: isMaster ? 0 : bp.price })
+                body: JSON.stringify({ playerId, blueprintId: bp.id, price: bp.price })
             });
             const data = await res.json();
             if (!data.success) throw new Error(data.error || 'Purchase failed');
             toast.success(`Blueprint "${bp.name}" purchased!`);
             await this.loadMyPurchases();
             this.renderGallery(); this.renderOwned(); this.fetchBalance();
-            // If master, automatically deploy for self? No, let them click deploy.
         } catch (err) { toast.error(err.message); }
     }
 
@@ -180,10 +284,12 @@ class DrainedBases {
         const blueprintId = this.deployingId;
         if (!blueprintId) return;
         const bp = this.blueprints.find(b => b.id === blueprintId);
-        if (!bp) { toast.error('Blueprint not found'); return; }
+        if (!bp || !bp.blockData) { toast.error('Blueprint data missing'); return; }
+        
         const select = document.getElementById('deploy-player-select');
         const targetPlayer = select.value;
         if (!targetPlayer) { toast.error('Select a player'); return; }
+        
         let position = null;
         try {
             const posRaw = await ConnectionManager.executeCommand(`player.position "${targetPlayer}"`);
@@ -191,15 +297,10 @@ class DrainedBases {
             if (match) position = { x: parseFloat(match[1]), y: parseFloat(match[2]), z: parseFloat(match[3]) };
             else throw new Error('Could not parse position');
         } catch (err) { toast.error(`Failed to get player position: ${err.message}`); document.getElementById('deploy-modal').classList.add('hidden'); return; }
-
-        // Get the actual block list from the full blueprint (we need to store blocks in the blueprint)
-        // For simplicity, we'll define blocks inline or fetch from server. Here we use the hardcoded ones.
-        const blocks = this.getBlocksForBlueprint(bp.name);
-        if (!blocks) { toast.error('Blueprint block data missing'); return; }
-
+        
         const offsetX = 2, offsetZ = 2;
         let successCount = 0;
-        for (const block of blocks) {
+        for (const block of bp.blockData) {
             const cmd = `spawn ${block.shortname} ${position.x + block.x + offsetX} ${position.y + block.y + 0.5} ${position.z + block.z + offsetZ}`;
             try {
                 await ConnectionManager.executeCommand(cmd);
@@ -207,44 +308,28 @@ class DrainedBases {
                 await new Promise(r => setTimeout(r, 150));
             } catch (err) { console.error(err); }
         }
-
+        
         if (successCount > 0) {
-            try {
-                await fetch(`${AppState.connection.bridgeUrl}/api/drained/deploy`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerId: AppState.user.platformId, blueprintId })
-                });
-            } catch (err) { console.warn(err); }
-            await this.loadMyPurchases();
+            // Mark as deployed
+            if (window.accessControl && window.accessControl.isMasterUser()) {
+                const purchase = this.purchases.find(p => p.blueprint_id === blueprintId && !p.deployed_at);
+                if (purchase) purchase.deployed_at = new Date().toISOString();
+                this.saveMasterPurchases();
+            } else {
+                try {
+                    await fetch(`${AppState.connection.bridgeUrl}/api/drained/deploy`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ playerId: AppState.user.platformId, blueprintId })
+                    });
+                } catch (err) { console.warn(err); }
+                await this.loadMyPurchases();
+            }
             this.renderGallery(); this.renderOwned();
-            toast.success(`Base deployed for ${targetPlayer}! ${successCount}/${blocks.length} blocks placed.`);
+            toast.success(`Base deployed for ${targetPlayer}! ${successCount}/${bp.blockData.length} blocks placed.`);
         } else { toast.error('Failed to deploy base. Check logs.'); }
+        
         document.getElementById('deploy-modal').classList.add('hidden');
         this.deployingId = null;
-    }
-
-    getBlocksForBlueprint(name) {
-        if (name.includes('2x1')) return [
-            { shortname: "wall.frame", x: 0, y: 0, z: 0 }, { shortname: "floor", x: 0, y: 0, z: 1 },
-            { shortname: "door.hinged.wood", x: 0, y: 0, z: -1 }, { shortname: "cupboard.tool", x: 0, y: 0, z: 1 },
-            { shortname: "sleepingbag", x: 1, y: 0, z: 0 }
-        ];
-        if (name.includes('2x2')) return [
-            { shortname: "wall.frame", x: 0, y: 0, z: 0 }, { shortname: "floor", x: 0, y: 0, z: 1 },
-            { shortname: "floor", x: 1, y: 0, z: 0 }, { shortname: "floor", x: 1, y: 0, z: 1 },
-            { shortname: "door.hinged.wood", x: 0, y: 0, z: -1 }, { shortname: "cupboard.tool", x: 1, y: 0, z: 1 },
-            { shortname: "sleepingbag", x: 0, y: 0, z: 2 }, { shortname: "sleepingbag", x: 2, y: 0, z: 0 },
-            { shortname: "box.wooden", x: 0, y: 0, z: 2 }
-        ];
-        if (name.includes('3x3')) return [
-            { shortname: "floor", x: 0, y: 0, z: 0 }, { shortname: "floor", x: 1, y: 0, z: 0 }, { shortname: "floor", x: 2, y: 0, z: 0 },
-            { shortname: "floor", x: 0, y: 0, z: 1 }, { shortname: "floor", x: 1, y: 0, z: 1 }, { shortname: "floor", x: 2, y: 0, z: 1 },
-            { shortname: "floor", x: 0, y: 0, z: 2 }, { shortname: "floor", x: 1, y: 0, z: 2 }, { shortname: "floor", x: 2, y: 0, z: 2 },
-            { shortname: "wall.frame", x: 0, y: 0, z: -1 }, { shortname: "door.hinged.wood", x: 1, y: 0, z: -1 },
-            { shortname: "cupboard.tool", x: 1, y: 0, z: 1 }, { shortname: "sleepingbag", x: 0, y: 0, z: 3 }, { shortname: "sleepingbag", x: 2, y: 0, z: 3 },
-            { shortname: "box.wooden", x: 0, y: 0, z: 3 }, { shortname: "box.wooden", x: 2, y: 0, z: 3 }
-        ];
-        return [];
     }
 
     attachEvents() {
