@@ -650,3 +650,99 @@ tr:hover td {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
 }
+
+/* ========== DRAINED LAND'S BASES ========== */
+.bps-container {
+    padding: 1rem;
+}
+.bps-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.bps-balance {
+    background: var(--bg-tertiary);
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-weight: 600;
+}
+.bps-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.bp-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 1.2rem;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.bp-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent-primary);
+}
+.bp-icon {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+.bp-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    margin-bottom: 0.3rem;
+}
+.bp-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    min-height: 50px;
+}
+.bp-price {
+    font-weight: 600;
+    background: var(--bg-tertiary);
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+}
+.bp-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+.bp-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.bp-btn.primary {
+    background: var(--accent-primary);
+    color: #000;
+}
+.bp-owned {
+    margin-top: 2rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+.owned-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--glass-border);
+}

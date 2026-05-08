@@ -1,5 +1,5 @@
 // sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
-// Manages top horizontal tabs: user selects up to 4 tabs, Settings is always the 5th.
+// Manages the customizable sidebar navigation.
 
 class SidebarManager {
     constructor() {
@@ -27,9 +27,11 @@ class SidebarManager {
             { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "master" },
             { id: "shop", name: "Shop", icon: "🏪", requiredRole: "user" },
             { id: "more", name: "More Tools", icon: "📊", requiredRole: "master" },
-            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "master" }
+            { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user" }
         ];
-        this.maxUserTabs = 4;   // user can select up to 4, Settings is fixed as 5th
+        this.settingsTab = { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "master" };
+        this.defaultSelectedIds = ["home", "players", "livemap", "items", "kits", "drained-bases"];
+        this.maxTabs = 6;
         this.selectedIds = [];
         this.access = window.accessControl;
         this.init();
@@ -37,23 +39,21 @@ class SidebarManager {
 
     init() {
         this.loadSelection();
-        this.renderTopTabs();
-        this.attachSettingsEvents();
+        this.renderSidebar();
+        this.addEventDelegation();
         window.addEventListener('tab-changed', () => this.highlightActiveTab());
-        window.addEventListener('user-role-changed', () => this.renderTopTabs());
     }
 
     loadSelection() {
         const saved = localStorage.getItem('tdl_selected_tabs');
         if (saved) {
             this.selectedIds = JSON.parse(saved);
-            if (this.selectedIds.length > this.maxUserTabs) {
-                this.selectedIds = this.selectedIds.slice(0, this.maxUserTabs);
+            if (this.selectedIds.length > this.maxTabs) {
+                this.selectedIds = this.selectedIds.slice(0, this.maxTabs);
                 this.saveSelection();
             }
         } else {
-            // Default: home, players, livemap, items
-            this.selectedIds = ["home", "players", "livemap", "items"];
+            this.selectedIds = [...this.defaultSelectedIds];
             this.saveSelection();
         }
     }
@@ -65,7 +65,6 @@ class SidebarManager {
     getAvailableTabs() {
         const role = AppState.user?.role || 'user';
         return this.allTabs.filter(tab => {
-            if (tab.id === 'settings') return false; // settings handled separately
             if (tab.requiredRole === 'user') return true;
             if (tab.requiredRole === 'master') return this.access.hasRole('master');
             if (tab.requiredRole === 'owner') return this.access.hasRole('owner');
@@ -73,82 +72,79 @@ class SidebarManager {
         });
     }
 
-    renderTopTabs() {
-        const container = document.getElementById('top-tab-bar');
+    renderSidebar() {
+        const container = document.getElementById('sidebar-nav-container');
         if (!container) return;
 
         let html = '';
-        // Add user-selected tabs
         for (const id of this.selectedIds) {
             const tab = this.allTabs.find(t => t.id === id);
-            if (tab && (tab.requiredRole === 'user' || this.access.hasRole(tab.requiredRole))) {
-                html += `<button class="tab-btn" data-tab="${tab.id}">${tab.icon} ${tab.name}</button>`;
+            if (tab) {
+                html += `<a href="#" class="nav-item" data-tab="${tab.id}"><span class="nav-icon">${tab.icon}</span> <span class="nav-text">${tab.name}</span></a>`;
             }
         }
-        // Always add Settings if user has master role (or if CooseTheGeek)
-        if (this.access.hasRole('master') || (AppState.user?.username === 'CooseTheGeek')) {
-            html += `<button class="tab-btn" data-tab="settings">⚙️ Settings</button>`;
-        }
-        // Ensure Master Control is shown for CooseTheGeek (override)
-        if (AppState.user?.username === 'CooseTheGeek' && !this.selectedIds.includes('master')) {
-            // Prepend master control as first tab
-            html = `<button class="tab-btn" data-tab="master">👑 Master Control</button>` + html;
-        }
+        html += `<a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>`;
         container.innerHTML = html;
-
         this.highlightActiveTab();
     }
 
     highlightActiveTab() {
         const activeTabId = document.querySelector('.tab-pane.active')?.id?.replace('tab-', '');
         if (!activeTabId) return;
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            if (btn.dataset.tab === activeTabId) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if (item.dataset.tab === activeTabId) item.classList.add('active');
+            else item.classList.remove('active');
+        });
+    }
+
+    addEventDelegation() {
+        const container = document.getElementById('sidebar-nav-container');
+        if (!container) return;
+        container.addEventListener('click', (e) => {
+            const item = e.target.closest('.nav-item');
+            if (item && item.dataset.tab) {
+                e.preventDefault();
+                const tabId = item.dataset.tab;
+                window.switchTab(tabId);
             }
         });
     }
 
     getSelectionUI() {
         const available = this.getAvailableTabs();
-        let html = `<div class="sidebar-customizer"><h3>Select up to ${this.maxUserTabs} tabs for the top bar (Settings is always added)</h3>`;
-        html += '<div class="tab-selection-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:0.8rem;">';
-        available.forEach(tab => {
+        const filtered = available.filter(t => t.id !== 'settings');
+        let html = `<div class="sidebar-customizer"><h3>Select up to ${this.maxTabs} sidebar tabs</h3>`;
+        html += '<div class="tab-selection-list">';
+        filtered.forEach(tab => {
             const isChecked = this.selectedIds.includes(tab.id);
             html += `
-                <label class="tab-checkbox" style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
-                    <input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${this.selectedIds.length >= this.maxUserTabs && !isChecked ? 'disabled' : ''}>
+                <label class="tab-checkbox">
+                    <input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${this.selectedIds.length >= this.maxTabs && !isChecked ? 'disabled' : ''}>
                     <span class="tab-icon">${tab.icon}</span> ${tab.name}
                 </label>
             `;
         });
-        html += '</div><button id="save-sidebar-tabs" class="settings-btn primary" style="margin-top:1rem;">Save Top Tabs</button></div>';
+        html += '</div><button id="save-sidebar-tabs" class="settings-btn primary">Save Sidebar Tabs</button></div>';
         return html;
     }
 
     attachSettingsEvents() {
         const saveBtn = document.getElementById('save-sidebar-tabs');
         if (saveBtn) {
-            // Remove old listener to avoid duplicates
-            const newBtn = saveBtn.cloneNode(true);
-            saveBtn.parentNode.replaceChild(newBtn, saveBtn);
-            newBtn.addEventListener('click', () => {
+            saveBtn.addEventListener('click', () => {
                 const checkboxes = document.querySelectorAll('.tab-checkbox input:checked');
                 const newIds = Array.from(checkboxes).map(cb => cb.value);
-                if (newIds.length > this.maxUserTabs) {
-                    toast.error(`You can only select up to ${this.maxUserTabs} tabs`);
+                if (newIds.length > this.maxTabs) {
+                    toast.error(`You can only select up to ${this.maxTabs} tabs`);
                     return;
                 }
                 this.selectedIds = newIds;
                 this.saveSelection();
-                this.renderTopTabs();
-                toast.success('Top tabs updated');
-                // Update disabled states
+                this.renderSidebar();
+                toast.success('Sidebar updated');
                 const allCbs = document.querySelectorAll('.tab-checkbox input');
                 allCbs.forEach(cb => {
-                    cb.disabled = this.selectedIds.length >= this.maxUserTabs && !cb.checked;
+                    cb.disabled = this.selectedIds.length >= this.maxTabs && !cb.checked;
                 });
             });
         }

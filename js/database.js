@@ -140,3 +140,44 @@ class Database {
 document.addEventListener('DOMContentLoaded', () => {
     window.database = new Database();
 });
+
+    // ==================== DRAINED BASES ====================
+    async getBlueprints() {
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/drained/blueprints`);
+            if (!res.ok) throw new Error('Failed to fetch blueprints');
+            return await res.json();
+        } catch (err) {
+            console.error('Database.getBlueprints error:', err);
+            return [];
+        }
+    }
+
+    async purchaseBlueprint(playerId, blueprintId, price) {
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/drained/purchase`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerId, blueprintId, price })
+            });
+            const data = await res.json();
+            return data.success;
+        } catch (err) {
+            console.error('Database.purchaseBlueprint error:', err);
+            return false;
+        }
+    }
+
+    async markDeployed(playerId, blueprintId) {
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/drained/deploy`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerId, blueprintId })
+            });
+            return res.ok;
+        } catch (err) {
+            console.error('Database.markDeployed error:', err);
+            return false;
+        }
+    }
