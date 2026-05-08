@@ -32,11 +32,10 @@ class More {
                     </div>
                 </div>
                 <div class="more-categories" id="more-categories">
-                    <!-- Categories will be injected here -->
+                    <div class="loading">Loading tools...</div>
                 </div>
             </div>
         `;
-
         this.renderCategories();
     }
 
@@ -46,7 +45,6 @@ class More {
         });
     }
 
-    // Define all tools with their categories
     getTools() {
         return [
             // Server Management
@@ -59,7 +57,6 @@ class More {
             { tab: 'gportal', icon: '🔌', name: 'GPortal', desc: 'GPortal connector', category: 'server' },
             { tab: 'health', icon: '📡', name: 'Health', desc: 'Connection health', category: 'server' },
             { tab: 'recovery', icon: '🔄', name: 'Recovery', desc: 'Auto-recovery', category: 'server' },
-
             // Player Management
             { tab: 'playerHub', icon: '📊', name: 'Player Hub', desc: 'Player statistics hub', category: 'player' },
             { tab: 'profiling', icon: '🎯', name: 'Profiling', desc: 'Player profiling', category: 'player' },
@@ -72,8 +69,6 @@ class More {
             { tab: 'trading', icon: '💰', name: 'Trading', desc: 'Trading floor', category: 'player' },
             { tab: 'defense', icon: '🛡️', name: 'Defense', desc: 'Base defense simulator', category: 'player' },
             { tab: 'alliance', icon: '🤝', name: 'Alliance', desc: 'Alliance network', category: 'player' },
-            { tab: 'drainedAI', icon: '🤖', name: 'Drained AI', desc: 'AI assistant', category: 'player' },
-
             // World Management
             { tab: 'world', icon: '🌍', name: 'World', desc: 'World controls', category: 'world' },
             { tab: 'monuments', icon: '🏛️', name: 'Monuments', desc: 'Monument controls', category: 'world' },
@@ -84,7 +79,6 @@ class More {
             { tab: 'heatmap', icon: '🔥', name: 'Heatmap', desc: 'Activity heatmap', category: 'world' },
             { tab: 'map3d', icon: '🏔️', name: '3D Map', desc: '3D map view', category: 'world' },
             { tab: 'livemap', icon: '🗺️', name: 'Live Map', desc: 'Live player map', category: 'world' },
-
             // Game Mechanics
             { tab: 'decay', icon: '⏳', name: 'Decay', desc: 'Decay & upkeep settings', category: 'mechanics' },
             { tab: 'modifiers', icon: '⚙️', name: 'Modifiers', desc: 'Item modifiers', category: 'mechanics' },
@@ -97,7 +91,6 @@ class More {
             { tab: 'heli', icon: '🚁', name: 'Helicopter', desc: 'Helicopter controls', category: 'mechanics' },
             { tab: 'underwater', icon: '🌊', name: 'Underwater', desc: 'Underwater controls', category: 'mechanics' },
             { tab: 'halloween', icon: '🎃', name: 'Halloween', desc: 'Halloween event', category: 'mechanics' },
-
             // Integration & Settings
             { tab: 'discord', icon: '🔗', name: 'Discord', desc: 'Discord integration', category: 'integration' },
             { tab: 'voice', icon: '🎤', name: 'Voice', desc: 'Voice commands', category: 'integration' },
@@ -124,7 +117,6 @@ class More {
             t.desc.toLowerCase().includes(filter)
         ) : tools;
 
-        // Group by category
         const categories = {
             server: { name: '🖥️ Server Management', icon: '🖥️', tools: [] },
             player: { name: '👥 Player Management', icon: '👥', tools: [] },
@@ -134,9 +126,7 @@ class More {
         };
 
         filtered.forEach(tool => {
-            if (categories[tool.category]) {
-                categories[tool.category].tools.push(tool);
-            }
+            if (categories[tool.category]) categories[tool.category].tools.push(tool);
         });
 
         let html = '';
@@ -145,7 +135,7 @@ class More {
             html += `
                 <div class="more-category">
                     <h3>${cat.icon} ${cat.name}</h3>
-                    <div class="more-grid" data-category="${key}">
+                    <div class="more-grid">
                         ${cat.tools.map(tool => `
                             <div class="more-card" data-tab="${tool.tab}">
                                 <div class="card-icon">${tool.icon}</div>
@@ -158,17 +148,14 @@ class More {
             `;
         }
 
-        if (filtered.length === 0) {
-            html = '<div class="no-results">No tools match your search</div>';
-        }
-
+        if (filtered.length === 0) html = '<div class="no-results">No tools match your search</div>';
         container.innerHTML = html;
 
-        // Re-attach click events
         container.querySelectorAll('.more-card').forEach(card => {
             card.addEventListener('click', () => {
                 const tab = card.dataset.tab;
-                if (tab) this.switchToTab(tab);
+                if (tab && window.switchTab) window.switchTab(tab);
+                else toast.error(`Tab "${tab}" not found`);
             });
         });
     }
@@ -177,29 +164,12 @@ class More {
         this.renderCategories(query);
     }
 
-    switchToTab(tabId) {
-        if (window.homeTab && typeof window.homeTab.switchToTab === 'function') {
-            window.homeTab.switchToTab(tabId);
-            return;
-        }
-        // Fallback: manual tab switching
-        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-        const targetPane = document.getElementById(`tab-${tabId}`);
-        if (targetPane) {
-            targetPane.classList.add('active');
-            window.dispatchEvent(new CustomEvent('tab-changed', { detail: { tab: tabId } }));
-        } else {
-            this.tablet.showError(`Tab "${tabId}" not found`);
-        }
-    }
-
     refresh() {
         this.renderCategories();
-        this.tablet.showToast('More tools refreshed', 'success');
+        toast.success('More tools refreshed');
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.more = new More();
 });
