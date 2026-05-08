@@ -6,9 +6,8 @@ class GPortalConnector {
         this.discordLinked = localStorage.getItem('discord_linked') === 'true';
         this.discordId = localStorage.getItem('discord_id');
         this.servers = [];
-        this.serverIdentifier = 'main-server';
         this.apiReady = false;
-        this.lastStatus = null;
+        this.connectedServer = null;
         this.init();
     }
 
@@ -19,7 +18,6 @@ class GPortalConnector {
         if (this.discordId) {
             this.loadServers();
             this.checkApiStatus();
-            this.fetchStatus();
         }
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'gportal') this.refresh();
@@ -32,8 +30,9 @@ class GPortalConnector {
         if (!statusDot || !statusText) return;
         if (this.apiReady && this.connectedServer) {
             statusDot.className = 'dot online';
-            statusText.innerText = 'CONNECTED (GPortal)';
+            statusText.innerText = `CONNECTED (${this.connectedServer.name || 'GPortal'})`;
             AppState.connection.status = 'connected';
+            if (window.ConnectionManager) ConnectionManager.notify();
         } else if (this.apiReady) {
             statusDot.className = 'dot connecting';
             statusText.innerText = 'CONNECTING...';
@@ -41,8 +40,8 @@ class GPortalConnector {
             statusDot.className = 'dot offline';
             statusText.innerText = 'DISCONNECTED';
             AppState.connection.status = 'disconnected';
+            if (window.ConnectionManager) ConnectionManager.notify();
         }
-        if (window.ConnectionManager) ConnectionManager.notify();
     }
 
     createHTML() {
@@ -54,14 +53,13 @@ class GPortalConnector {
                 <div class="gportal-header">
                     <h2>🔌 GPORTAL CONNECTOR</h2>
                     <div class="api-status" id="gportal-api-status">
-                        API Status: <span class="status-badge ${this.apiReady ? 'online' : 'offline'}">${this.apiReady ? 'Connected' : 'Unknown'}</span>
+                        API Status: <span class="status-badge ${this.apiReady ? 'online' : 'offline'}">${this.apiReady ? 'Ready' : 'Unknown'}</span>
                     </div>
                 </div>
-
                 <div class="gportal-grid">
                     <div class="gportal-section">
                         <h3>🔗 CONNECT WITH DISCORD</h3>
-                        <p>Link your Discord account to manage your servers.</p>
+                        <p>Link your Discord account to save your servers.</p>
                         <button id="discord-connect-btn" class="gportal-btn primary">
                             ${this.discordLinked ? '✅ Discord Connected' : '🔗 Connect Discord'}
                         </button>
@@ -70,14 +68,15 @@ class GPortalConnector {
 
                     ${this.discordLinked ? `
                     <div class="gportal-section">
-                        <h3>➕ ADD SERVER</h3>
+                        <h3>➕ ADD / CONNECT SERVER</h3>
                         <div class="form-group"><label>Server Name:</label><input type="text" id="server-name" placeholder="My Rust Server"></div>
                         <div class="form-group"><label>IP Address:</label><input type="text" id="server-ip" value="144.126.137.59"></div>
                         <div class="form-group"><label>RCON Port:</label><input type="number" id="server-port" value="28916"></div>
                         <div class="form-group"><label>RCON Password:</label><input type="password" id="server-password" value="Myakspray1215"></div>
                         <div class="form-group"><label>Server ID (optional):</label><input type="text" id="server-id" value="1879409"></div>
-                        <div class="form-group"><label>Region (int/eur):</label><input type="text" id="server-region" value="int"></div>
-                        <button id="add-server-btn" class="gportal-btn">ADD SERVER</button>
+                        <div class="form-group"><label>Region:</label><input type="text" id="server-region" value="int"></div>
+                        <button id="save-server-btn" class="gportal-btn primary">💾 SAVE SERVER</button>
+                        <button id="connect-saved-btn" class="gportal-btn" style="margin-top:0.5rem;">🔌 CONNECT SELECTED</button>
                     </div>
 
                     <div class="gportal-section">
@@ -95,43 +94,36 @@ class GPortalConnector {
 
                     <div class="gportal-section">
                         <h3>📊 SERVER STATUS</h3>
-                        <pre id="gportal-server-status" class="status-pre">Loading...</pre>
+                        <pre id="gportal-server-status" class="status-pre">Not connected</pre>
                         <button id="gportal-refresh-status" class="gportal-btn small">🔄 Refresh</button>
                     </div>
                     ` : ''}
                 </div>
-
-                <div class="gportal-logs" id="gportal-logs">
-                    <h3>📋 CONNECTION LOGS</h3>
-                    <div id="gportal-log-list"></div>
-                </div>
+                <div class="gportal-logs"><h3>📋 CONNECTION LOGS</h3><div id="gportal-log-list"></div></div>
             </div>
         `;
     }
 
     attachEvents() {
         document.getElementById('discord-connect-btn')?.addEventListener('click', () => this.connectDiscord());
-        if (this.discordLinked) {
-            document.getElementById('add-server-btn')?.addEventListener('click', (e) => this.addServer(e));
-            document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
-            document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
-            document.getElementById('refresh-servers-btn')?.addEventListener('click', () => this.loadServers());
-            document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.sendCommand();
-            });
-        }
+        if (!this.discordLinked) return;
+
+        document.getElementById('save-server-btn')?.addEventListener('click', () => this.saveServer());
+        document.getElementById('connect-saved-btn')?.addEventListener('click', () => this.connectSelectedServer());
+        document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
+        document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
+        document.getElementById('refresh-servers-btn')?.addEventListener('click', () => this.loadServers());
+        document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.sendCommand();
+        });
     }
 
     connectDiscord() {
         window.location.href = `${this.bridgeUrl}/api/discord/login`;
     }
 
-    async addServer(e) {
-        if (!this.discordId) { toast.error('You must link Discord first'); return; }
-        const btn = e.currentTarget;
-        btn.disabled = true;
-        btn.textContent = 'ADDING...';
-
+    async saveServer() {
+        if (!this.discordId) { toast.error('Link Discord first'); return; }
         const name = document.getElementById('server-name').value.trim();
         const ip = document.getElementById('server-ip').value.trim();
         const port = parseInt(document.getElementById('server-port').value);
@@ -140,12 +132,10 @@ class GPortalConnector {
         const region = document.getElementById('server-region').value.trim();
 
         if (!name || !ip || !port || !password) {
-            toast.error('Name, IP, port, and password are required');
-            btn.disabled = false; btn.textContent = 'ADD SERVER';
+            toast.error('Name, IP, port, and password required');
             return;
         }
 
-        this.logMessage(`Adding server ${name}...`);
         try {
             const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`, {
                 method: 'POST',
@@ -154,32 +144,60 @@ class GPortalConnector {
             });
             const data = await res.json();
             if (data.success) {
-                this.logMessage('✅ Server added');
-                toast.success('Server added successfully');
+                toast.success(`Server "${name}" saved`);
                 await this.loadServers();
-                // Auto-connect to the newly added server (or first in list)
-                this.connectedServer = { ip, port, password, name };
+                // Auto-select this server
+                this.connectedServer = { name, ip, port, password };
                 this.apiReady = true;
                 this.updateHeaderStatus();
-                this.fetchStatus();
+                // Test connection
+                await this.testConnection(ip, port, password);
             } else {
-                this.logMessage(`❌ Failed: ${data.error}`);
-                toast.error(data.error || 'Failed to add server');
+                toast.error(data.error || 'Save failed');
             }
         } catch (err) {
-            this.logMessage(`❌ Error: ${err.message}`);
             toast.error('Network error');
-        } finally {
-            btn.disabled = false; btn.textContent = 'ADD SERVER';
         }
+    }
+
+    async testConnection(ip, port, password) {
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip, port, password, command: 'status' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success('Connection successful');
+                this.apiReady = true;
+                this.updateHeaderStatus();
+                await this.fetchStatus();
+            } else {
+                toast.error('Connection failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            toast.error('Connection error: ' + err.message);
+        }
+    }
+
+    async connectSelectedServer() {
+        const select = document.getElementById('servers-list').querySelector('select');
+        if (!select || !select.value) { toast.error('Select a server first'); return; }
+        const serverId = select.value;
+        const server = this.servers.find(s => s.id == serverId);
+        if (!server) return;
+        this.connectedServer = { name: server.name, ip: server.ip, port: server.port, password: server.password };
+        this.apiReady = true;
+        this.updateHeaderStatus();
+        await this.testConnection(server.ip, server.port, server.password);
     }
 
     async loadServers() {
         if (!this.discordId) return;
         try {
             const res = await fetch(`${this.bridgeUrl}/api/user/servers?discord_id=${this.discordId}`);
-            const servers = await res.json();
-            this.servers = servers;
+            this.servers = await res.json();
             this.renderServers();
         } catch (err) {
             this.logMessage(`❌ Failed to load servers: ${err.message}`);
@@ -189,73 +207,54 @@ class GPortalConnector {
     renderServers() {
         const container = document.getElementById('servers-list');
         if (!container) return;
-        if (this.servers.length === 0) { container.innerHTML = '<p>No servers added yet.</p>'; return; }
-        container.innerHTML = this.servers.map(s => `
-            <div class="server-card">
-                <div class="server-name">${s.name}</div>
-                <div class="server-details">${s.ip}:${s.port}</div>
-                <div class="server-actions">
-                    <button class="small-btn connect-server" data-ip="${s.ip}" data-port="${s.port}" data-pass="${s.password}" data-name="${s.name}">Connect</button>
-                    <button class="small-btn delete-server" data-id="${s.id}">Delete</button>
-                </div>
-            </div>
-        `).join('');
+        if (this.servers.length === 0) {
+            container.innerHTML = '<p>No servers saved. Add one above.</p>';
+            return;
+        }
+        let html = '<select id="server-select" style="width:100%; margin-bottom:0.5rem;">';
+        this.servers.forEach(s => {
+            html += `<option value="${s.id}">${s.name} (${s.ip}:${s.port})</option>`;
+        });
+        html += '</select><div style="display:flex; gap:0.5rem;">';
+        html += `<button class="small-btn connect-server-btn">🔌 Connect</button>`;
+        html += `<button class="small-btn delete-server-btn">🗑️ Delete</button></div>`;
+        container.innerHTML = html;
 
-        container.querySelectorAll('.connect-server').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const ip = btn.dataset.ip, port = btn.dataset.port, password = btn.dataset.pass, name = btn.dataset.name;
-                this.connectedServer = { ip, port, password, name };
+        container.querySelector('.connect-server-btn')?.addEventListener('click', async () => {
+            const id = document.getElementById('server-select').value;
+            const server = this.servers.find(s => s.id == id);
+            if (server) {
+                this.connectedServer = { name: server.name, ip: server.ip, port: server.port, password: server.password };
                 this.apiReady = true;
                 this.updateHeaderStatus();
-                await this.fetchStatus();
-                toast.success(`Connected to ${name}`);
-            });
+                await this.testConnection(server.ip, server.port, server.password);
+            }
         });
-        container.querySelectorAll('.delete-server').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                if (!confirm('Delete this server?')) return;
-                await fetch(`${this.bridgeUrl}/api/user/servers/${btn.dataset.id}?discord_id=${this.discordId}`, { method: 'DELETE' });
-                this.loadServers();
-                toast.success('Server deleted');
-            });
+        container.querySelector('.delete-server-btn')?.addEventListener('click', async () => {
+            const id = document.getElementById('server-select').value;
+            if (!confirm('Delete this server?')) return;
+            await fetch(`${this.bridgeUrl}/api/user/servers/${id}?discord_id=${this.discordId}`, { method: 'DELETE' });
+            this.loadServers();
+            toast.success('Server deleted');
         });
-    }
-
-    async checkApiStatus() {
-        try {
-            const res = await fetch(`${this.bridgeUrl}/api/gportal/command`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: 'status' })
-            });
-            this.apiReady = res.ok;
-        } catch { this.apiReady = false; }
-        this.updateApiStatusBadge();
-        this.updateHeaderStatus();
-    }
-
-    updateApiStatusBadge() {
-        const badge = document.querySelector('#gportal-api-status .status-badge');
-        if (badge) {
-            badge.className = `status-badge ${this.apiReady ? 'online' : 'offline'}`;
-            badge.innerText = this.apiReady ? 'Connected' : 'Disconnected';
-        }
     }
 
     async sendCommand() {
+        if (!this.connectedServer) { toast.error('No server connected'); return; }
         const cmd = document.getElementById('gportal-command').value.trim();
         if (!cmd) return;
-        this.logMessage(`Sending command: ${cmd}`);
+        this.logMessage(`Sending: ${cmd}`);
         document.getElementById('gportal-command-output').innerText = 'Sending...';
         try {
-            const res = await fetch(`${this.bridgeUrl}/api/gportal/command`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: cmd })
+            const res = await fetch(`${this.bridgeUrl}/api/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip: this.connectedServer.ip, port: this.connectedServer.port, password: this.connectedServer.password, command: cmd })
             });
             const data = await res.json();
             if (data.success) {
                 document.getElementById('gportal-command-output').innerText = data.result || 'Command executed (no output)';
                 this.logMessage(`✅ Command executed`);
-                if (!this.apiReady) { this.apiReady = true; this.updateApiStatusBadge(); this.updateHeaderStatus(); }
             } else {
                 document.getElementById('gportal-command-output').innerText = `Error: ${data.error}`;
                 this.logMessage(`❌ Command failed: ${data.error}`);
@@ -267,33 +266,27 @@ class GPortalConnector {
     }
 
     async fetchStatus() {
+        if (!this.connectedServer) { document.getElementById('gportal-server-status').innerText = 'Not connected'; return; }
         const statusDiv = document.getElementById('gportal-server-status');
-        if (!statusDiv) return;
-        statusDiv.innerText = 'Loading...';
+        statusDiv.innerText = 'Fetching...';
         try {
-            const res = await fetch(`${this.bridgeUrl}/api/gportal/status`);
+            const res = await fetch(`${this.bridgeUrl}/api/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip: this.connectedServer.ip, port: this.connectedServer.port, password: this.connectedServer.password, command: 'status' })
+            });
             const data = await res.json();
-            if (res.ok) {
-                this.lastStatus = data;
-                statusDiv.innerText = JSON.stringify(data, null, 2);
-                this.logMessage('✅ Server status fetched');
-                if (!this.apiReady) { this.apiReady = true; this.updateApiStatusBadge(); this.updateHeaderStatus(); }
+            if (data.success) {
+                statusDiv.innerText = data.result || 'No output';
+                this.logMessage('✅ Status fetched');
             } else {
                 statusDiv.innerText = `Error: ${data.error}`;
-                this.logMessage(`❌ Status fetch failed: ${data.error}`);
+                this.logMessage(`❌ Status failed: ${data.error}`);
             }
         } catch (err) {
             statusDiv.innerText = `Network error: ${err.message}`;
             this.logMessage(`❌ Network error: ${err.message}`);
         }
-    }
-
-    getPlayerCount() {
-        if (!this.lastStatus) return 0;
-        if (this.lastStatus.players) return Array.isArray(this.lastStatus.players) ? this.lastStatus.players.length : parseInt(this.lastStatus.players) || 0;
-        if (this.lastStatus.playerCount) return parseInt(this.lastStatus.playerCount) || 0;
-        if (this.lastStatus.numplayers) return parseInt(this.lastStatus.numplayers) || 0;
-        return 0;
     }
 
     checkDiscordReturn() {
@@ -323,11 +316,7 @@ class GPortalConnector {
         this.discordId = localStorage.getItem('discord_id');
         this.createHTML();
         this.attachEvents();
-        if (this.discordId) {
-            this.loadServers();
-            this.checkApiStatus();
-            this.fetchStatus();
-        }
+        if (this.discordId) this.loadServers();
     }
 }
 

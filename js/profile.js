@@ -23,7 +23,6 @@ class Profile {
         localStorage.setItem('tdl_saved_servers', JSON.stringify(this.savedServers));
     }
 
-    // Load profile data from localStorage (per user)
     loadProfileData() {
         const username = AppState.user?.username || 'default';
         const saved = localStorage.getItem(`tdl_profile_${username}`);
@@ -47,7 +46,6 @@ class Profile {
     saveProfileData(data) {
         const username = AppState.user?.username || 'default';
         localStorage.setItem(`tdl_profile_${username}`, JSON.stringify(data));
-        // Also sync to bridge if needed (future)
     }
 
     init() {
@@ -270,6 +268,20 @@ class Profile {
                     </div>
                 </div>
             </div>
+
+            <!-- Crop Modal (hidden by default) -->
+            <div id="crop-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h3>✂️ Crop Avatar</h3>
+                    <div class="crop-container">
+                        <img id="crop-image" src="" alt="Crop">
+                    </div>
+                    <div class="modal-actions">
+                        <button id="crop-save" class="modal-btn primary">Save</button>
+                        <button id="crop-cancel" class="modal-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
         `;
     }
 
@@ -477,7 +489,6 @@ class Profile {
             platformId: document.getElementById('edit-platform-id')?.value || ''
         };
 
-        // Also update AppState platform if those fields exist
         const platformSelect = document.getElementById('edit-platform');
         const platformIdInput = document.getElementById('edit-platform-id');
         if (platformSelect && platformIdInput) {
@@ -553,7 +564,6 @@ class Profile {
     loadServer(id) {
         const server = this.savedServers.find(s => s.id === id);
         if (!server) return;
-        // Fill in the connection fields in the GPortal tab
         const ipField = document.getElementById('server-ip');
         const portField = document.getElementById('server-port');
         const passField = document.getElementById('server-password');
@@ -576,7 +586,7 @@ class Profile {
     }
 
     connectGPortal() {
-        window.home?.switchToTab('gportal');
+        window.switchTab('gportal');
         toast.info('Please connect your Discord first in the GPortal tab');
     }
 
@@ -608,7 +618,6 @@ class Profile {
     refresh() {
         this.renderServers();
         this.populateUserInfo();
-        // Update Discord button status
         const discordBtn = document.getElementById('connect-discord');
         if (discordBtn) {
             if (localStorage.getItem('discord_linked') === 'true') {
@@ -622,12 +631,10 @@ class Profile {
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.profile = new Profile();
 });
 
-// Update header avatar on load
 document.addEventListener('DOMContentLoaded', () => {
     const headerAvatar = document.getElementById('profile-avatar');
     if (headerAvatar) {
