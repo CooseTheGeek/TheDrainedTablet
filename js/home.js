@@ -1,11 +1,11 @@
 // home.js – DRAINED TABLET ULTIMATE v7.0.0
-// Replaces CPU/RAM/players with Rust character dress‑up system.
+// Rust character dress‑up system with working item gallery and canvas.
 
 class Home {
     constructor() {
         this.tablet = window.drainedTablet;
         this.access = window.accessControl;
-        this.items = window.itemsDatabase || window.items?.items || [];
+        this.items = [];
         this.equipment = this.loadEquipment();
         this.canvas = null;
         this.ctx = null;
@@ -28,12 +28,52 @@ class Home {
         localStorage.setItem('tdl_dressed_character', JSON.stringify(this.equipment));
     }
 
-    init() {
+    async init() {
+        // Wait for items database to be ready
+        await this.loadItemsDatabase();
         this.createHTML();
         this.attachEvents();
         this.startServerUpdates();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'home') this.refresh();
+        });
+    }
+
+    loadItemsDatabase() {
+        return new Promise((resolve) => {
+            if (window.itemsDatabase && window.itemsDatabase.length > 0) {
+                this.items = window.itemsDatabase;
+                resolve();
+            } else if (window.items && window.items.items && window.items.items.length > 0) {
+                this.items = window.items.items;
+                resolve();
+            } else {
+                // Fallback: wait for items.js to load
+                const checkInterval = setInterval(() => {
+                    if (window.itemsDatabase && window.itemsDatabase.length > 0) {
+                        this.items = window.itemsDatabase;
+                        clearInterval(checkInterval);
+                        resolve();
+                    } else if (window.items && window.items.items && window.items.items.length > 0) {
+                        this.items = window.items.items;
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 200);
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    if (this.items.length === 0) {
+                        console.warn('Items database not loaded, using fallback items');
+                        this.items = [
+                            { shortname: 'rock', name: 'Rock', category: 'Tools' },
+                            { shortname: 'torch', name: 'Torch', category: 'Tools' },
+                            { shortname: 'hatchet', name: 'Hatchet', category: 'Tools' },
+                            { shortname: 'rifle.ak', name: 'AK-47', category: 'Weapons' }
+                        ];
+                        resolve();
+                    }
+                }, 3000);
+            }
         });
     }
 
@@ -92,36 +132,48 @@ class Home {
         if (!this.ctx) return;
         this.ctx.clearRect(0, 0, 400, 500);
         
-        // Base silhouette (placeholder – you can replace with a Rust character outline)
-        this.ctx.fillStyle = '#2c3e2f';
-        this.ctx.fillRect(150, 100, 100, 250); // body
-        this.ctx.fillRect(120, 150, 40, 80);  // left arm
-        this.ctx.fillRect(240, 150, 40, 80);  // right arm
-        this.ctx.fillRect(170, 350, 60, 80);  // legs
+        // Draw base Rust survivor silhouette (improved)
+        this.ctx.fillStyle = '#3a5e3a';
+        // Body
+        this.ctx.fillRect(150, 100, 100, 200);
+        // Head
+        this.ctx.fillStyle = '#d2a679';
+        this.ctx.beginPath();
+        this.ctx.ellipse(200, 80, 35, 45, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+        // Left arm
+        this.ctx.fillStyle = '#3a5e3a';
+        this.ctx.fillRect(120, 130, 30, 90);
+        // Right arm
+        this.ctx.fillRect(250, 130, 30, 90);
+        // Left leg
+        this.ctx.fillRect(165, 300, 30, 100);
+        // Right leg
+        this.ctx.fillRect(205, 300, 30, 100);
         
-        // Draw equipped items as images on top
-        this.drawItemOnSlot('head', 175, 70, 50, 50);
-        this.drawItemOnSlot('torso', 170, 130, 60, 80);
-        this.drawItemOnSlot('legs', 170, 230, 60, 80);
-        this.drawItemOnSlot('feet', 170, 320, 60, 40);
-        this.drawItemOnSlot('mainhand', 100, 200, 50, 50);
-        this.drawItemOnSlot('offhand', 250, 200, 50, 50);
+        // Draw equipped items (layer images)
+        this.drawItemOnSlot('head', 165, 40, 70, 70);
+        this.drawItemOnSlot('torso', 155, 100, 90, 120);
+        this.drawItemOnSlot('legs', 165, 220, 70, 90);
+        this.drawItemOnSlot('feet', 165, 320, 70, 40);
+        this.drawItemOnSlot('mainhand', 80, 170, 50, 50);
+        this.drawItemOnSlot('offhand', 270, 170, 50, 50);
     }
 
     drawItemOnSlot(slot, x, y, w, h) {
-        const itemShortname = this.equipment[slot];
-        if (!itemShortname) return;
+        const shortname = this.equipment[slot];
+        if (!shortname) return;
         const img = new Image();
-        const shortnameFormatted = itemShortname.replace(/\./g, '-');
-        img.src = `https://www.corrosionhour.com/img/items/${shortnameFormatted}.png`;
+        const formatted = shortname.replace(/\./g, '-');
+        img.src = `https://www.corrosionhour.com/img/items/${formatted}.png`;
         img.onload = () => {
             this.ctx.drawImage(img, x, y, w, h);
         };
         img.onerror = () => {
-            // fallback text
-            this.ctx.fillStyle = '#aaa';
+            // Fallback text
+            this.ctx.fillStyle = '#fff';
             this.ctx.font = '10px monospace';
-            this.ctx.fillText(itemShortname, x + 5, y + 20);
+            this.ctx.fillText(shortname, x + 5, y + 20);
         };
     }
 
@@ -134,12 +186,12 @@ class Home {
             const filtered = this.items.filter(i => 
                 i.name.toLowerCase().includes(query) || 
                 i.shortname.toLowerCase().includes(query)
-            ).slice(0, 100);
+            ).slice(0, 80);
             container.innerHTML = filtered.map(item => `
                 <div class="item-card" data-shortname="${item.shortname}">
                     <img src="https://www.corrosionhour.com/img/items/${item.shortname.replace(/\./g, '-')}.png" 
                          onerror="this.src='https://via.placeholder.com/32?text=?'">
-                    <span>${item.name}</span>
+                    <span>${item.name.length > 20 ? item.name.slice(0, 18) + '…' : item.name}</span>
                 </div>
             `).join('');
             container.querySelectorAll('.item-card').forEach(card => {
@@ -149,7 +201,7 @@ class Home {
                 });
             });
         };
-        searchInput.addEventListener('input', filterItems);
+        if (searchInput) searchInput.addEventListener('input', filterItems);
         filterItems();
     }
 
@@ -187,7 +239,6 @@ class Home {
 
     attachEvents() {
         document.getElementById('home-refresh')?.addEventListener('click', () => this.refresh());
-        // Slot clicks to clear equipment
         document.querySelectorAll('.equipment-slots .slot').forEach(slotDiv => {
             slotDiv.addEventListener('click', () => {
                 const slot = slotDiv.dataset.slot;
@@ -205,12 +256,14 @@ class Home {
 
     async startServerUpdates() {
         setInterval(async () => {
-            if (AppState.connection.status === 'connected') {
+            if (window.AppState?.connection?.status === 'connected' && window.ConnectionManager) {
                 try {
-                    const players = AppState.players.length;
-                    const uptime = await ConnectionManager.executeCommand('server.uptime');
-                    document.getElementById('player-count').innerText = players;
-                    document.getElementById('uptime').innerText = uptime || '0d 0h 0m';
+                    const players = window.AppState.players?.length || 0;
+                    const uptime = await window.ConnectionManager.executeCommand('server.uptime');
+                    const playerCountEl = document.getElementById('player-count');
+                    const uptimeEl = document.getElementById('uptime');
+                    if (playerCountEl) playerCountEl.innerText = players;
+                    if (uptimeEl) uptimeEl.innerText = uptime || '0d 0h 0m';
                 } catch (e) {}
             }
         }, 5000);
