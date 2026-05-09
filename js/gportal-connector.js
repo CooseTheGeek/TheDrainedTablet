@@ -1,5 +1,4 @@
-// gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Works with master (CooseTheGeek), saves servers, connects via bridge.
+// gportal-connector.js – Force master detection
 
 class GPortalConnector {
     constructor() {
@@ -10,10 +9,21 @@ class GPortalConnector {
     }
 
     async init() {
-        // Determine if current user is master (CooseTheGeek)
+        // Force master if the logged in user is CooseTheGeek or the master code was used
         const username = AppState.user?.username || localStorage.getItem('tdl_username');
-        this.isMaster = (username === 'CooseTheGeek');
+        const isMaster = (username === 'CooseTheGeek');
+        // Also check if master code 0827 was used (stored in session)
+        const session = localStorage.getItem('tdl_session');
+        let isMasterSession = false;
+        if (session) {
+            try {
+                const sess = JSON.parse(session);
+                if (sess.role === 'master') isMasterSession = true;
+            } catch(e) {}
+        }
+        this.isMaster = isMaster || isMasterSession;
         console.log('GPortalConnector: isMaster =', this.isMaster);
+        
         if (this.isMaster) {
             this.loadLocalServers();
         }
@@ -186,7 +196,6 @@ class GPortalConnector {
                 this.updateHeaderStatus(true, server.name);
                 this.logMessage(`✅ Connected to ${server.name}`);
                 toast.success(`Connected to ${server.name}`);
-                // Show output in command output area
                 const outputDiv = document.getElementById('gportal-command-output');
                 if (outputDiv) outputDiv.innerText = data.result || 'Connected';
             } else {
