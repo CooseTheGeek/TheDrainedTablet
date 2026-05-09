@@ -1,34 +1,24 @@
-// gportal-connector.js – Force master detection
+// gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
 
 class GPortalConnector {
     constructor() {
         this.bridgeUrl = AppState.connection.bridgeUrl;
         this.servers = [];
-        this.activeServer = null;
+        this.apiReady = false;
+        this.connectedServer = null;
         this.init();
     }
 
     async init() {
-        // Force master if the logged in user is CooseTheGeek or the master code was used
         const username = AppState.user?.username || localStorage.getItem('tdl_username');
-        const isMaster = (username === 'CooseTheGeek');
-        // Also check if master code 0827 was used (stored in session)
-        const session = localStorage.getItem('tdl_session');
-        let isMasterSession = false;
-        if (session) {
-            try {
-                const sess = JSON.parse(session);
-                if (sess.role === 'master') isMasterSession = true;
-            } catch(e) {}
-        }
-        this.isMaster = isMaster || isMasterSession;
+        this.isMaster = (username === 'CooseTheGeek');
         console.log('GPortalConnector: isMaster =', this.isMaster);
-        
         if (this.isMaster) {
             this.loadLocalServers();
         }
         this.createHTML();
         this.attachEvents();
+        await this.checkApiStatus();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'gportal') this.refresh();
         });
@@ -37,30 +27,50 @@ class GPortalConnector {
     loadLocalServers() {
         const saved = localStorage.getItem('tdl_master_servers');
         this.servers = saved ? JSON.parse(saved) : [];
-        console.log('Loaded servers:', this.servers);
     }
 
     saveLocalServers() {
         localStorage.setItem('tdl_master_servers', JSON.stringify(this.servers));
     }
 
-    updateHeaderStatus(connected = false, serverName = '') {
+    async checkApiStatus() {
+        try {
+            const res = await fetch(`${this.bridgeUrl}/api/health`);
+            const data = await res.json();
+            this.apiReady = data.rceReady === true;
+        } catch (err) {
+            this.apiReady = false;
+        }
+        this.updateApiStatusBadge();
+        this.updateHeaderStatus();
+    }
+
+    updateApiStatusBadge() {
+        const badge = document.querySelector('#gportal-api-status .status-badge');
+        if (badge) {
+            badge.className = `status-badge ${this.apiReady ? 'online' : 'offline'}`;
+            badge.innerText = this.apiReady ? 'Connected' : 'Disconnected';
+        }
+    }
+
+    updateHeaderStatus() {
         const statusDot = document.querySelector('#connection-status .dot');
         const statusText = document.getElementById('conn-status-text');
         if (!statusDot || !statusText) return;
-        if (connected && this.activeServer) {
+        if (this.apiReady && this.connectedServer) {
             statusDot.className = 'dot online';
-            statusText.innerText = `CONNECTED (${serverName})`;
+            statusText.innerText = `CONNECTED (${this.connectedServer.name || 'GPortal'})`;
             AppState.connection.status = 'connected';
-            AppState.connection.server = this.activeServer;
-            if (window.ConnectionManager) ConnectionManager.notify();
+        } else if (this.apiReady) {
+            statusDot.className = 'dot connecting';
+            statusText.innerText = 'CONNECTING...';
+            AppState.connection.status = 'connecting';
         } else {
             statusDot.className = 'dot offline';
             statusText.innerText = 'DISCONNECTED';
             AppState.connection.status = 'disconnected';
-            AppState.connection.server = null;
-            if (window.ConnectionManager) ConnectionManager.notify();
         }
+        if (window.ConnectionManager) ConnectionManager.notify();
     }
 
     createHTML() {
@@ -69,17 +79,20 @@ class GPortalConnector {
         tab.innerHTML = `
             <div class="gportal-container">
                 <div class="gportal-header">
-                    <h2>🔌 SERVER CONNECTOR (RCON)</h2>
+                    <h2>🔌 SERVER CONNECTOR (GPortal API)</h2>
+                    <div class="api-status" id="gportal-api-status">
+                        API Status: <span class="status-badge ${this.apiReady ? 'online' : 'offline'}">${this.apiReady ? 'Connected' : 'Disconnected'}</span>
+                    </div>
                 </div>
                 <div class="gportal-grid">
                     <div class="gportal-section">
                         <h3>➕ ADD / CONNECT SERVER</h3>
                         <div class="form-group"><label>Server Name:</label><input type="text" id="server-name" placeholder="My Rust Server"></div>
-                        <div class="form-group"><label>IP Address:</label><input type="text" id="server-ip" placeholder="144.126.137.59"></div>
+                        <div class="form-group"><label>IP Address:</label><input type="text" id="server-ip" value="144.126.137.59"></div>
                         <div class="form-group"><label>RCON Port:</label><input type="number" id="server-port" value="28916"></div>
-                        <div class="form-group"><label>RCON Password:</label><input type="password" id="server-password" placeholder="Myakspray1215"></div>
+                        <div class="form-group"><label>RCON Password:</label><input type="password" id="server-password" value="Myakspray1215!"></div>
                         <button id="save-server-btn" class="gportal-btn primary">💾 SAVE SERVER</button>
-                        <button id="connect-saved-btn" class="gportal-btn" style="margin-top:0.5rem;">🔌 CONNECT SELECTED</button>
+                        <button id="connect-saved-btn" class="gportal-btn">🔌 CONNECT SELECTED</button>
                     </div>
                     <div class="gportal-section">
                         <h3>📋 YOUR SERVERS</h3>
@@ -103,24 +116,16 @@ class GPortalConnector {
             console.warn('Not master – GPortal controls disabled');
             return;
         }
-        const saveBtn = document.getElementById('save-server-btn');
-        const connectBtn = document.getElementById('connect-saved-btn');
-        const sendBtn = document.getElementById('gportal-send-command');
-        const refreshBtn = document.getElementById('refresh-servers-btn');
-        const commandInput = document.getElementById('gportal-command');
-
-        if (saveBtn) saveBtn.addEventListener('click', (e) => this.saveServer(e));
-        if (connectBtn) connectBtn.addEventListener('click', (e) => this.connectSelectedServer(e));
-        if (sendBtn) sendBtn.addEventListener('click', (e) => this.sendCommand(e));
-        if (refreshBtn) refreshBtn.addEventListener('click', (e) => this.refresh(e));
-        if (commandInput) commandInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.sendCommand(e);
+        document.getElementById('save-server-btn')?.addEventListener('click', () => this.saveServer());
+        document.getElementById('connect-saved-btn')?.addEventListener('click', () => this.connectSelectedServer());
+        document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
+        document.getElementById('refresh-servers-btn')?.addEventListener('click', () => this.refresh());
+        document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.sendCommand();
         });
     }
 
-    saveServer(event) {
-        event.preventDefault();
-        console.log('Save server clicked');
+    saveServer() {
         const name = document.getElementById('server-name').value.trim();
         const ip = document.getElementById('server-ip').value.trim();
         const port = parseInt(document.getElementById('server-port').value);
@@ -134,7 +139,6 @@ class GPortalConnector {
         this.saveLocalServers();
         toast.success(`Server "${name}" saved`);
         this.renderServers();
-        // Clear form
         document.getElementById('server-name').value = '';
         document.getElementById('server-ip').value = '';
         document.getElementById('server-port').value = '28916';
@@ -177,44 +181,39 @@ class GPortalConnector {
     }
 
     async testConnection(server) {
-        this.logMessage(`Testing connection to ${server.name} (${server.ip}:${server.port})...`);
+        this.logMessage(`Testing connection to ${server.name} via GPortal API...`);
         toast.info(`Connecting to ${server.name}...`);
         try {
-            const res = await fetch(`${this.bridgeUrl}/api/command`, {
+            const res = await fetch(`${this.bridgeUrl}/api/gportal/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ip: server.ip,
-                    port: server.port,
-                    password: server.password,
-                    command: 'status'
-                })
+                body: JSON.stringify({ command: 'status' })
             });
             const data = await res.json();
             if (data.success) {
-                this.activeServer = server;
-                this.updateHeaderStatus(true, server.name);
+                this.connectedServer = server;
+                this.apiReady = true;
+                this.updateApiStatusBadge();
+                this.updateHeaderStatus();
                 this.logMessage(`✅ Connected to ${server.name}`);
                 toast.success(`Connected to ${server.name}`);
-                const outputDiv = document.getElementById('gportal-command-output');
-                if (outputDiv) outputDiv.innerText = data.result || 'Connected';
+                document.getElementById('gportal-command-output').innerText = data.result || 'Connected';
             } else {
                 this.logMessage(`❌ Connection failed: ${data.error}`);
                 toast.error(`Connection failed: ${data.error}`);
-                this.activeServer = null;
-                this.updateHeaderStatus(false);
+                this.connectedServer = null;
+                this.updateHeaderStatus();
             }
         } catch (err) {
             this.logMessage(`❌ Network error: ${err.message}`);
             toast.error(`Network error: ${err.message}`);
-            this.activeServer = null;
-            this.updateHeaderStatus(false);
+            this.connectedServer = null;
+            this.updateHeaderStatus();
         }
     }
 
-    async sendCommand(event) {
-        event.preventDefault();
-        if (!this.activeServer) {
+    async sendCommand() {
+        if (!this.connectedServer) {
             toast.error('No active connection. Connect to a server first.');
             return;
         }
@@ -224,26 +223,21 @@ class GPortalConnector {
         const outputDiv = document.getElementById('gportal-command-output');
         if (outputDiv) outputDiv.innerText = 'Executing...';
         try {
-            const res = await fetch(`${this.bridgeUrl}/api/command`, {
+            const res = await fetch(`${this.bridgeUrl}/api/gportal/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ip: this.activeServer.ip,
-                    port: this.activeServer.port,
-                    password: this.activeServer.password,
-                    command: cmd
-                })
+                body: JSON.stringify({ command: cmd })
             });
             const data = await res.json();
             if (data.success) {
-                if (outputDiv) outputDiv.innerText = data.result || 'Command executed (no output)';
+                outputDiv.innerText = data.result || 'Command executed (no output)';
                 this.logMessage(`✅ Command executed`);
             } else {
-                if (outputDiv) outputDiv.innerText = `Error: ${data.error}`;
+                outputDiv.innerText = `Error: ${data.error}`;
                 this.logMessage(`❌ Command failed: ${data.error}`);
             }
         } catch (err) {
-            if (outputDiv) outputDiv.innerText = `Network error: ${err.message}`;
+            outputDiv.innerText = `Network error: ${err.message}`;
             this.logMessage(`❌ Network error: ${err.message}`);
         }
     }
@@ -263,6 +257,7 @@ class GPortalConnector {
             this.loadLocalServers();
             this.renderServers();
         }
+        this.checkApiStatus();
         toast.success('GPortal refreshed');
     }
 }
