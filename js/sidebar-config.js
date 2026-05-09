@@ -24,12 +24,12 @@ class SidebarManager {
             { id: "items", name: "Items", icon: "📦", requiredRole: "master" },
             { id: "kits", name: "Kits", icon: "🧰", requiredRole: "master" },
             { id: "world", name: "World", icon: "🌍", requiredRole: "master" },
-            { id: "backups", name: "Backups", icon: "💾", requiredRole: "owner" },
+            { id: "backups", name: "Backups", icon: "💾", requiredRole: "master" },
             { id: "logs", name: "Logs", icon: "📜", requiredRole: "master" },
             { id: "console", name: "Console", icon: "🖥️", requiredRole: "master" },
-            { id: "gportal", name: "GPortal", icon: "🔌", requiredRole: "owner" },
+            { id: "gportal", name: "GPortal", icon: "🔌", requiredRole: "master" },
             { id: "health", name: "Health", icon: "📡", requiredRole: "master" },
-            { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "owner" },
+            { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "master" },
             { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
             { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" }
         ];
