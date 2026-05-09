@@ -1,5 +1,5 @@
 // shop.js – DRAINED TABLET ULTIMATE v7.0.0
-// Complete shop system with claim integration (fixed default avatar)
+// Complete shop system with admin panel, product management, and player purchase.
 
 class Shop {
     constructor() {
@@ -11,15 +11,40 @@ class Shop {
         this.init();
     }
 
-    init() {
+    async init() {
+        await this.loadItems();
         this.createHTML();
         this.attachEvents();
-        this.loadItems();
         window.addEventListener('tab-changed', (e) => {
-            if (e.detail.tab === 'shop') {
-                this.refresh();
-            }
+            if (e.detail.tab === 'shop') this.refresh();
         });
+    }
+
+    async loadItems() {
+        try {
+            const res = await fetch(`${AppState.connection.bridgeUrl}/api/shop/items`);
+            if (!res.ok) throw new Error('Failed to load shop items');
+            this.items = await res.json();
+        } catch (err) {
+            console.error('Shop load error:', err);
+            this.items = [];
+        }
+        this.renderProducts();
+    }
+
+    getUserPlatformId() {
+        return AppState.user.platformId || localStorage.getItem('tdl_platform_id');
+    }
+
+    async getPlayerBalance() {
+        const playerId = this.getUserPlatformId();
+        if (!playerId) return null;
+        try {
+            const res = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
+            return parseInt(res) || 0;
+        } catch {
+            return null;
+        }
     }
 
     createHTML() {
@@ -31,20 +56,21 @@ class Shop {
         tab.innerHTML = `
             <div class="shop-container" style="padding:1rem;">
                 <div class="shop-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                    <h2 style="color:var(--accent-primary); font-size:2rem;">🏪 SERVER SHOP</h2>
+                    <h2 style="color:var(--accent-primary);">🏪 SERVER SHOP</h2>
+                    <div class="shop-balance" style="background:var(--bg-tertiary); padding:0.5rem 1rem; border-radius:30px;">
+                        💰 Your Scrap: <strong id="shop-player-balance">--</strong>
+                    </div>
                     ${isAdmin ? '<button id="shop-add-product" class="shop-btn primary" style="padding:0.8rem 1.5rem;">+ ADD PRODUCT</button>' : ''}
                 </div>
 
-                <!-- Search & Filter -->
                 <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
-                    <input type="text" id="shop-search" placeholder="Search products..." style="flex:2; min-width:200px; padding:0.8rem 1rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:30px;">
+                    <input type="text" id="shop-search" placeholder="Search items..." style="flex:2; min-width:200px; padding:0.8rem 1rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:30px;">
                     <select id="shop-category-filter" style="flex:1; min-width:150px; padding:0.8rem 1rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:30px;">
                         <option value="all">All Categories</option>
                         ${this.categories.map(c => `<option value="${c}">${c}</option>`).join('')}
                     </select>
                 </div>
 
-                <!-- Products Grid -->
                 <div id="shop-products" class="products-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:1.5rem; margin-bottom:2rem;"></div>
 
                 <!-- Admin Product Modal (Create/Edit) -->
@@ -93,7 +119,7 @@ class Shop {
                                 <input type="number" id="product-quantity" value="1" min="1" style="width:100%; padding:0.8rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;">
                             </div>
                             <div class="form-group" style="margin-bottom:1rem;">
-                                <label style="display:block; margin-bottom:0.3rem; color:var(--text-secondary);">Price (Coins) *</label>
+                                <label style="display:block; margin-bottom:0.3rem; color:var(--text-secondary);">Price (Scrap) *</label>
                                 <input type="number" id="product-price" value="0" min="0" style="width:100%; padding:0.8rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;">
                             </div>
                             <div class="form-group" style="margin-bottom:1rem;">
@@ -121,173 +147,159 @@ class Shop {
             </div>
         `;
 
-        // Add custom styles for product cards
-        const style = document.createElement('style');
-        style.textContent = `
-            .product-card {
-                background: var(--glass-bg);
-                backdrop-filter: blur(10px);
-                border: 1px solid var(--glass-border);
-                border-radius: 16px;
-                padding: 1.5rem;
-                transition: transform 0.2s;
-                display: flex;
-                flex-direction: column;
-            }
-            .product-card:hover {
-                transform: translateY(-4px);
-                border-color: var(--accent-primary);
-            }
-            .product-image {
-                width: 100px;
-                height: 100px;
-                object-fit: contain;
-                margin: 0 auto 1rem;
-            }
-            .product-name {
-                font-size: 1.2rem;
-                font-weight: 600;
-                color: var(--text-primary);
-                margin-bottom: 0.3rem;
-            }
-            .product-desc {
-                color: var(--text-secondary);
-                font-size: 0.9rem;
-                margin-bottom: 0.8rem;
-                flex: 1;
-            }
-            .product-price {
-                color: var(--accent-primary);
-                font-weight: 600;
-                font-size: 1.1rem;
-            }
-            .product-stock {
-                color: var(--text-secondary);
-                font-size: 0.9rem;
-            }
-            .shop-tab.active {
-                color: var(--accent-primary) !important;
-                border-bottom-color: var(--accent-primary) !important;
-            }
-        `;
-        document.head.appendChild(style);
-
+        this.updateBalance();
+        this.renderProducts();
         this.attachModalEvents();
     }
 
     attachEvents() {
-        document.getElementById('shop-add-product')?.addEventListener('click', () => this.openProductModal());
+        const isAdmin = this.access.hasRole('master') || this.access.hasRole('owner');
         document.getElementById('shop-search')?.addEventListener('input', () => this.renderProducts());
         document.getElementById('shop-category-filter')?.addEventListener('change', () => this.renderProducts());
-        document.getElementById('shop-cancel-product')?.addEventListener('click', () => {
-            document.getElementById('shop-product-modal').classList.add('hidden');
-        });
-
-        // Tab switching inside modal
-        document.querySelectorAll('.shop-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.shop-tab-content').forEach(c => c.style.display = 'none');
-                e.target.classList.add('active');
-                const tabId = e.target.dataset.tab === 'info' ? 'shop-info-tab' : 'shop-commands-tab';
-                document.getElementById(tabId).style.display = 'block';
+        if (isAdmin) {
+            document.getElementById('shop-add-product')?.addEventListener('click', () => this.openProductModal());
+            document.getElementById('shop-save-product')?.addEventListener('click', () => this.saveProduct());
+            document.getElementById('shop-cancel-product')?.addEventListener('click', () => {
+                document.getElementById('shop-product-modal').classList.add('hidden');
             });
-        });
-
-        // Show/hide command override field
-        document.getElementById('product-use-command')?.addEventListener('change', (e) => {
-            document.getElementById('command-override-group').style.display = e.target.checked ? 'block' : 'none';
-        });
-
-        // Image preview
-        document.getElementById('product-image')?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    document.getElementById('product-image-preview').innerHTML = `<img src="${ev.target.result}" style="max-width:100px; max-height:100px; border-radius:8px;">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
+            // Tab switching inside modal
+            document.querySelectorAll('.shop-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.shop-tab-content').forEach(c => c.style.display = 'none');
+                    e.target.classList.add('active');
+                    const tabId = e.target.dataset.tab === 'info' ? 'shop-info-tab' : 'shop-commands-tab';
+                    document.getElementById(tabId).style.display = 'block';
+                });
+            });
+            // Command override checkbox
+            document.getElementById('product-use-command')?.addEventListener('change', (e) => {
+                document.getElementById('command-override-group').style.display = e.target.checked ? 'block' : 'none';
+            });
+            // Image preview
+            document.getElementById('product-image')?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        document.getElementById('product-image-preview').innerHTML = `<img src="${ev.target.result}" style="max-width:100px; max-height:100px; border-radius:8px;">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        // Purchase button delegation
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('shop-buy-btn')) {
-                const id = e.target.dataset.id;
-                this.buyItem(id);
+                const id = parseInt(e.target.dataset.id);
+                const item = this.items.find(i => i.id === id);
+                if (item) this.purchaseItem(item);
             }
             if (e.target.classList.contains('shop-edit-btn')) {
-                const id = e.target.dataset.id;
+                const id = parseInt(e.target.dataset.id);
                 this.openProductModal(id);
             }
             if (e.target.classList.contains('shop-delete-btn')) {
-                const id = e.target.dataset.id;
+                const id = parseInt(e.target.dataset.id);
                 this.deleteItem(id);
             }
         });
-
-        document.getElementById('shop-save-product')?.addEventListener('click', () => this.saveProduct());
     }
 
-    attachModalEvents() {
-        // Already handled in attachEvents
-    }
+    attachModalEvents() {}
 
-    async loadItems() {
-        try {
-            const res = await fetch(`${AppState.connection.bridgeUrl}/api/shop/items`);
-            if (!res.ok) throw new Error('Failed to load shop items');
-            this.items = await res.json();
-        } catch (err) {
-            console.error('Shop load error:', err);
-            this.items = [];
-        }
-        this.renderProducts();
+    async updateBalance() {
+        const balance = await this.getPlayerBalance();
+        const balanceEl = document.getElementById('shop-player-balance');
+        if (balanceEl) balanceEl.innerText = (balance !== null) ? balance : '?';
     }
 
     renderProducts() {
-        const grid = document.getElementById('shop-products');
-        if (!grid) return;
+        const container = document.getElementById('shop-products');
+        if (!container) return;
 
         const search = document.getElementById('shop-search')?.value.toLowerCase() || '';
         const category = document.getElementById('shop-category-filter')?.value || 'all';
 
         let filtered = this.items;
         if (search) {
-            filtered = filtered.filter(i => i.name.toLowerCase().includes(search) || 
-                                          (i.description && i.description.toLowerCase().includes(search)));
+            filtered = filtered.filter(i => i.name.toLowerCase().includes(search) || (i.description && i.description.toLowerCase().includes(search)));
         }
         if (category !== 'all') {
             filtered = filtered.filter(i => i.category === category);
         }
 
+        const isAdmin = this.access.hasRole('master') || this.access.hasRole('owner');
+        const defaultAvatar = window.DEFAULT_AVATAR || `data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='25' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3Crect x='30' y='65' width='40' height='30' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3C/svg%3E`;
+
         if (filtered.length === 0) {
-            grid.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);">No products found</div>';
+            container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);">No products found</div>';
             return;
         }
 
-        const isAdmin = this.access.hasRole('master') || this.access.hasRole('owner');
-        // Safe default avatar – percent-encoded colon to avoid breaking onerror attributes
-        const defaultAvatar = window.DEFAULT_AVATAR || `data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='25' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3Crect x='30' y='65' width='40' height='30' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3C/svg%3E`;
-
-        grid.innerHTML = filtered.map(item => `
-            <div class="product-card">
-                <img src="${item.image || defaultAvatar}" alt="${item.name}" class="product-image" onerror="this.src='${defaultAvatar}'">
-                <div class="product-name">${item.name}</div>
-                <div class="product-desc">${item.description || ''}</div>
+        container.innerHTML = filtered.map(item => `
+            <div class="product-card" style="background:var(--glass-bg); backdrop-filter:blur(var(--glass-blur)); border:1px solid var(--glass-border); border-radius:16px; padding:1.5rem; transition:transform 0.2s;">
+                <img src="${item.image || defaultAvatar}" alt="${item.name}" style="width:100px; height:100px; object-fit:contain; display:block; margin:0 auto 1rem; background:var(--bg-secondary); border-radius:12px;" onerror="this.src='${defaultAvatar}'">
+                <div style="font-size:1.2rem; font-weight:600; text-align:center; margin-bottom:0.3rem;">${this.escapeHtml(item.name)}</div>
+                <div style="color:var(--text-secondary); font-size:0.9rem; text-align:center; margin-bottom:0.8rem;">${this.escapeHtml(item.description || '')}</div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem;">
-                    <span class="product-price">${item.price} coins</span>
-                    <span class="product-stock">${item.stock === -1 ? '∞' : item.stock + ' left'}</span>
+                    <span style="color:var(--accent-primary); font-weight:600;">💰 ${item.price} scrap</span>
+                    <span style="color:var(--text-secondary); font-size:0.8rem;">${item.stock === -1 ? '∞' : item.stock + ' left'}</span>
                 </div>
                 <div style="display:flex; gap:0.5rem; margin-top:1rem;">
-                    <button class="small-btn shop-buy-btn" data-id="${item.id}" style="flex:2;">Buy</button>
+                    <button class="shop-buy-btn small-btn" data-id="${item.id}" style="flex:2; background:var(--accent-primary); color:#000; border:none; border-radius:30px; padding:0.5rem;">Buy</button>
                     ${isAdmin ? `
-                        <button class="small-btn shop-edit-btn" data-id="${item.id}" style="flex:1;">✏️</button>
-                        <button class="small-btn shop-delete-btn" data-id="${item.id}" style="flex:1;">🗑️</button>
+                        <button class="shop-edit-btn small-btn" data-id="${item.id}" style="flex:1;">✏️</button>
+                        <button class="shop-delete-btn small-btn" data-id="${item.id}" style="flex:1; background:var(--error); color:#fff;">🗑️</button>
                     ` : ''}
                 </div>
             </div>
         `).join('');
+    }
+
+    async purchaseItem(item) {
+        const playerId = this.getUserPlatformId();
+        if (!playerId) {
+            toast.error('Platform ID not set. Go to Profile to add your PSN ID / Gamertag.');
+            return;
+        }
+
+        let balance;
+        try {
+            const balanceRes = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
+            balance = parseInt(balanceRes) || 0;
+            if (balance < item.price) {
+                toast.error(`You need ${item.price} scrap. You have ${balance}.`);
+                return;
+            }
+        } catch (err) {
+            toast.error('Could not check balance: ' + err.message);
+            return;
+        }
+
+        if (!confirm(`Buy ${item.name} for ${item.price} scrap?`)) return;
+
+        try {
+            await ConnectionManager.executeCommand(`economy.remove "${playerId}" ${item.price}`);
+            const claimRes = await fetch(`${AppState.connection.bridgeUrl}/api/claim`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    playerId: playerId,
+                    itemShortname: item.shortname,
+                    quantity: 1,
+                    expiresAt: null
+                })
+            });
+            if (!claimRes.ok) throw new Error('Failed to add claim');
+            toast.success(`Purchased ${item.name}! Check your claims tab.`);
+            this.updateBalance();
+            if (window.claimSystem && typeof window.claimSystem.refresh === 'function') {
+                window.claimSystem.refresh();
+            }
+        } catch (err) {
+            toast.error(`Purchase failed: ${err.message}`);
+        }
     }
 
     openProductModal(id = null) {
@@ -310,7 +322,7 @@ class Shop {
         document.getElementById('product-command').value = '';
 
         if (id) {
-            const item = this.items.find(i => i.id == id);
+            const item = this.items.find(i => i.id === id);
             if (item) {
                 document.getElementById('product-name').value = item.name || '';
                 document.getElementById('product-desc').value = item.description || '';
@@ -332,7 +344,8 @@ class Shop {
         // Reset to info tab
         document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.shop-tab-content').forEach(c => c.style.display = 'none');
-        document.querySelector('.shop-tab[data-tab="info"]').classList.add('active');
+        const firstTab = document.querySelector('.shop-tab[data-tab="info"]');
+        if (firstTab) firstTab.classList.add('active');
         document.getElementById('shop-info-tab').style.display = 'block';
 
         modal.classList.remove('hidden');
@@ -359,7 +372,7 @@ class Shop {
                 reader.readAsDataURL(file);
             });
         } else if (this.editingId) {
-            const existing = this.items.find(i => i.id == this.editingId);
+            const existing = this.items.find(i => i.id === this.editingId);
             if (existing) image = existing.image;
         }
 
@@ -368,16 +381,7 @@ class Shop {
             return;
         }
 
-        const payload = {
-            name, 
-            description: desc, 
-            shortname, 
-            price, 
-            stock, 
-            category, 
-            image, 
-            command
-        };
+        const payload = { name, description: desc, shortname, price, stock, category, image, command };
 
         try {
             let res;
@@ -396,7 +400,7 @@ class Shop {
             }
             if (!res.ok) throw new Error('Save failed');
             toast.success(`Product ${this.editingId ? 'updated' : 'created'}`);
-            this.loadItems();
+            await this.loadItems();
             document.getElementById('shop-product-modal').classList.add('hidden');
         } catch (err) {
             toast.error('Failed to save product: ' + err.message);
@@ -411,64 +415,29 @@ class Shop {
             });
             if (!res.ok) throw new Error('Delete failed');
             toast.info('Product deleted');
-            this.loadItems();
+            await this.loadItems();
         } catch (err) {
             toast.error('Delete failed: ' + err.message);
         }
     }
 
-    async buyItem(id) {
-        const item = this.items.find(i => i.id == id);
-        if (!item) return;
-
-        // Check stock
-        if (item.stock !== -1 && item.stock <= 0) {
-            toast.error('Out of stock');
-            return;
-        }
-
-        // Get player identifier (PSN/Xbox ID) from user profile
-        const playerId = AppState.user.platformId;
-        if (!playerId) {
-            toast.error('Please set your platform ID in Profile first');
-            return;
-        }
-
-        try {
-            const res = await fetch(`${AppState.connection.bridgeUrl}/api/shop/purchase`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    playerId,
-                    itemShortname: item.shortname,
-                    quantity: 1
-                })
-            });
-            if (!res.ok) throw new Error('Purchase failed');
-            
-            toast.success('Item added to your claims!');
-            
-            // Decrement stock locally if not unlimited
-            if (item.stock !== -1) {
-                item.stock--;
-                this.renderProducts();
-            }
-            
-            // Refresh claims data if claim system is open
-            if (window.claimSystem) {
-                window.claimSystem.refresh();
-            }
-        } catch (err) {
-            toast.error('Purchase failed: ' + err.message);
-        }
+    escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
     }
 
-    refresh() {
-        this.loadItems();
+    async refresh() {
+        await this.loadItems();
+        this.updateBalance();
+        toast.success('Shop refreshed');
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.shop = new Shop();
 });

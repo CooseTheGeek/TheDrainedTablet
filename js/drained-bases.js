@@ -1,6 +1,5 @@
 // drained-bases.js – DRAINED TABLET ULTIMATE v7.0.0
-// Shop‑style blueprint system with Rust item images, economy integration, master free purchase.
-// Auto‑deploys base at buyer's position with offset. Supports 2x1, 2x2, 3x3.
+// Shop‑style blueprint system with player name dropdown.
 
 class DrainedBases {
     constructor() {
@@ -94,7 +93,7 @@ class DrainedBases {
                 // Ensure blockData is present
                 this.blueprints = this.blueprints.map(bp => {
                     const defaultBp = this.getDefaultBlueprints().find(d => d.id === bp.id);
-                    if (defaultBp && !bp.blockData) bp.blockData = defaultBp.blockData;
+                    if (defaultBp && (!bp.blockData || bp.blockData.length === 0)) bp.blockData = defaultBp.blockData;
                     return bp;
                 });
             }
@@ -106,7 +105,6 @@ class DrainedBases {
     async loadMyPurchases() {
         const playerId = AppState.user.platformId;
         if (!playerId) {
-            // Master still can have purchases stored under 'master' key
             if (window.accessControl && window.accessControl.isMasterUser()) {
                 const masterPurchases = localStorage.getItem('tdl_master_purchases');
                 this.purchases = masterPurchases ? JSON.parse(masterPurchases) : [];
@@ -181,8 +179,19 @@ class DrainedBases {
         const select = document.getElementById('deploy-player-select');
         if (!select) return;
         const players = AppState.players || [];
-        select.innerHTML = '<option value="">Select a player...</option>' + players.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
-        if (players.length === 0) select.innerHTML = '<option value="">No players online</option>';
+        // Ensure players is an array of objects with 'name' property
+        let options = '<option value="">Select a player...</option>';
+        if (players.length === 0) {
+            options = '<option value="">No players online</option>';
+        } else {
+            players.forEach(p => {
+                const playerName = p.name || p.displayName || p.DisplayName;
+                if (playerName) {
+                    options += `<option value="${playerName}">${playerName}</option>`;
+                }
+            });
+        }
+        select.innerHTML = options;
     }
 
     renderGallery() {
@@ -193,12 +202,13 @@ class DrainedBases {
         container.innerHTML = this.blueprints.map(bp => {
             const owned = this.purchases.some(p => p.blueprint_id === bp.id && !p.deployed_at);
             const priceDisplay = isMaster ? 'FREE (Master)' : `${bp.price} scrap`;
+            const blockCount = (bp.blockData && bp.blockData.length) ? bp.blockData.length : (bp.blocks || 0);
             return `
                 <div class="bp-card" data-id="${bp.id}">
                     <img src="${this.getItemImage(bp.image || bp.shortname)}" class="bp-image" onerror="this.src='https://www.corrosionhour.com/img/items/wood.png'">
                     <div class="bp-name">${this.escapeHtml(bp.name)}</div>
                     <div class="bp-desc">${this.escapeHtml(bp.description || '')}</div>
-                    <div class="bp-specs"><span>📦 ${bp.blocks} blocks</span><span>💰 ${priceDisplay}</span></div>
+                    <div class="bp-specs"><span>📦 ${blockCount} blocks</span><span>💰 ${priceDisplay}</span></div>
                     <div class="bp-actions">
                         ${owned ? `<button class="bp-btn deploy-bp" data-id="${bp.id}">🏗️ Deploy</button>` : `<button class="bp-btn primary purchase-bp" data-id="${bp.id}">🛒 Purchase</button>`}
                     </div>
