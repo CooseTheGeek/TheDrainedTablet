@@ -1,5 +1,6 @@
 // drained-bases.js – DRAINED TABLET ULTIMATE v7.0.0
-// Shop‑style blueprint system with fixed position parser for `printpos` output.
+// Shop‑style blueprint system with Rust item images, economy integration, master free purchase.
+// Auto‑deploys base at player's position using correct spawn command syntax for Rust Console.
 
 class DrainedBases {
     constructor() {
@@ -318,46 +319,24 @@ class DrainedBases {
             return;
         }
         
-        // Try to get position using the correct command for your server
         let position = null;
         try {
-            // Use 'printpos' command (works on your server)
             const result = await ConnectionManager.executeCommand(`printpos ${targetPlayer}`);
             console.log('Raw position output:', result);
-            
-            // Parse format: "05/08/2026 22:34:58:LOG: (1596.38, 0.47, -994.44)"
-            let match;
             if (typeof result === 'string') {
-                // Look for parentheses with numbers inside
-                match = result.match(/\(([-\d.]+),\s*([-\d.]+),\s*([-\d.]+)\)/);
+                const match = result.match(/\(([-\d.]+),\s*([-\d.]+),\s*([-\d.]+)\)/);
                 if (match) {
-                    position = {
-                        x: parseFloat(match[1]),
-                        y: parseFloat(match[2]),
-                        z: parseFloat(match[3])
-                    };
+                    position = { x: parseFloat(match[1]), y: parseFloat(match[2]), z: parseFloat(match[3]) };
                 }
             }
-            
-            if (!position) {
-                throw new Error('Could not extract coordinates from response');
-            }
+            if (!position) throw new Error('Could not extract coordinates');
         } catch (err) {
             console.error('Position fetch error:', err);
-            // Fallback: manual coordinate entry
             const manualX = prompt(`Could not fetch position for ${targetPlayer}. Enter X coordinate (or cancel to abort):`, '0');
-            if (manualX === null) {
-                toast.error('Deployment cancelled');
-                document.getElementById('deploy-modal').classList.add('hidden');
-                return;
-            }
+            if (manualX === null) { toast.error('Deployment cancelled'); document.getElementById('deploy-modal').classList.add('hidden'); return; }
             const manualY = prompt('Enter Y coordinate:', '0');
             const manualZ = prompt('Enter Z coordinate:', '0');
-            position = {
-                x: parseFloat(manualX),
-                y: parseFloat(manualY),
-                z: parseFloat(manualZ)
-            };
+            position = { x: parseFloat(manualX), y: parseFloat(manualY), z: parseFloat(manualZ) };
             toast.info(`Using manual coordinates: (${position.x}, ${position.y}, ${position.z})`);
         }
         
@@ -367,12 +346,15 @@ class DrainedBases {
             return;
         }
         
-        // Offset the base so it doesn't spawn inside the player
-        const offsetX = 2;
-        const offsetZ = 2;
+        const offsetX = 2, offsetZ = 2;
         let successCount = 0;
         for (const block of bp.blockData) {
-            const cmd = `spawn ${block.shortname} ${position.x + block.x + offsetX} ${position.y + block.y + 0.5} ${position.z + block.z + offsetZ}`;
+            const spawnX = position.x + block.x + offsetX;
+            const spawnY = position.y + block.y + 0.5;
+            const spawnZ = position.z + block.z + offsetZ;
+            // Correct syntax for Rust Console: spawn shortname (x,y,z)
+            const cmd = `spawn ${block.shortname} (${spawnX},${spawnY},${spawnZ})`;
+            console.log('Sending command:', cmd);
             try {
                 await ConnectionManager.executeCommand(cmd);
                 successCount++;
@@ -399,7 +381,7 @@ class DrainedBases {
             this.renderGallery(); this.renderOwned();
             toast.success(`Base deployed for ${targetPlayer}! ${successCount}/${bp.blockData.length} blocks placed.`);
         } else {
-            toast.error('Failed to deploy base. Check logs.');
+            toast.error('Failed to deploy base. Check console for errors.');
         }
         
         document.getElementById('deploy-modal').classList.add('hidden');
