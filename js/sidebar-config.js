@@ -1,5 +1,5 @@
 // sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
-// Customizable sidebar navigation with corrosion dissolve animation and cleaned selection UI.
+// Customizable sidebar navigation with corrosion dissolve animation, cleaned selection UI, and Clear All option.
 
 class SidebarManager {
     constructor() {
@@ -174,6 +174,7 @@ class SidebarManager {
         html += `
                 </div>
                 <div class="customizer-actions">
+                    <button id="clear-sidebar-tabs" class="settings-btn warning">🗑️ Clear All</button>
                     <button id="save-sidebar-tabs" class="settings-btn primary">💾 Save Sidebar Tabs</button>
                     <button id="reset-sidebar-tabs" class="settings-btn">↺ Reset to Default</button>
                 </div>
@@ -185,6 +186,24 @@ class SidebarManager {
     attachSettingsEvents() {
         const saveBtn = document.getElementById('save-sidebar-tabs');
         const resetBtn = document.getElementById('reset-sidebar-tabs');
+        const clearBtn = document.getElementById('clear-sidebar-tabs');
+        
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (confirm('Clear all selected tabs? The sidebar will become empty until you select new tabs.')) {
+                    this.selectedIds = [];
+                    this.saveSelection();
+                    this.renderSidebar();
+                    // Refresh the UI in Settings tab
+                    const customizerDiv = document.querySelector('.sidebar-customizer');
+                    if (customizerDiv) {
+                        customizerDiv.innerHTML = this.getSelectionUI();
+                        this.attachSettingsEvents();
+                    }
+                    toast.info('All tabs cleared. Select tabs and save to restore.');
+                }
+            });
+        }
         
         if (saveBtn) {
             saveBtn.addEventListener('click', () => {
