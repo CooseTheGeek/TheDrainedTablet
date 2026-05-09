@@ -24,10 +24,6 @@ class More {
         });
     }
 
-    // All your existing methods: createHTML, renderCategories, filterTools, etc.
-    // ...
-}
-
     getTools() {
         return {
             server: { name: "🖥️ Server Management", tools: [
