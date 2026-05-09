@@ -1,12 +1,10 @@
 // sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
-// Manages customizable sidebar navigation. For regular users, only player tabs appear.
+// Manages customizable sidebar navigation.
 
 class SidebarManager {
     constructor() {
-        // All possible tabs with required role
         this.allTabs = [
             { id: "home", name: "Home", icon: "🏠", requiredRole: "user" },
-            // Player tabs (visible to everyone)
             { id: "profile", name: "Profile", icon: "👤", requiredRole: "user" },
             { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user" },
             { id: "shop", name: "Shop", icon: "🏪", requiredRole: "user" },
@@ -14,8 +12,8 @@ class SidebarManager {
             { id: "combatlog", name: "Combat Log", icon: "⚔️", requiredRole: "user" },
             { id: "idcard", name: "ID Card", icon: "🪪", requiredRole: "user" },
             { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "user" },
-            { id: "more", name: "More Tools", icon: "📊", requiredRole: "master" }, // Only master sees More Tools
-            // Admin/master tabs (hidden for regular users)
+            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "master" },
+            { id: "more", name: "More Tools", icon: "📊", requiredRole: "master" },
             { id: "players", name: "Players", icon: "👥", requiredRole: "master" },
             { id: "master", name: "Master Control", icon: "👑", requiredRole: "master" },
             { id: "economy", name: "Economy", icon: "💰", requiredRole: "master" },
@@ -33,10 +31,9 @@ class SidebarManager {
             { id: "health", name: "Health", icon: "📡", requiredRole: "master" },
             { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "owner" },
             { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
-            { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" },
-            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "master" }
+            { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" }
         ];
-        this.defaultSelectedIds = ["home", "profile", "drained-bases", "settings", "more"];
+        this.defaultSelectedIds = ["home", "profile", "drained-bases", "shop", "claims", "settings"];
         this.maxTabs = 6;
         this.selectedIds = [];
         this.access = window.accessControl;
@@ -69,44 +66,34 @@ class SidebarManager {
     }
 
     getAvailableTabs() {
-    // First, check if current user is master by username (CooseTheGeek)
-    const username = AppState.user?.username || localStorage.getItem('tdl_username');
-    const isMasterUser = username === 'CooseTheGeek';
-    
-    // If master by username, force role to master
-    if (isMasterUser && AppState.user) {
-        AppState.user.role = 'master';
-        localStorage.setItem('tdl_role', 'master');
-    }
-    
-    const role = AppState.user?.role || 'user';
-    const effectiveRole = isMasterUser ? 'master' : role;
-    
-    return this.allTabs.filter(tab => {
-        if (effectiveRole === 'user') {
-            return tab.requiredRole === 'user';
+        const username = AppState.user?.username || localStorage.getItem('tdl_username');
+        const isMasterUser = username === 'CooseTheGeek';
+        if (isMasterUser && AppState.user) {
+            AppState.user.role = 'master';
+            localStorage.setItem('tdl_role', 'master');
         }
-        if (tab.requiredRole === 'user') return true;
-        if (tab.requiredRole === 'master') return effectiveRole === 'master' || effectiveRole === 'owner';
-        if (tab.requiredRole === 'owner') return effectiveRole === 'owner';
-        return false;
-    });
-}
+        const role = AppState.user?.role || 'user';
+        const effectiveRole = isMasterUser ? 'master' : role;
+        return this.allTabs.filter(tab => {
+            if (effectiveRole === 'user') {
+                return tab.requiredRole === 'user';
+            }
+            if (tab.requiredRole === 'user') return true;
+            if (tab.requiredRole === 'master') return effectiveRole === 'master' || effectiveRole === 'owner';
+            if (tab.requiredRole === 'owner') return effectiveRole === 'owner';
+            return false;
+        });
+    }
+
     renderSidebar() {
         const container = document.getElementById('sidebar-nav-container');
         if (!container) return;
-
         let html = '';
         for (const id of this.selectedIds) {
             const tab = this.allTabs.find(t => t.id === id);
-            // Only show if tab is available for current role
             if (tab && this.getAvailableTabs().find(t => t.id === id)) {
                 html += `<a href="#" class="nav-item" data-tab="${tab.id}"><span class="nav-icon">${tab.icon}</span> <span class="nav-text">${tab.name}</span></a>`;
             }
-        }
-        // Settings only shown for master/owner
-        if (this.getAvailableTabs().find(t => t.id === 'settings')) {
-            html += `<a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> <span class="nav-text">Settings</span></a>`;
         }
         container.innerHTML = html;
         this.highlightActiveTab();
@@ -137,16 +124,10 @@ class SidebarManager {
     getSelectionUI() {
         const available = this.getAvailableTabs();
         const filtered = available.filter(t => t.id !== 'settings');
-        let html = `<div class="sidebar-customizer"><h3>Select up to ${this.maxTabs} sidebar tabs</h3>`;
-        html += '<div class="tab-selection-list">';
+        let html = `<div class="sidebar-customizer"><h3>Select up to ${this.maxTabs} sidebar tabs</h3><div class="tab-selection-list">`;
         filtered.forEach(tab => {
             const isChecked = this.selectedIds.includes(tab.id);
-            html += `
-                <label class="tab-checkbox">
-                    <input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${this.selectedIds.length >= this.maxTabs && !isChecked ? 'disabled' : ''}>
-                    <span class="tab-icon">${tab.icon}</span> ${tab.name}
-                </label>
-            `;
+            html += `<label class="tab-checkbox"><input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${this.selectedIds.length >= this.maxTabs && !isChecked ? 'disabled' : ''}><span class="tab-icon">${tab.icon}</span> ${tab.name}</label>`;
         });
         html += '</div><button id="save-sidebar-tabs" class="settings-btn primary">Save Sidebar Tabs</button></div>';
         return html;
