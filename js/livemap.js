@@ -122,7 +122,10 @@ class Livemap {
         const container = document.querySelector('.map-container');
         if (!container || !this.canvas) return;
         const width = container.clientWidth;
-        const height = width * (this.mapConfig.map.measured.h / this.mapConfig.map.measured.w);
+        if (!width || width <= 0) return;
+        const measured = this.mapConfig?.map?.measured;
+        const ratio = measured ? measured.h / measured.w : 0.8;
+        const height = Math.max(width * ratio, 200);
         this.canvas.width = width;
         this.canvas.height = height;
         this.canvas.style.width = `${width}px`;
@@ -130,7 +133,12 @@ class Livemap {
     }
 
     loadMapImage() {
-        const imgUrl = this.mapConfig.map.imageUrl;
+        const imgUrl = this.mapConfig?.map?.imageUrl;
+        if (!imgUrl) {
+            this.imageLoaded = false;
+            this.draw();
+            return;
+        }
         this.mapImage = new Image();
         this.mapImage.crossOrigin = 'anonymous';
         this.mapImage.src = imgUrl;
@@ -147,7 +155,6 @@ class Livemap {
 
     async fetchMonuments() {
         try {
-            // Send command via GPortal bridge
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -161,7 +168,6 @@ class Livemap {
             this.draw();
         } catch (err) {
             console.error('Failed to fetch monuments:', err);
-            // Fallback to mock data for demo
             this.monuments = this.getMockMonuments();
             this.filterMonuments();
             this.draw();
@@ -181,7 +187,6 @@ class Livemap {
                 const worldZ = parseFloat(match[4]);
                 let displayName = internalName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-                // Handle duplicates
                 if (seenNames.has(displayName)) {
                     const count = seenNames.get(displayName) + 1;
                     seenNames.set(displayName, count);
@@ -207,7 +212,14 @@ class Livemap {
     }
 
     worldToPixel(worldX, worldZ) {
-        const anchors = this.mapConfig.map.anchors;
+        const anchors = this.mapConfig?.map?.anchors;
+        if (!anchors || anchors.length < 2) {
+            // fallback: simple linear mapping assuming world size 3500
+            const mapSize = this.mapConfig?.map?.worldSize || 3500;
+            const pixelX = (worldX + mapSize/2) / mapSize * this.canvas.width;
+            const pixelY = (worldZ + mapSize/2) / mapSize * this.canvas.height;
+            return { x: pixelX, y: pixelY };
+        }
         const a1 = anchors[0];
         const a2 = anchors[1];
         const scaleX = (a2.pixelX - a1.pixelX) / (a2.worldX - a1.worldX);
@@ -283,9 +295,12 @@ class Livemap {
     }
 
     drawMonuments() {
+        if (!this.filteredMonuments.length) return;
+        const w = this.canvas.width / this.zoom;
+        const h = this.canvas.height / this.zoom;
         for (const m of this.filteredMonuments) {
-            const x = m.pixelX / (this.mapConfig.map.measured.w / this.zoom);
-            const y = m.pixelY / (this.mapConfig.map.measured.h / this.zoom);
+            const x = m.pixelX / (this.mapConfig?.map?.measured?.w / this.zoom || w);
+            const y = m.pixelY / (this.mapConfig?.map?.measured?.h / this.zoom || h);
             this.ctx.beginPath();
             this.ctx.arc(x, y, 6 / this.zoom, 0, 2 * Math.PI);
             this.ctx.fillStyle = '#FFB100';
@@ -301,7 +316,7 @@ class Livemap {
 
     drawPlayers() {
         if (!this.players.length) return;
-        const mapSize = this.mapConfig.map.worldSize;
+        const mapSize = this.mapConfig?.map?.worldSize || 3500;
         const w = this.canvas.width / this.zoom;
         const h = this.canvas.height / this.zoom;
 
@@ -355,7 +370,7 @@ class Livemap {
         const scaleY = this.canvas.height / rect.height;
         const x = ((e.clientX - rect.left - this.panX) * scaleX) / this.zoom;
         const y = ((e.clientY - rect.top - this.panY) * scaleY) / this.zoom;
-        const mapSize = this.mapConfig.map.worldSize;
+        const mapSize = this.mapConfig?.map?.worldSize || 3500;
         const gameX = Math.round((x / (this.canvas.width / this.zoom) - 0.5) * mapSize);
         const gameZ = Math.round((y / (this.canvas.height / this.zoom) - 0.5) * mapSize);
         const coordsEl = document.getElementById('map-coords');
@@ -363,7 +378,6 @@ class Livemap {
     }
 
     getMockMonuments() {
-        // Fallback data in case RCON fails
         return [
             { name: 'HQM Quarry', category: 'quarries', pixelX: 420, pixelY: 560 },
             { name: 'Stone Quarry', category: 'quarries', pixelX: 540, pixelY: 410 },
