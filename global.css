@@ -1874,3 +1874,24 @@ body::after {
     padding: 0.5rem;
     border-bottom: 1px solid var(--glass-border);
 }
+
+/* Box each setting row for better visual separation */
+.setting-row {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 0.8rem 1.2rem;
+    margin-bottom: 0.8rem;
+    transition: background 0.2s;
+}
+.setting-row:hover {
+    background: var(--bg-tertiary);
+}
+.setting-row label {
+    min-width: 140px;
+}
+.setting-row.checkbox {
+    justify-content: flex-start;
+}
+.setting-row input[type="range"] {
+    flex: 1;
+}
