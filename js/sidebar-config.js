@@ -1,5 +1,4 @@
 // sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
-// Manages customizable sidebar navigation.
 
 class SidebarManager {
     constructor() {
@@ -33,7 +32,7 @@ class SidebarManager {
             { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
             { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" }
         ];
-        this.defaultSelectedIds = ["home", "profile", "drained-bases", "gportal", "settings", "more"];
+        this.defaultSelectedIds = ["home", "profile", "drained-bases", "shop", "settings", "more"];
         this.maxTabs = 6;
         this.selectedIds = [];
         this.access = window.accessControl;
@@ -48,32 +47,43 @@ class SidebarManager {
     }
 
     loadSelection() {
-    const username = AppState.user?.username || localStorage.getItem('tdl_username');
-    const isMasterUser = username === 'CooseTheGeek';
-    
-    // If master and saved selection doesn't include settings/more, reset to defaults
-    const saved = localStorage.getItem('tdl_selected_tabs');
-    if (saved && isMasterUser) {
-        const parsed = JSON.parse(saved);
-        if (!parsed.includes('settings') || !parsed.includes('more')) {
-            localStorage.removeItem('tdl_selected_tabs');
+        const username = AppState.user?.username || localStorage.getItem('tdl_username');
+        const isMasterUser = username === 'CooseTheGeek';
+        
+        // Force reset for master if settings/more missing
+        const saved = localStorage.getItem('tdl_selected_tabs');
+        if (saved && isMasterUser) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (!parsed.includes('settings') || !parsed.includes('more')) {
+                    localStorage.removeItem('tdl_selected_tabs');
+                    this.selectedIds = [...this.defaultSelectedIds];
+                    this.saveSelection();
+                    return;
+                }
+            } catch(e) {}
+        }
+        
+        if (saved) {
+            try {
+                this.selectedIds = JSON.parse(saved);
+                if (this.selectedIds.length > this.maxTabs) {
+                    this.selectedIds = this.selectedIds.slice(0, this.maxTabs);
+                    this.saveSelection();
+                }
+            } catch(e) {
+                this.selectedIds = [...this.defaultSelectedIds];
+                this.saveSelection();
+            }
+        } else {
             this.selectedIds = [...this.defaultSelectedIds];
             this.saveSelection();
-            return;
         }
     }
-    
-    if (saved) {
-        this.selectedIds = JSON.parse(saved);
-        if (this.selectedIds.length > this.maxTabs) {
-            this.selectedIds = this.selectedIds.slice(0, this.maxTabs);
-            this.saveSelection();
-        }
-    } else {
-        this.selectedIds = [...this.defaultSelectedIds];
-        this.saveSelection();
+
+    saveSelection() {
+        localStorage.setItem('tdl_selected_tabs', JSON.stringify(this.selectedIds));
     }
-}
 
     getAvailableTabs() {
         const username = AppState.user?.username || localStorage.getItem('tdl_username');
