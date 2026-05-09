@@ -1,5 +1,5 @@
 // drained-bases.js – DRAINED TABLET ULTIMATE v7.0.0
-// Fixed: player dropdown names, position parsing, block count display.
+// Shop‑style blueprint system with fixed position parser for `printpos` output.
 
 class DrainedBases {
     constructor() {
@@ -84,7 +84,6 @@ class DrainedBases {
             if (!this.blueprints || this.blueprints.length === 0) {
                 this.blueprints = this.getDefaultBlueprints();
             } else {
-                // Ensure blockData is present
                 this.blueprints = this.blueprints.map(bp => {
                     const defaultBp = this.getDefaultBlueprints().find(d => d.id === bp.id);
                     if (defaultBp && (!bp.blockData || bp.blockData.length === 0)) {
@@ -319,41 +318,58 @@ class DrainedBases {
             return;
         }
         
+        // Try to get position using the correct command for your server
         let position = null;
         try {
-            const posRaw = await ConnectionManager.executeCommand(`player.position "${targetPlayer}"`);
-            console.log('Raw position response:', posRaw);
-            if (posRaw && typeof posRaw === 'string') {
-                // Try format: "X: 123.45, Y: 45.67, Z: 789.01"
-                let match = posRaw.match(/X:\s*([-\d.]+),\s*Y:\s*([-\d.]+),\s*Z:\s*([-\d.]+)/i);
+            // Use 'printpos' command (works on your server)
+            const result = await ConnectionManager.executeCommand(`printpos ${targetPlayer}`);
+            console.log('Raw position output:', result);
+            
+            // Parse format: "05/08/2026 22:34:58:LOG: (1596.38, 0.47, -994.44)"
+            let match;
+            if (typeof result === 'string') {
+                // Look for parentheses with numbers inside
+                match = result.match(/\(([-\d.]+),\s*([-\d.]+),\s*([-\d.]+)\)/);
                 if (match) {
                     position = {
                         x: parseFloat(match[1]),
                         y: parseFloat(match[2]),
                         z: parseFloat(match[3])
                     };
-                } else {
-                    // Try just numbers: "123.45 45.67 789.01"
-                    const nums = posRaw.match(/-?\d+\.?\d*/g);
-                    if (nums && nums.length >= 3) {
-                        position = {
-                            x: parseFloat(nums[0]),
-                            y: parseFloat(nums[1]),
-                            z: parseFloat(nums[2])
-                        };
-                    }
                 }
             }
+            
             if (!position) {
-                throw new Error('Could not parse position from response');
+                throw new Error('Could not extract coordinates from response');
             }
         } catch (err) {
-            toast.error(`Failed to get player position: ${err.message}`);
+            console.error('Position fetch error:', err);
+            // Fallback: manual coordinate entry
+            const manualX = prompt(`Could not fetch position for ${targetPlayer}. Enter X coordinate (or cancel to abort):`, '0');
+            if (manualX === null) {
+                toast.error('Deployment cancelled');
+                document.getElementById('deploy-modal').classList.add('hidden');
+                return;
+            }
+            const manualY = prompt('Enter Y coordinate:', '0');
+            const manualZ = prompt('Enter Z coordinate:', '0');
+            position = {
+                x: parseFloat(manualX),
+                y: parseFloat(manualY),
+                z: parseFloat(manualZ)
+            };
+            toast.info(`Using manual coordinates: (${position.x}, ${position.y}, ${position.z})`);
+        }
+        
+        if (!position) {
+            toast.error('No position available. Deployment cancelled.');
             document.getElementById('deploy-modal').classList.add('hidden');
             return;
         }
         
-        const offsetX = 2, offsetZ = 2;
+        // Offset the base so it doesn't spawn inside the player
+        const offsetX = 2;
+        const offsetZ = 2;
         let successCount = 0;
         for (const block of bp.blockData) {
             const cmd = `spawn ${block.shortname} ${position.x + block.x + offsetX} ${position.y + block.y + 0.5} ${position.z + block.z + offsetZ}`;
@@ -377,9 +393,7 @@ class DrainedBases {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ playerId: AppState.user.platformId, blueprintId })
                     });
-                } catch (err) {
-                    console.warn(err);
-                }
+                } catch (err) { console.warn(err); }
                 await this.loadMyPurchases();
             }
             this.renderGallery(); this.renderOwned();
