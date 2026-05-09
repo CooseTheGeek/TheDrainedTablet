@@ -33,7 +33,7 @@ class SidebarManager {
             { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
             { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" }
         ];
-        this.defaultSelectedIds = ["home", "profile", "drained-bases", "shop", "claims", "settings"];
+        this.defaultSelectedIds = ["home", "profile", "drained-bases", "gportal", "settings", "more"];
         this.maxTabs = 6;
         this.selectedIds = [];
         this.access = window.accessControl;
