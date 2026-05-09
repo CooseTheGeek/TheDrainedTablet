@@ -1,5 +1,5 @@
 // more.js – DRAINED TABLET ULTIMATE v7.0.0
-// Redesigned: single page, collapsible categories (dropdowns), compact grid.
+// Redesigned: compact grid that fits on one page, each tool opens its own tab.
 
 class More {
     constructor() {
@@ -9,27 +9,24 @@ class More {
     }
 
     init() {
-        this.createHTML();
-        this.attachEvents();
+        // Wait for the DOM to be fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.createHTML();
+                this.attachEvents();
+            });
+        } else {
+            this.createHTML();
+            this.attachEvents();
+        }
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'more') this.refresh();
         });
     }
 
-    createHTML() {
-        const tab = document.getElementById('tab-more');
-        if (!tab) return;
-        tab.innerHTML = `
-            <div class="more-tools-single">
-                <div class="more-header">
-                    <h2>📊 MORE TOOLS</h2>
-                    <p>Click a category to expand, then any tool to open</p>
-                </div>
-                <div id="more-tools-categories"></div>
-            </div>
-        `;
-        this.renderCategories();
-    }
+    // All your existing methods: createHTML, renderCategories, filterTools, etc.
+    // ...
+}
 
     getTools() {
         return {
