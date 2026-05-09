@@ -176,23 +176,31 @@ class DrainedBases {
     }
 
     updatePlayerDropdown() {
-        const select = document.getElementById('deploy-player-select');
-        if (!select) return;
-        const players = AppState.players || [];
-        // Ensure players is an array of objects with 'name' property
-        let options = '<option value="">Select a player...</option>';
-        if (players.length === 0) {
-            options = '<option value="">No players online</option>';
-        } else {
-            players.forEach(p => {
-                const playerName = p.name || p.displayName || p.DisplayName;
-                if (playerName) {
-                    options += `<option value="${playerName}">${playerName}</option>`;
-                }
-            });
-        }
-        select.innerHTML = options;
+    const select = document.getElementById('deploy-player-select');
+    if (!select) return;
+    const players = AppState.players || [];
+    let options = '<option value="">Select a player...</option>';
+    if (players.length === 0) {
+        options = '<option value="">No players online</option>';
+    } else {
+        players.forEach(p => {
+            // Try common name properties in order
+            let name = p.DisplayName || p.displayName || p.name || p.playerName || p.username;
+            // If still undefined, see if there's a property that looks like a name
+            if (!name && typeof p === 'object') {
+                const possible = Object.values(p).find(v => typeof v === 'string' && v.length > 0 && v.length < 50 && !v.includes('STEAM'));
+                if (possible) name = possible;
+            }
+            if (name) {
+                name = name.replace(/[<>]/g, ''); // sanitize
+                options += `<option value="${name}">${name}</option>`;
+            } else {
+                console.warn('No name found for player:', p);
+            }
+        });
     }
+    select.innerHTML = options;
+}
 
     renderGallery() {
         const container = document.getElementById('bps-gallery');

@@ -116,17 +116,29 @@ setInterval(async () => {
             const data = await res.json();
             let players = [];
             if (data.success && data.result) {
-                const raw = data.result;
+                let raw = data.result;
                 if (Array.isArray(raw)) {
                     players = raw.map(p => ({
-                        name: p.DisplayName || p.name || p.displayName || 'Unknown',
-                        online: true,
-                        playtime: 'N/A',
-                        position: null
+                        name: p.DisplayName || p.displayName || p.name || 'Unknown'
                     }));
                 } else if (typeof raw === 'string') {
-                    const lines = raw.split('\n').filter(l => l.trim());
-                    players = lines.map(name => ({ name: name.trim(), online: true, playtime: 'N/A', position: null }));
+                    // Attempt to parse as JSON if it's a stringified array
+                    try {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) {
+                            players = parsed.map(p => ({
+                                name: p.DisplayName || p.displayName || p.name || 'Unknown'
+                            }));
+                        }
+                    } catch(e) {
+                        // Fallback: split by newline
+                        const lines = raw.split('\n').filter(l => l.trim());
+                        players = lines.map(line => {
+                            // Try to extract name: often format like "Name (STEAM_...)"
+                            const match = line.match(/^([^\(]+)/);
+                            return { name: match ? match[1].trim() : line.trim() };
+                        });
+                    }
                 }
             }
             AppState.players = players;
