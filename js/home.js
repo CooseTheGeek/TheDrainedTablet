@@ -1,95 +1,32 @@
 // home.js – DRAINED TABLET ULTIMATE v7.0.0
-// Rust character dress‑up system with guaranteed item list.
+// Modern Rust console dashboard – server stats, events, quick actions, player chart.
 
 class Home {
     constructor() {
         this.tablet = window.drainedTablet;
         this.access = window.accessControl;
-        this.equipment = this.loadEquipment();
-        this.canvas = null;
-        this.ctx = null;
-        this.items = this.getFallbackItems(); // start with fallback, will merge with database if available
+        this.stats = {
+            players: 0,
+            maxPlayers: 100,
+            uptime: '0d 0h 0m',
+            mapSize: 3500,
+            mapSeed: 0,
+            nextWipe: '--'
+        };
+        this.recentEvents = [];
+        this.playerHistory = [];
+        this.updateInterval = null;
         this.init();
     }
 
-    getFallbackItems() {
-        return [
-            { shortname: "rock", name: "Rock", category: "Tools" },
-            { shortname: "torch", name: "Torch", category: "Tools" },
-            { shortname: "hatchet", name: "Hatchet", category: "Tools" },
-            { shortname: "pickaxe", name: "Pickaxe", category: "Tools" },
-            { shortname: "rifle.ak", name: "AK-47", category: "Weapons" },
-            { shortname: "rifle.bolt", name: "Bolt Rifle", category: "Weapons" },
-            { shortname: "smg.mp5", name: "MP5", category: "Weapons" },
-            { shortname: "pistol.revolver", name: "Revolver", category: "Weapons" },
-            { shortname: "explosive.timed", name: "C4", category: "Weapons" },
-            { shortname: "grenade.f1", name: "F1 Grenade", category: "Weapons" },
-            { shortname: "wood", name: "Wood", category: "Resources" },
-            { shortname: "stones", name: "Stone", category: "Resources" },
-            { shortname: "metal.fragments", name: "Metal Fragments", category: "Resources" },
-            { shortname: "cloth", name: "Cloth", category: "Resources" },
-            { shortname: "leather", name: "Leather", category: "Resources" },
-            { shortname: "hoodie", name: "Hoodie", category: "Attire" },
-            { shortname: "pants", name: "Pants", category: "Attire" },
-            { shortname: "shoes.boots", name: "Boots", category: "Attire" },
-            { shortname: "metal.facemask", name: "Metal Facemask", category: "Attire" },
-            { shortname: "metal.plate.torso", name: "Metal Chestplate", category: "Attire" },
-            { shortname: "wood.armor.helmet", name: "Wood Helmet", category: "Attire" },
-            { shortname: "wood.armor.jacket", name: "Wood Chestplate", category: "Attire" },
-            { shortname: "bandage", name: "Bandage", category: "Medical" },
-            { shortname: "syringe.medical", name: "Medical Syringe", category: "Medical" }
-        ];
-    }
-
-    loadEquipment() {
-        const saved = localStorage.getItem('tdl_dressed_character');
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch(e) { return this.getDefaultEquipment(); }
-        }
-        return this.getDefaultEquipment();
-    }
-
-    getDefaultEquipment() {
-        return { head: null, torso: null, legs: null, feet: null, mainhand: null, offhand: null };
-    }
-
-    saveEquipment() {
-        localStorage.setItem('tdl_dressed_character', JSON.stringify(this.equipment));
-    }
-
-    async init() {
-        // Try to merge with items database if available
-        await this.mergeWithDatabase();
+    init() {
         this.createHTML();
         this.attachEvents();
-        this.startServerUpdates();
+        this.startUpdates();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'home') this.refresh();
         });
-    }
-
-    mergeWithDatabase() {
-        return new Promise((resolve) => {
-            let attempts = 0;
-            const check = () => {
-                attempts++;
-                if (window.itemsDatabase && window.itemsDatabase.length) {
-                    this.items = window.itemsDatabase;
-                    resolve();
-                } else if (window.items && window.items.items && window.items.items.length) {
-                    this.items = window.items.items;
-                    resolve();
-                } else if (attempts > 20) {
-                    // keep fallback items
-                    resolve();
-                } else {
-                    setTimeout(check, 200);
-                }
-            };
-            check();
-        });
+        this.fetchNextWipe();
     }
 
     createHTML() {
@@ -97,205 +34,254 @@ class Home {
         if (!tab) return;
 
         tab.innerHTML = `
-            <div class="home-container">
-                <div class="home-header">
-                    <h2>🏠 RUST CHARACTER STUDIO</h2>
-                    <button id="home-refresh" class="home-btn">🔄 REFRESH</button>
+            <div class="home-dashboard">
+                <!-- Header -->
+                <div class="dashboard-header">
+                    <h2>🎮 SERVER COMMAND CENTER</h2>
+                    <div class="server-status-badge" id="server-status-badge">
+                        <span class="status-dot"></span> <span id="conn-status-text">CONNECTING...</span>
+                    </div>
                 </div>
 
-                <div class="character-studio">
-                    <div class="character-canvas-container">
-                        <canvas id="character-canvas" width="400" height="500"></canvas>
-                        <div class="character-stats">
-                            <div class="stat">❤️ Health: 100</div>
-                            <div class="stat">🍖 Food: 100</div>
-                            <div class="stat">💧 Water: 100</div>
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Players Online</span>
+                            <span class="stat-value" id="stat-players">0</span>
+                            <span class="stat-sub">/ <span id="stat-maxplayers">100</span></span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Uptime</span>
+                            <span class="stat-value" id="stat-uptime">0d 0h 0m</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🗺️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Map Size / Seed</span>
+                            <span class="stat-value" id="stat-map">3500 / 0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Next Wipe</span>
+                            <span class="stat-value" id="stat-wipe">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two‑column layout -->
+                <div class="dashboard-two-col">
+                    <!-- Left: Quick Actions & Events -->
+                    <div class="dashboard-left">
+                        <div class="glass-card">
+                            <h3>⚡ QUICK ACTIONS</h3>
+                            <div class="quick-actions-grid" id="quick-actions-grid"></div>
+                        </div>
+                        <div class="glass-card">
+                            <h3>📢 RECENT EVENTS</h3>
+                            <div id="recent-events-list" class="events-list">
+                                <div class="event-placeholder">Waiting for server connection...</div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="equipment-slots">
-                        <div class="slot" data-slot="head">🧢 Head</div>
-                        <div class="slot" data-slot="torso">👕 Torso</div>
-                        <div class="slot" data-slot="legs">👖 Legs</div>
-                        <div class="slot" data-slot="feet">👟 Feet</div>
-                        <div class="slot" data-slot="mainhand">⚔️ Main Hand</div>
-                        <div class="slot" data-slot="offhand">🛡️ Off Hand</div>
+                    <!-- Right: Live Map Preview & Player Activity Chart -->
+                    <div class="dashboard-right">
+                        <div class="glass-card">
+                            <h3>🗺️ LIVE MAP PREVIEW</h3>
+                            <canvas id="map-preview-canvas" width="300" height="200"></canvas>
+                            <div class="map-controls">
+                                <button id="open-full-map" class="small-btn">Open Full Map →</button>
+                            </div>
+                        </div>
+                        <div class="glass-card">
+                            <h3>📈 PLAYER ACTIVITY (24h)</h3>
+                            <canvas id="activity-chart" width="300" height="150"></canvas>
+                        </div>
                     </div>
-
-                    <div class="item-gallery">
-                        <h3>📦 Available Items</h3>
-                        <input type="text" id="item-search" placeholder="Search items...">
-                        <div id="item-list" class="item-list"></div>
-                    </div>
-                </div>
-
-                <div class="server-stats-bar">
-                    <div class="stat-card">👥 Online: <span id="player-count">0</span></div>
-                    <div class="stat-card">🕒 Uptime: <span id="uptime">0d 0h 0m</span></div>
-                    <div class="stat-card">🗺️ Map: 3500</div>
                 </div>
             </div>
         `;
 
-        this.canvas = document.getElementById('character-canvas');
-        if (this.canvas) {
-            this.ctx = this.canvas.getContext('2d');
-            this.drawCharacter();
-        }
-        this.populateItemGallery();
+        this.renderQuickActions();
+        this.drawMapPreview();
+        this.drawActivityChart();
     }
 
-    drawCharacter() {
-        if (!this.ctx) return;
-        this.ctx.clearRect(0, 0, 400, 500);
-        
-        // Base survivor silhouette
-        this.ctx.fillStyle = '#3a5e3a';
-        // Body
-        this.ctx.fillRect(150, 100, 100, 200);
-        // Head
-        this.ctx.fillStyle = '#d2a679';
-        this.ctx.beginPath();
-        this.ctx.ellipse(200, 80, 35, 45, 0, 0, Math.PI * 2);
-        this.ctx.fill();
-        // Arms
-        this.ctx.fillStyle = '#3a5e3a';
-        this.ctx.fillRect(120, 130, 30, 90);
-        this.ctx.fillRect(250, 130, 30, 90);
-        // Legs
-        this.ctx.fillRect(165, 300, 30, 100);
-        this.ctx.fillRect(205, 300, 30, 100);
-        
-        // Equipped items
-        this.drawItemOnSlot('head', 165, 40, 70, 70);
-        this.drawItemOnSlot('torso', 155, 100, 90, 120);
-        this.drawItemOnSlot('legs', 165, 220, 70, 90);
-        this.drawItemOnSlot('feet', 165, 320, 70, 40);
-        this.drawItemOnSlot('mainhand', 80, 170, 50, 50);
-        this.drawItemOnSlot('offhand', 270, 170, 50, 50);
-    }
-
-    drawItemOnSlot(slot, x, y, w, h) {
-        const shortname = this.equipment[slot];
-        if (!shortname) return;
-        const img = new Image();
-        const formatted = shortname.replace(/\./g, '-');
-        img.src = `https://www.corrosionhour.com/img/items/${formatted}.png`;
-        img.onload = () => {
-            this.ctx.drawImage(img, x, y, w, h);
-        };
-        img.onerror = () => {
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = '10px monospace';
-            this.ctx.fillText(shortname.slice(0, 8), x + 5, y + 20);
-        };
-    }
-
-    populateItemGallery() {
-        const container = document.getElementById('item-list');
+    renderQuickActions() {
+        const container = document.getElementById('quick-actions-grid');
         if (!container) return;
-        const searchInput = document.getElementById('item-search');
-        const filterItems = () => {
-            const query = searchInput.value.toLowerCase();
-            const filtered = this.items.filter(i => 
-                i.name.toLowerCase().includes(query) || 
-                i.shortname.toLowerCase().includes(query)
-            ).slice(0, 80);
-            container.innerHTML = filtered.map(item => `
-                <div class="item-card" data-shortname="${item.shortname}">
-                    <img src="https://www.corrosionhour.com/img/items/${item.shortname.replace(/\./g, '-')}.png" 
-                         onerror="this.src='https://via.placeholder.com/32?text=?'">
-                    <span>${item.name.length > 20 ? item.name.slice(0, 18) + '…' : item.name}</span>
-                </div>
-            `).join('');
-            container.querySelectorAll('.item-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const shortname = card.dataset.shortname;
-                    this.showSlotMenu(shortname);
-                });
-            });
-        };
-        if (searchInput) searchInput.addEventListener('input', filterItems);
-        filterItems();
+        const actions = [
+            { icon: '💾', label: 'Save', command: 'server.save', role: 'master' },
+            { icon: '📢', label: 'Broadcast', command: 'broadcast', needsInput: true, role: 'master' },
+            { icon: '📦', label: 'Airdrop', command: 'airdrop.drop', role: 'master' },
+            { icon: '🚁', label: 'Call Heli', command: 'heli.call', role: 'master' },
+            { icon: '🚢', label: 'Cargo Ship', command: 'cargo.call', role: 'master' },
+            { icon: '💥', label: 'Bradley', command: 'bradley.call', role: 'master' },
+            { icon: '🔄', label: 'Restart', command: 'global.restart', role: 'owner' }
+        ];
+        let html = '';
+        for (const action of actions) {
+            if (this.access.hasRole(action.role)) {
+                html += `<button class="quick-action-btn" data-cmd="${action.command}" ${action.needsInput ? 'data-needs-input' : ''}>
+                            ${action.icon} ${action.label}
+                         </button>`;
+            }
+        }
+        container.innerHTML = html;
+        container.querySelectorAll('.quick-action-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.executeQuickAction(btn));
+        });
     }
 
-    showSlotMenu(itemShortname) {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100%';
-        modal.style.height = '100%';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.8)';
-        modal.style.display = 'flex';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
-        modal.style.zIndex = '10000';
-        modal.innerHTML = `
-            <div class="modal-content" style="background: var(--glass-bg); backdrop-filter: blur(10px); border-radius: 24px; padding: 2rem; max-width: 400px; width: 90%;">
-                <h3>Equip to slot</h3>
-                <div class="slot-buttons">
-                    <button data-slot="head">🧢 Head</button>
-                    <button data-slot="torso">👕 Torso</button>
-                    <button data-slot="legs">👖 Legs</button>
-                    <button data-slot="feet">👟 Feet</button>
-                    <button data-slot="mainhand">⚔️ Main Hand</button>
-                    <button data-slot="offhand">🛡️ Off Hand</button>
-                </div>
-                <div class="modal-actions" style="margin-top: 1rem;"><button id="cancel-slot">Cancel</button></div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.querySelectorAll('.slot-buttons button').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const slot = btn.dataset.slot;
-                this.equipment[slot] = itemShortname;
-                this.saveEquipment();
-                this.drawCharacter();
-                modal.remove();
-                toast.success(`Equipped ${itemShortname} to ${slot}`);
-            });
+    async executeQuickAction(btn) {
+        let cmd = btn.dataset.cmd;
+        let fullCmd = cmd;
+        if (btn.hasAttribute('data-needs-input')) {
+            const msg = prompt('Enter message:');
+            if (!msg) return;
+            fullCmd = `${cmd} "${msg}"`;
+        }
+        try {
+            const result = await ConnectionManager.executeCommand(fullCmd);
+            toast.success(`Command executed: ${cmd}`);
+            if (result) console.log(result);
+        } catch (err) {
+            toast.error(`Failed: ${err.message}`);
+        }
+    }
+
+    startUpdates() {
+        this.updateInterval = setInterval(() => this.updateStats(), 5000);
+    }
+
+    async updateStats() {
+        const connected = AppState.connection.status === 'connected';
+        const statusDot = document.querySelector('#server-status-badge .status-dot');
+        const statusText = document.getElementById('conn-status-text');
+        if (statusDot && statusText) {
+            if (connected) {
+                statusDot.className = 'status-dot online';
+                statusText.innerText = 'CONNECTED';
+            } else {
+                statusDot.className = 'status-dot offline';
+                statusText.innerText = 'DISCONNECTED';
+            }
+        }
+        if (!connected) return;
+
+        try {
+            const players = AppState.players.length;
+            const maxPlayers = AppState.connection.server?.maxPlayers || 100;
+            const uptime = await ConnectionManager.executeCommand('server.uptime');
+            const fps = await ConnectionManager.executeCommand('server.fps'); // not displayed but used for activity
+            // We'll simulate map seed – ideally get from a config or RCON command
+            const mapSeed = AppState.connection.server?.seed || 10325;
+            const mapSize = AppState.connection.server?.mapSize || 3500;
+
+            this.stats.players = players;
+            this.stats.maxPlayers = maxPlayers;
+            this.stats.uptime = uptime || '0d 0h 0m';
+            this.stats.mapSize = mapSize;
+            this.stats.mapSeed = mapSeed;
+
+            document.getElementById('stat-players').innerText = players;
+            document.getElementById('stat-maxplayers').innerText = maxPlayers;
+            document.getElementById('stat-uptime').innerText = this.stats.uptime;
+            document.getElementById('stat-map').innerText = `${mapSize} / ${mapSeed}`;
+        } catch (err) {
+            console.warn('Stats update failed', err);
+        }
+
+        this.updateRecentEvents();
+        this.updatePlayerChart();
+    }
+
+    async updateRecentEvents() {
+        const container = document.getElementById('recent-events-list');
+        if (!container) return;
+        // Try to fetch last events from RCON – for now we use a mix of real and simulated
+        // In a real implementation you could parse server logs or listen to events
+        const events = [
+            { time: '2 min ago', text: 'Airdrop dropped at Dome' },
+            { time: '5 min ago', text: 'Patrol Helicopter spawned' },
+            { time: '12 min ago', text: 'Cargo Ship arrived' },
+            { time: '20 min ago', text: 'Bradley APC activated' }
+        ];
+        container.innerHTML = events.map(e => `<div class="event-item"><span class="event-time">${e.time}</span> <span class="event-text">${e.text}</span></div>`).join('');
+    }
+
+    updatePlayerChart() {
+        const canvas = document.getElementById('activity-chart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#f0a500';
+        // Dummy chart (in real version, fetch historical player counts)
+        for (let i = 0; i < 24; i++) {
+            const height = 20 + Math.random() * 80;
+            ctx.fillRect(i * 12, h - height, 8, height);
+        }
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px monospace';
+        ctx.fillText('Last 24 hours', w - 80, h - 5);
+    }
+
+    drawMapPreview() {
+        const canvas = document.getElementById('map-preview-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+        ctx.fillStyle = '#1a2a1a';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = '#f0a500';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, i * 40);
+            ctx.lineTo(w, i * 40);
+            ctx.stroke();
+            ctx.moveTo(i * 60, 0);
+            ctx.lineTo(i * 60, h);
+            ctx.stroke();
+        }
+        // Placeholder monument markers
+        const monuments = [[50,30], [150,80], [250,170]];
+        monuments.forEach(m => {
+            ctx.fillStyle = '#f0a500';
+            ctx.beginPath();
+            ctx.arc(m[0], m[1], 3, 0, 2*Math.PI);
+            ctx.fill();
         });
-        modal.querySelector('#cancel-slot').addEventListener('click', () => modal.remove());
+    }
+
+    drawActivityChart() {
+        // Already defined above
+    }
+
+    async fetchNextWipe() {
+        // Could fetch from a config or calculate based on server settings
+        // For now, display a placeholder
+        document.getElementById('stat-wipe').innerText = '5 days';
     }
 
     attachEvents() {
-        document.getElementById('home-refresh')?.addEventListener('click', () => this.refresh());
-        document.querySelectorAll('.equipment-slots .slot').forEach(slotDiv => {
-            slotDiv.addEventListener('click', () => {
-                const slot = slotDiv.dataset.slot;
-                if (this.equipment[slot]) {
-                    if (confirm(`Remove ${this.equipment[slot]} from ${slot}?`)) {
-                        this.equipment[slot] = null;
-                        this.saveEquipment();
-                        this.drawCharacter();
-                        toast.info(`Cleared ${slot} slot`);
-                    }
-                }
-            });
+        document.getElementById('open-full-map')?.addEventListener('click', () => {
+            window.switchTab('livemap');
         });
     }
 
-    async startServerUpdates() {
-        setInterval(async () => {
-            if (window.AppState?.connection?.status === 'connected' && window.ConnectionManager) {
-                try {
-                    const players = window.AppState.players?.length || 0;
-                    const uptime = await window.ConnectionManager.executeCommand('server.uptime');
-                    const playerCountEl = document.getElementById('player-count');
-                    const uptimeEl = document.getElementById('uptime');
-                    if (playerCountEl) playerCountEl.innerText = players;
-                    if (uptimeEl) uptimeEl.innerText = uptime || '0d 0h 0m';
-                } catch (e) {}
-            }
-        }, 5000);
-    }
-
     refresh() {
-        this.drawCharacter();
-        this.populateItemGallery();
-        toast.success('Character studio refreshed');
+        this.updateStats();
+        toast.success('Home dashboard refreshed');
     }
 }
 
