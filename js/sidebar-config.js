@@ -1,4 +1,5 @@
 // sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
+// Customizable sidebar navigation with corrosion dissolve animation.
 
 class SidebarManager {
     constructor() {
@@ -51,7 +52,6 @@ class SidebarManager {
             const username = AppState.user?.username || localStorage.getItem('tdl_username');
             const isMasterUser = username === 'CooseTheGeek';
             
-            // Force reset for master if saved selection is corrupted or missing required tabs
             const saved = localStorage.getItem('tdl_selected_tabs');
             if (saved && isMasterUser) {
                 const parsed = JSON.parse(saved);
@@ -94,9 +94,7 @@ class SidebarManager {
         const role = AppState.user?.role || 'user';
         const effectiveRole = isMasterUser ? 'master' : role;
         return this.allTabs.filter(tab => {
-            if (effectiveRole === 'user') {
-                return tab.requiredRole === 'user';
-            }
+            if (effectiveRole === 'user') return tab.requiredRole === 'user';
             if (tab.requiredRole === 'user') return true;
             if (tab.requiredRole === 'master') return effectiveRole === 'master' || effectiveRole === 'owner';
             if (tab.requiredRole === 'owner') return effectiveRole === 'owner';
@@ -130,10 +128,16 @@ class SidebarManager {
     addEventDelegation() {
         const container = document.getElementById('sidebar-nav-container');
         if (!container) return;
+        
         container.addEventListener('click', (e) => {
             const item = e.target.closest('.nav-item');
             if (item && item.dataset.tab) {
                 e.preventDefault();
+                
+                // Add animation class
+                item.classList.add('click-animation');
+                setTimeout(() => item.classList.remove('click-animation'), 350);
+                
                 const tabId = item.dataset.tab;
                 window.switchTab(tabId);
             }
