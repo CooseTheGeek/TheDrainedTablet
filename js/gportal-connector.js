@@ -1,5 +1,5 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
-// Master: direct RCON entry, saves servers locally, connects and updates AppState.connection.
+// Master: direct RCON entry, saves servers locally, connects, updates header.
 
 class GPortalConnector {
     constructor() {
@@ -12,14 +12,11 @@ class GPortalConnector {
     async init() {
         const username = AppState.user?.username || localStorage.getItem('tdl_username');
         this.isMaster = username === 'CooseTheGeek';
-        
         if (this.isMaster) {
             this.loadLocalServers();
         }
-        
         this.createHTML();
         this.attachEvents();
-        
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'gportal') this.refresh();
         });
@@ -38,7 +35,6 @@ class GPortalConnector {
         const statusDot = document.querySelector('#connection-status .dot');
         const statusText = document.getElementById('conn-status-text');
         if (!statusDot || !statusText) return;
-        
         if (connected && this.connectedServer) {
             statusDot.className = 'dot online';
             statusText.innerText = `CONNECTED (${this.connectedServer.name || 'Server'})`;
@@ -62,14 +58,10 @@ class GPortalConnector {
     createHTML() {
         const tab = document.getElementById('tab-gportal');
         if (!tab) return;
-
         tab.innerHTML = `
             <div class="gportal-container">
                 <div class="gportal-header">
                     <h2>🔌 SERVER CONNECTOR (RCON)</h2>
-                    <div class="api-status" id="gportal-api-status">
-                        Status: <span class="status-badge">Ready</span>
-                    </div>
                 </div>
                 <div class="gportal-grid">
                     <div class="gportal-section">
@@ -83,20 +75,17 @@ class GPortalConnector {
                         <button id="save-server-btn" class="gportal-btn primary">💾 SAVE SERVER</button>
                         <button id="connect-saved-btn" class="gportal-btn" style="margin-top:0.5rem;">🔌 CONNECT SELECTED</button>
                     </div>
-
                     <div class="gportal-section">
                         <h3>📋 YOUR SERVERS</h3>
                         <div id="servers-list" class="servers-list"></div>
                         <button id="refresh-servers-btn" class="gportal-btn small">🔄 Refresh List</button>
                     </div>
-
                     <div class="gportal-section">
                         <h3>⚡ SEND COMMAND</h3>
                         <div class="form-group"><input type="text" id="gportal-command" placeholder="Enter command (e.g., status)"></div>
                         <button id="gportal-send-command" class="gportal-btn primary">SEND COMMAND</button>
                         <div id="gportal-command-output" class="command-output"></div>
                     </div>
-
                     <div class="gportal-section">
                         <h3>📊 SERVER STATUS</h3>
                         <pre id="gportal-server-status" class="status-pre">Not connected</pre>
@@ -110,13 +99,19 @@ class GPortalConnector {
 
     attachEvents() {
         if (!this.isMaster) return;
-        
-        document.getElementById('save-server-btn')?.addEventListener('click', () => this.saveServer());
-        document.getElementById('connect-saved-btn')?.addEventListener('click', () => this.connectSelectedServer());
-        document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
-        document.getElementById('gportal-refresh-status')?.addEventListener('click', () => this.fetchStatus());
-        document.getElementById('refresh-servers-btn')?.addEventListener('click', () => this.refresh());
-        document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
+        const saveBtn = document.getElementById('save-server-btn');
+        const connectBtn = document.getElementById('connect-saved-btn');
+        const sendBtn = document.getElementById('gportal-send-command');
+        const refreshBtn = document.getElementById('gportal-refresh-status');
+        const refreshListBtn = document.getElementById('refresh-servers-btn');
+        const commandInput = document.getElementById('gportal-command');
+
+        if (saveBtn) saveBtn.addEventListener('click', () => this.saveServer());
+        if (connectBtn) connectBtn.addEventListener('click', () => this.connectSelectedServer());
+        if (sendBtn) sendBtn.addEventListener('click', () => this.sendCommand());
+        if (refreshBtn) refreshBtn.addEventListener('click', () => this.fetchStatus());
+        if (refreshListBtn) refreshListBtn.addEventListener('click', () => this.refresh());
+        if (commandInput) commandInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendCommand();
         });
     }
@@ -143,16 +138,19 @@ class GPortalConnector {
 
     async connectSelectedServer() {
         const select = document.getElementById('server-select');
-        if (!select || !select.value) { toast.error('Select a server first'); return; }
+        if (!select || !select.value) {
+            toast.error('Select a server first');
+            return;
+        }
         const serverId = select.value;
         const server = this.servers.find(s => s.id === serverId);
         if (!server) return;
-        
         this.connectedServer = { name: server.name, ip: server.ip, port: server.port, password: server.password };
         await this.testConnection(server.ip, server.port, server.password);
     }
 
     async testConnection(ip, port, password) {
+        toast.info('Testing connection...');
         try {
             const res = await fetch(`${this.bridgeUrl}/api/command`, {
                 method: 'POST',
@@ -190,27 +188,32 @@ class GPortalConnector {
         html += `<button class="small-btn delete-server-btn">🗑️ Delete</button></div>`;
         container.innerHTML = html;
 
-        container.querySelector('.connect-server-btn')?.addEventListener('click', () => {
-            const id = document.getElementById('server-select').value;
-            const server = this.servers.find(s => s.id === id);
-            if (server) {
-                this.connectedServer = { name: server.name, ip: server.ip, port: server.port, password: server.password };
-                this.testConnection(server.ip, server.port, server.password);
-            }
-        });
-
-        container.querySelector('.delete-server-btn')?.addEventListener('click', () => {
-            const id = document.getElementById('server-select').value;
-            if (!confirm('Delete this server?')) return;
-            this.servers = this.servers.filter(s => s.id !== id);
-            this.saveLocalServers();
-            this.renderServers();
-            toast.success('Server deleted');
-            if (this.connectedServer && this.connectedServer.id === id) {
-                this.connectedServer = null;
-                this.updateHeaderStatus(false);
-            }
-        });
+        const connectBtn = container.querySelector('.connect-server-btn');
+        const deleteBtn = container.querySelector('.delete-server-btn');
+        if (connectBtn) {
+            connectBtn.addEventListener('click', () => {
+                const id = document.getElementById('server-select').value;
+                const server = this.servers.find(s => s.id === id);
+                if (server) {
+                    this.connectedServer = { name: server.name, ip: server.ip, port: server.port, password: server.password };
+                    this.testConnection(server.ip, server.port, server.password);
+                }
+            });
+        }
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                const id = document.getElementById('server-select').value;
+                if (!confirm('Delete this server?')) return;
+                this.servers = this.servers.filter(s => s.id !== id);
+                this.saveLocalServers();
+                this.renderServers();
+                toast.success('Server deleted');
+                if (this.connectedServer && this.connectedServer.id === id) {
+                    this.connectedServer = null;
+                    this.updateHeaderStatus(false);
+                }
+            });
+        }
     }
 
     async sendCommand() {
