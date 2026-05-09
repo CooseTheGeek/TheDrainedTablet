@@ -1,5 +1,5 @@
 // sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
-// Customizable sidebar navigation with corrosion dissolve animation.
+// Customizable sidebar navigation with corrosion dissolve animation and cleaned selection UI.
 
 class SidebarManager {
     constructor() {
@@ -133,11 +133,8 @@ class SidebarManager {
             const item = e.target.closest('.nav-item');
             if (item && item.dataset.tab) {
                 e.preventDefault();
-                
-                // Add animation class
                 item.classList.add('click-animation');
                 setTimeout(() => item.classList.remove('click-animation'), 350);
-                
                 const tabId = item.dataset.tab;
                 window.switchTab(tabId);
             }
@@ -146,20 +143,52 @@ class SidebarManager {
 
     getSelectionUI() {
         const available = this.getAvailableTabs();
-        let html = `<div class="sidebar-customizer"><h3>Select up to ${this.maxTabs} sidebar tabs</h3><div class="tab-selection-list">`;
+        const selectedCount = this.selectedIds.length;
+        const remaining = this.maxTabs - selectedCount;
+        
+        let html = `
+            <div class="sidebar-customizer">
+                <div class="customizer-header">
+                    <h3>📑 Customize Sidebar Tabs</h3>
+                    <div class="selection-info">
+                        <span class="selected-count">${selectedCount}</span> / <span class="max-count">${this.maxTabs}</span> tabs selected
+                        ${remaining > 0 ? `<span class="remaining"> (${remaining} remaining)</span>` : '<span class="full"> (max reached)</span>'}
+                    </div>
+                </div>
+                <div class="tab-selection-grid">
+        `;
+        
         available.forEach(tab => {
             const isChecked = this.selectedIds.includes(tab.id);
-            html += `<label class="tab-checkbox"><input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${this.selectedIds.length >= this.maxTabs && !isChecked ? 'disabled' : ''}><span class="tab-icon">${tab.icon}</span> ${tab.name}</label>`;
+            const disabled = this.selectedIds.length >= this.maxTabs && !isChecked;
+            html += `
+                <label class="tab-card ${isChecked ? 'checked' : ''} ${disabled ? 'disabled' : ''}" data-tab="${tab.id}">
+                    <input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+                    <div class="tab-card-icon">${tab.icon}</div>
+                    <div class="tab-card-name">${tab.name}</div>
+                    <div class="tab-card-check">${isChecked ? '✓' : ''}</div>
+                </label>
+            `;
         });
-        html += '</div><button id="save-sidebar-tabs" class="settings-btn primary">Save Sidebar Tabs</button></div>';
+        
+        html += `
+                </div>
+                <div class="customizer-actions">
+                    <button id="save-sidebar-tabs" class="settings-btn primary">💾 Save Sidebar Tabs</button>
+                    <button id="reset-sidebar-tabs" class="settings-btn">↺ Reset to Default</button>
+                </div>
+            </div>
+        `;
         return html;
     }
 
     attachSettingsEvents() {
         const saveBtn = document.getElementById('save-sidebar-tabs');
+        const resetBtn = document.getElementById('reset-sidebar-tabs');
+        
         if (saveBtn) {
             saveBtn.addEventListener('click', () => {
-                const checkboxes = document.querySelectorAll('.tab-checkbox input:checked');
+                const checkboxes = document.querySelectorAll('.tab-card input:checked');
                 const newIds = Array.from(checkboxes).map(cb => cb.value);
                 if (newIds.length > this.maxTabs) {
                     toast.error(`You can only select up to ${this.maxTabs} tabs`);
@@ -168,13 +197,34 @@ class SidebarManager {
                 this.selectedIds = newIds;
                 this.saveSelection();
                 this.renderSidebar();
+                // Refresh the UI in Settings tab
+                const customizerDiv = document.querySelector('.sidebar-customizer');
+                if (customizerDiv) {
+                    customizerDiv.innerHTML = this.getSelectionUI();
+                    this.attachSettingsEvents();
+                }
                 toast.success('Sidebar updated');
-                const allCbs = document.querySelectorAll('.tab-checkbox input');
-                allCbs.forEach(cb => {
-                    cb.disabled = this.selectedIds.length >= this.maxTabs && !cb.checked;
-                });
             });
         }
+        
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetSidebarTabs());
+        }
+    }
+
+    resetSidebarTabs() {
+        this.selectedIds = [...this.defaultSelectedIds];
+        this.saveSelection();
+        this.renderSidebar();
+        const settingsTab = document.getElementById('tab-settings');
+        if (settingsTab && settingsTab.classList.contains('active')) {
+            const customizerDiv = document.querySelector('.sidebar-customizer');
+            if (customizerDiv) {
+                customizerDiv.innerHTML = this.getSelectionUI();
+                this.attachSettingsEvents();
+            }
+        }
+        toast.success('Sidebar tabs reset to default');
     }
 }
 

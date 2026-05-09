@@ -1636,3 +1636,138 @@ body::after {
     .stats-grid { grid-template-columns: 1fr 1fr; }
     .dashboard-two-col { grid-template-columns: 1fr; }
 }
+
+/* ========== SIDEBAR CUSTOMIZER (SETTINGS TAB) ========== */
+.sidebar-customizer {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 1.2rem;
+}
+
+.customizer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.customizer-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.selection-info {
+    font-size: 0.9rem;
+    background: var(--bg-tertiary);
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+}
+
+.selected-count {
+    font-weight: bold;
+    color: var(--accent-primary);
+}
+
+.max-count {
+    font-weight: bold;
+}
+
+.remaining {
+    color: var(--success);
+    margin-left: 0.3rem;
+}
+
+.full {
+    color: var(--error);
+    margin-left: 0.3rem;
+}
+
+.tab-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0.2rem;
+}
+
+.tab-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 0.8rem 0.4rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.tab-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-primary);
+    background: var(--bg-tertiary);
+}
+
+.tab-card.checked {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #000;
+}
+
+.tab-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+}
+
+.tab-card.disabled:hover {
+    transform: none;
+    border-color: var(--glass-border);
+}
+
+.tab-card input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.tab-card-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.3rem;
+}
+
+.tab-card-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+
+.tab-card-check {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #000;
+}
+
+.customizer-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+.customizer-actions .settings-btn {
+    padding: 0.5rem 1.2rem;
+    border-radius: 30px;
+}
