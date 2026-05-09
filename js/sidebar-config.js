@@ -47,13 +47,13 @@ class SidebarManager {
     }
 
     loadSelection() {
-        const username = AppState.user?.username || localStorage.getItem('tdl_username');
-        const isMasterUser = username === 'CooseTheGeek';
-        
-        // Force reset for master if settings/more missing
-        const saved = localStorage.getItem('tdl_selected_tabs');
-        if (saved && isMasterUser) {
-            try {
+        try {
+            const username = AppState.user?.username || localStorage.getItem('tdl_username');
+            const isMasterUser = username === 'CooseTheGeek';
+            
+            // Force reset for master if saved selection is corrupted or missing required tabs
+            const saved = localStorage.getItem('tdl_selected_tabs');
+            if (saved && isMasterUser) {
                 const parsed = JSON.parse(saved);
                 if (!parsed.includes('settings') || !parsed.includes('more')) {
                     localStorage.removeItem('tdl_selected_tabs');
@@ -61,21 +61,20 @@ class SidebarManager {
                     this.saveSelection();
                     return;
                 }
-            } catch(e) {}
-        }
-        
-        if (saved) {
-            try {
+            }
+            
+            if (saved) {
                 this.selectedIds = JSON.parse(saved);
                 if (this.selectedIds.length > this.maxTabs) {
                     this.selectedIds = this.selectedIds.slice(0, this.maxTabs);
                     this.saveSelection();
                 }
-            } catch(e) {
+            } else {
                 this.selectedIds = [...this.defaultSelectedIds];
                 this.saveSelection();
             }
-        } else {
+        } catch (e) {
+            console.warn('Error loading sidebar selection, using defaults', e);
             this.selectedIds = [...this.defaultSelectedIds];
             this.saveSelection();
         }
@@ -143,9 +142,8 @@ class SidebarManager {
 
     getSelectionUI() {
         const available = this.getAvailableTabs();
-        const filtered = available.filter(t => t.id !== 'settings');
         let html = `<div class="sidebar-customizer"><h3>Select up to ${this.maxTabs} sidebar tabs</h3><div class="tab-selection-list">`;
-        filtered.forEach(tab => {
+        available.forEach(tab => {
             const isChecked = this.selectedIds.includes(tab.id);
             html += `<label class="tab-checkbox"><input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${this.selectedIds.length >= this.maxTabs && !isChecked ? 'disabled' : ''}><span class="tab-icon">${tab.icon}</span> ${tab.name}</label>`;
         });
