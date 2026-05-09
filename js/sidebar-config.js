@@ -1,5 +1,5 @@
 // sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
-// Customizable sidebar navigation with corrosion dissolve animation, cleaned selection UI, and Clear All option.
+// Customizable sidebar navigation with corrosion animation, card grid, Clear All, Reset, and Save.
 
 class SidebarManager {
     constructor() {
@@ -160,10 +160,10 @@ class SidebarManager {
         
         available.forEach(tab => {
             const isChecked = this.selectedIds.includes(tab.id);
-            const disabled = this.selectedIds.length >= this.maxTabs && !isChecked;
+            // No disabled attribute – we enforce limit on save only
             html += `
-                <label class="tab-card ${isChecked ? 'checked' : ''} ${disabled ? 'disabled' : ''}" data-tab="${tab.id}">
-                    <input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+                <label class="tab-card ${isChecked ? 'checked' : ''}" data-tab-id="${tab.id}">
+                    <input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''}>
                     <div class="tab-card-icon">${tab.icon}</div>
                     <div class="tab-card-name">${tab.name}</div>
                     <div class="tab-card-check">${isChecked ? '✓' : ''}</div>
@@ -184,66 +184,97 @@ class SidebarManager {
     }
 
     attachSettingsEvents() {
+        const clearBtn = document.getElementById('clear-sidebar-tabs');
         const saveBtn = document.getElementById('save-sidebar-tabs');
         const resetBtn = document.getElementById('reset-sidebar-tabs');
-        const clearBtn = document.getElementById('clear-sidebar-tabs');
+        
+        // Helper to refresh the customizer UI after changes
+        const refreshCustomizer = () => {
+            const customizerDiv = document.querySelector('.sidebar-customizer');
+            if (customizerDiv) {
+                customizerDiv.innerHTML = this.getSelectionUI();
+                this.attachSettingsEvents(); // re-bind buttons
+            }
+        };
         
         if (clearBtn) {
             clearBtn.addEventListener('click', () => {
-                if (confirm('Clear all selected tabs? The sidebar will become empty until you select new tabs.')) {
+                if (confirm('Clear all selected tabs? Your sidebar will become empty.')) {
                     this.selectedIds = [];
                     this.saveSelection();
                     this.renderSidebar();
-                    // Refresh the UI in Settings tab
-                    const customizerDiv = document.querySelector('.sidebar-customizer');
-                    if (customizerDiv) {
-                        customizerDiv.innerHTML = this.getSelectionUI();
-                        this.attachSettingsEvents();
-                    }
-                    toast.info('All tabs cleared. Select tabs and save to restore.');
+                    refreshCustomizer();
+                    toast.info('All tabs cleared. Use the checkboxes to select new tabs, then Save.');
                 }
             });
         }
         
         if (saveBtn) {
             saveBtn.addEventListener('click', () => {
+                // Gather checked values from the current UI
                 const checkboxes = document.querySelectorAll('.tab-card input:checked');
                 const newIds = Array.from(checkboxes).map(cb => cb.value);
                 if (newIds.length > this.maxTabs) {
-                    toast.error(`You can only select up to ${this.maxTabs} tabs`);
+                    toast.error(`You can only select up to ${this.maxTabs} tabs. Currently selected: ${newIds.length}`);
                     return;
                 }
                 this.selectedIds = newIds;
                 this.saveSelection();
                 this.renderSidebar();
-                // Refresh the UI in Settings tab
-                const customizerDiv = document.querySelector('.sidebar-customizer');
-                if (customizerDiv) {
-                    customizerDiv.innerHTML = this.getSelectionUI();
-                    this.attachSettingsEvents();
-                }
+                refreshCustomizer();
                 toast.success('Sidebar updated');
             });
         }
         
         if (resetBtn) {
-            resetBtn.addEventListener('click', () => this.resetSidebarTabs());
+            resetBtn.addEventListener('click', () => {
+                this.selectedIds = [...this.defaultSelectedIds];
+                this.saveSelection();
+                this.renderSidebar();
+                refreshCustomizer();
+                toast.success('Sidebar tabs reset to default');
+            });
         }
-    }
-
-    resetSidebarTabs() {
-        this.selectedIds = [...this.defaultSelectedIds];
-        this.saveSelection();
-        this.renderSidebar();
-        const settingsTab = document.getElementById('tab-settings');
-        if (settingsTab && settingsTab.classList.contains('active')) {
-            const customizerDiv = document.querySelector('.sidebar-customizer');
-            if (customizerDiv) {
-                customizerDiv.innerHTML = this.getSelectionUI();
-                this.attachSettingsEvents();
+        
+        // Also re-attach checkbox change events? Not needed because clicking label toggles checkbox naturally.
+        // But we need to update the visual "checked" state and the counter when checkboxes are clicked.
+        // We'll add a live counter update on checkbox click.
+        const updateCounterFromCheckboxes = () => {
+            const checkboxes = document.querySelectorAll('.tab-card input:checked');
+            const count = checkboxes.length;
+            const infoDiv = document.querySelector('.selection-info');
+            if (infoDiv) {
+                const remaining = this.maxTabs - count;
+                infoDiv.innerHTML = `
+                    <span class="selected-count">${count}</span> / <span class="max-count">${this.maxTabs}</span> tabs selected
+                    ${remaining > 0 ? `<span class="remaining"> (${remaining} remaining)</span>` : '<span class="full"> (max reached)</span>'}
+                `;
             }
+            // Update visual card styles
+            document.querySelectorAll('.tab-card').forEach(card => {
+                const cb = card.querySelector('input');
+                if (cb.checked) {
+                    card.classList.add('checked');
+                    card.querySelector('.tab-card-check').innerText = '✓';
+                } else {
+                    card.classList.remove('checked');
+                    card.querySelector('.tab-card-check').innerText = '';
+                }
+            });
+        };
+        
+        // Attach change event to all checkboxes (they may be recreated, so use delegation)
+        const grid = document.querySelector('.tab-selection-grid');
+        if (grid) {
+            grid.addEventListener('change', (e) => {
+                if (e.target && e.target.type === 'checkbox') {
+                    updateCounterFromCheckboxes();
+                }
+            });
         }
-        toast.success('Sidebar tabs reset to default');
+        
+        // Initial counter update
+        updateCounterFromCheckboxes();
     }
 }
 
