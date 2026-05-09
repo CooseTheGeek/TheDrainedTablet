@@ -1,4 +1,5 @@
-// settings.js – DRAINED TABLET ULTIMATE v7.0.0 (fixed save)
+// settings.js – DRAINED TABLET ULTIMATE v7.0.0 (FULLY RESTORED with layout management)
+// Dashboard settings: modern card layout, with extra customization options.
 
 class Settings {
     constructor() {
@@ -41,7 +42,6 @@ class Settings {
     saveSettings() {
         localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
         this.applySettings();
-        console.log('Settings saved to localStorage', this.settings);
     }
 
     saveLayouts() {
@@ -67,6 +67,7 @@ class Settings {
                     <h2>⚙️ Dashboard Settings</h2>
                     <p>Customize your experience</p>
                 </div>
+
                 <div class="settings-cards">
                     <!-- Appearance Card -->
                     <div class="settings-card">
@@ -219,6 +220,7 @@ class Settings {
                         </div>
                     </div>
 
+                    <!-- Layout Management Card (Master only) -->
                     ${this.access.hasRole('master') ? `
                     <div class="settings-card">
                         <div class="card-header">📐 Layout Management</div>
@@ -232,6 +234,7 @@ class Settings {
                     </div>
                     ` : ''}
 
+                    <!-- Sidebar Tabs Card -->
                     <div class="settings-card">
                         <div class="card-header">📑 Sidebar Tabs</div>
                         <div class="card-body">
@@ -239,6 +242,7 @@ class Settings {
                         </div>
                     </div>
 
+                    <!-- Data Management Card -->
                     <div class="settings-card">
                         <div class="card-header">💾 Data Management</div>
                         <div class="card-body">
@@ -255,6 +259,7 @@ class Settings {
                         </div>
                     </div>
                 </div>
+
                 <div class="settings-actions">
                     <button id="save-settings" class="settings-btn primary">💾 SAVE ALL SETTINGS</button>
                     <button id="reset-settings" class="settings-btn">🔄 RESET TO DEFAULT</button>
@@ -266,7 +271,6 @@ class Settings {
         this.setupRangeListeners();
         this.renderSidebarCustomizer();
         this.attachBackgroundUpload();
-        this.attachSettingsSave(); // ensure event listener attached
     }
 
     setupRangeListeners() {
@@ -311,8 +315,7 @@ class Settings {
     }
 
     attachEvents() {
-        // Already called; but we need to ensure save button works
-        this.attachSettingsSave();
+        document.getElementById('save-settings')?.addEventListener('click', () => this.saveSettings());
         document.getElementById('reset-settings')?.addEventListener('click', () => this.resetSettings());
         document.getElementById('export-data')?.addEventListener('click', () => this.exportData());
         document.getElementById('import-data')?.addEventListener('click', () => this.importData());
@@ -320,18 +323,6 @@ class Settings {
         if (this.access.hasRole('master')) {
             document.getElementById('save-layout')?.addEventListener('click', () => this.saveLayout());
             document.getElementById('reset-layout')?.addEventListener('click', () => this.resetLayout());
-        }
-    }
-
-    attachSettingsSave() {
-        const saveBtn = document.getElementById('save-settings');
-        if (saveBtn) {
-            // Remove old listener to avoid duplicates
-            saveBtn.removeEventListener('click', this.saveSettingsHandler);
-            this.saveSettingsHandler = () => this.saveSettings();
-            saveBtn.addEventListener('click', this.saveSettingsHandler);
-        } else {
-            console.warn('Save settings button not found');
         }
     }
 
@@ -370,12 +361,15 @@ class Settings {
     applySettings() {
         // Theme
         document.body.className = `theme-${this.settings.theme}`;
+        // Compact mode
         document.body.classList.toggle('compact', this.settings.compactMode);
+        // Animations
         if (!this.settings.animations || this.settings.reducedMotion) {
             document.body.classList.add('no-animations');
         } else {
             document.body.classList.remove('no-animations');
         }
+        // Live background
         if (this.settings.liveBackground && !this.settings.customBackground) {
             document.body.classList.remove('no-live-bg');
         } else if (this.settings.customBackground) {
@@ -387,15 +381,158 @@ class Settings {
             document.body.style.backgroundImage = '';
             document.body.classList.remove('has-custom-bg');
         }
+        // Font size
         document.documentElement.style.fontSize = 
             this.settings.fontSize === 'small' ? '12px' :
             this.settings.fontSize === 'large' ? '16px' : '14px';
+        // Glass blur and border radius
         document.documentElement.style.setProperty('--glass-blur', `${this.settings.glassBlur}px`);
         document.documentElement.style.setProperty('--border-radius', `${this.settings.borderRadius}px`);
+        // Language
         document.documentElement.lang = this.settings.language;
     }
 
-    // ... (rest of methods unchanged: resetSettings, exportData, importData, clearData, renderLayoutList, saveLayout, loadLayout, deleteLayout, resetLayout, refresh)
+    resetSettings() {
+        if (confirm('Reset all settings to default?')) {
+            this.settings = {
+                defaultTab: 'home',
+                theme: 'default',
+                sidebarPosition: 'left',
+                compactMode: false,
+                showAvatars: true,
+                refreshRate: 5,
+                notifications: true,
+                soundAlerts: true,
+                autoLock: 30,
+                language: 'en',
+                animations: true,
+                reducedMotion: false,
+                liveBackground: true,
+                fontSize: 'medium',
+                glassBlur: 16,
+                borderRadius: 12,
+                customBackground: null
+            };
+            this.saveSettings();
+            this.refresh();
+            toast.info('Settings reset');
+        }
+    }
+
+    exportData() {
+        const data = {
+            settings: this.settings,
+            layouts: this.layouts,
+            timestamp: new Date().toISOString()
+        };
+        if (this.access.hasRole('master')) {
+            data.users = localStorage.getItem('tdl_users');
+            data.audit = localStorage.getItem('tdl_audit_log');
+        }
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `drained_settings_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+
+    importData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (data.settings) {
+                        this.settings = { ...this.settings, ...data.settings };
+                        this.saveSettings();
+                    }
+                    if (data.layouts && this.access.hasRole('master')) {
+                        this.layouts = data.layouts;
+                        this.saveLayouts();
+                    }
+                    if (data.users && this.access.hasRole('master')) localStorage.setItem('tdl_users', data.users);
+                    if (data.audit && this.access.hasRole('master')) localStorage.setItem('tdl_audit_log', data.audit);
+                    toast.success('Data imported');
+                    setTimeout(() => location.reload(), 1000);
+                } catch (err) {
+                    toast.error('Invalid import file');
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    clearData() {
+        if (confirm('⚠️ DELETE ALL LOCAL DATA? This cannot be undone!')) {
+            localStorage.clear();
+            toast.error('All local data cleared');
+            setTimeout(() => location.reload(), 1500);
+        }
+    }
+
+    renderLayoutList() {
+        const list = document.getElementById('layout-list');
+        if (!list) return;
+        if (this.layouts.saved.length === 0) {
+            list.innerHTML = '<p>No saved layouts</p>';
+            return;
+        }
+        let html = '';
+        this.layouts.saved.forEach((layout, index) => {
+            html += `<div class="layout-item"><span>${layout.name}</span><button class="small-btn load-layout" data-index="${index}">Load</button><button class="small-btn delete-layout" data-index="${index}">Delete</button></div>`;
+        });
+        list.innerHTML = html;
+        list.querySelectorAll('.load-layout').forEach(btn => btn.addEventListener('click', (e) => this.loadLayout(parseInt(e.target.dataset.index))));
+        list.querySelectorAll('.delete-layout').forEach(btn => btn.addEventListener('click', (e) => this.deleteLayout(parseInt(e.target.dataset.index))));
+    }
+
+    saveLayout() {
+        const name = prompt('Enter layout name:');
+        if (!name) return;
+        const layout = { name, data: LayoutManager.loadLayout() || {}, created: new Date().toISOString() };
+        this.layouts.saved.push(layout);
+        this.saveLayouts();
+        this.renderLayoutList();
+        toast.success('Layout saved');
+    }
+
+    loadLayout(index) {
+        const layout = this.layouts.saved[index];
+        if (layout && layout.data) {
+            LayoutManager.saveLayout(layout.data);
+            toast.success(`Layout "${layout.name}" loaded`);
+        }
+    }
+
+    deleteLayout(index) {
+        if (confirm('Delete this layout?')) {
+            this.layouts.saved.splice(index, 1);
+            this.saveLayouts();
+            this.renderLayoutList();
+            toast.info('Layout deleted');
+        }
+    }
+
+    resetLayout() {
+        if (confirm('Reset layout to default?')) {
+            LayoutManager.resetLayout();
+            toast.info('Layout reset');
+        }
+    }
+
+    refresh() {
+        this.createHTML();
+        this.attachEvents();
+        if (this.access.hasRole('master')) this.renderLayoutList();
+        this.renderSidebarCustomizer();
+        toast.success('Settings refreshed');
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
