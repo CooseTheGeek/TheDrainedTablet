@@ -48,22 +48,32 @@ class SidebarManager {
     }
 
     loadSelection() {
-        const saved = localStorage.getItem('tdl_selected_tabs');
-        if (saved) {
-            this.selectedIds = JSON.parse(saved);
-            if (this.selectedIds.length > this.maxTabs) {
-                this.selectedIds = this.selectedIds.slice(0, this.maxTabs);
-                this.saveSelection();
-            }
-        } else {
+    const username = AppState.user?.username || localStorage.getItem('tdl_username');
+    const isMasterUser = username === 'CooseTheGeek';
+    
+    // If master and saved selection doesn't include settings/more, reset to defaults
+    const saved = localStorage.getItem('tdl_selected_tabs');
+    if (saved && isMasterUser) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.includes('settings') || !parsed.includes('more')) {
+            localStorage.removeItem('tdl_selected_tabs');
             this.selectedIds = [...this.defaultSelectedIds];
             this.saveSelection();
+            return;
         }
     }
-
-    saveSelection() {
-        localStorage.setItem('tdl_selected_tabs', JSON.stringify(this.selectedIds));
+    
+    if (saved) {
+        this.selectedIds = JSON.parse(saved);
+        if (this.selectedIds.length > this.maxTabs) {
+            this.selectedIds = this.selectedIds.slice(0, this.maxTabs);
+            this.saveSelection();
+        }
+    } else {
+        this.selectedIds = [...this.defaultSelectedIds];
+        this.saveSelection();
     }
+}
 
     getAvailableTabs() {
         const username = AppState.user?.username || localStorage.getItem('tdl_username');
