@@ -1,4 +1,4 @@
-// settings.js – DRAINED TABLET ULTIMATE v7.0.0 (FULLY RESTORED with layout management)
+// settings.js – DRAINED TABLET ULTIMATE v7.0.0
 // Dashboard settings: modern card layout, with extra customization options.
 
 class Settings {
@@ -40,8 +40,28 @@ class Settings {
     }
 
     saveSettings() {
+        // Gather all values (no recursion!)
+        this.settings.defaultTab = document.getElementById('default-tab').value;
+        this.settings.theme = document.getElementById('theme-select').value;
+        this.settings.sidebarPosition = document.getElementById('sidebar-position').value;
+        this.settings.compactMode = document.getElementById('compact-mode').checked;
+        this.settings.showAvatars = document.getElementById('show-avatars').checked;
+        this.settings.refreshRate = parseInt(document.getElementById('refresh-rate').value);
+        this.settings.notifications = document.getElementById('enable-notifications').checked;
+        this.settings.soundAlerts = document.getElementById('sound-alerts').checked;
+        this.settings.autoLock = parseInt(document.getElementById('auto-lock').value);
+        this.settings.language = document.getElementById('language-select').value;
+        this.settings.animations = document.getElementById('enable-animations').checked;
+        this.settings.reducedMotion = document.getElementById('reduced-motion').checked;
+        this.settings.liveBackground = document.getElementById('live-background').checked;
+        this.settings.fontSize = document.getElementById('font-size').value;
+        this.settings.glassBlur = parseInt(document.getElementById('glass-blur').value);
+        this.settings.borderRadius = parseInt(document.getElementById('border-radius').value);
+        // customBackground is separate, not overwritten here
+
         localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
         this.applySettings();
+        toast.success('Settings saved');
     }
 
     saveLayouts() {
@@ -60,6 +80,8 @@ class Settings {
     createHTML() {
         const tab = document.getElementById('tab-settings');
         if (!tab) return;
+
+        const isMaster = this.access.hasRole('master');
 
         tab.innerHTML = `
             <div class="settings-modern">
@@ -220,8 +242,7 @@ class Settings {
                         </div>
                     </div>
 
-                    <!-- Layout Management Card (Master only) -->
-                    ${this.access.hasRole('master') ? `
+                    ${isMaster ? `
                     <div class="settings-card">
                         <div class="card-header">📐 Layout Management</div>
                         <div class="card-body">
@@ -234,7 +255,6 @@ class Settings {
                     </div>
                     ` : ''}
 
-                    <!-- Sidebar Tabs Card -->
                     <div class="settings-card">
                         <div class="card-header">📑 Sidebar Tabs</div>
                         <div class="card-body">
@@ -242,7 +262,6 @@ class Settings {
                         </div>
                     </div>
 
-                    <!-- Data Management Card -->
                     <div class="settings-card">
                         <div class="card-header">💾 Data Management</div>
                         <div class="card-body">
@@ -267,7 +286,7 @@ class Settings {
             </div>
         `;
 
-        if (this.access.hasRole('master')) this.renderLayoutList();
+        if (isMaster) this.renderLayoutList();
         this.setupRangeListeners();
         this.renderSidebarCustomizer();
         this.attachBackgroundUpload();
@@ -301,6 +320,7 @@ class Settings {
                     this.settings.customBackground = ev.target.result;
                     this.applySettings();
                     toast.success('Background image applied');
+                    localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
                 };
                 reader.readAsDataURL(file);
             });
@@ -310,6 +330,7 @@ class Settings {
                 this.settings.customBackground = null;
                 this.applySettings();
                 toast.info('Background cleared');
+                localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
             });
         }
     }
@@ -331,31 +352,9 @@ class Settings {
         if (container && window.sidebarManager && window.sidebarManager.getSelectionUI) {
             container.innerHTML = window.sidebarManager.getSelectionUI();
             window.sidebarManager.attachSettingsEvents();
+        } else if (container) {
+            container.innerHTML = '<p>Sidebar manager not loaded.</p>';
         }
-    }
-
-    saveSettings() {
-        // Gather all values
-        this.settings.defaultTab = document.getElementById('default-tab').value;
-        this.settings.theme = document.getElementById('theme-select').value;
-        this.settings.sidebarPosition = document.getElementById('sidebar-position').value;
-        this.settings.compactMode = document.getElementById('compact-mode').checked;
-        this.settings.showAvatars = document.getElementById('show-avatars').checked;
-        this.settings.refreshRate = parseInt(document.getElementById('refresh-rate').value);
-        this.settings.notifications = document.getElementById('enable-notifications').checked;
-        this.settings.soundAlerts = document.getElementById('sound-alerts').checked;
-        this.settings.autoLock = parseInt(document.getElementById('auto-lock').value);
-        this.settings.language = document.getElementById('language-select').value;
-        this.settings.animations = document.getElementById('enable-animations').checked;
-        this.settings.reducedMotion = document.getElementById('reduced-motion').checked;
-        this.settings.liveBackground = document.getElementById('live-background').checked;
-        this.settings.fontSize = document.getElementById('font-size').value;
-        this.settings.glassBlur = parseInt(document.getElementById('glass-blur').value);
-        this.settings.borderRadius = parseInt(document.getElementById('border-radius').value);
-        // customBackground already handled
-        this.saveSettings();
-        this.applySettings();
-        toast.success('Settings saved');
     }
 
     applySettings() {
@@ -372,6 +371,8 @@ class Settings {
         // Live background
         if (this.settings.liveBackground && !this.settings.customBackground) {
             document.body.classList.remove('no-live-bg');
+            document.body.style.backgroundImage = '';
+            document.body.classList.remove('has-custom-bg');
         } else if (this.settings.customBackground) {
             document.body.style.backgroundImage = `url(${this.settings.customBackground})`;
             document.body.classList.add('has-custom-bg');
@@ -413,7 +414,8 @@ class Settings {
                 borderRadius: 12,
                 customBackground: null
             };
-            this.saveSettings();
+            localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
+            this.applySettings();
             this.refresh();
             toast.info('Settings reset');
         }
@@ -449,7 +451,8 @@ class Settings {
                     const data = JSON.parse(event.target.result);
                     if (data.settings) {
                         this.settings = { ...this.settings, ...data.settings };
-                        this.saveSettings();
+                        localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
+                        this.applySettings();
                     }
                     if (data.layouts && this.access.hasRole('master')) {
                         this.layouts = data.layouts;
