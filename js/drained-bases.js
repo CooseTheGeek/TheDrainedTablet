@@ -1,5 +1,5 @@
 // drained-bases.js – DRAINED TABLET ULTIMATE v7.0.0
-// Shop‑style blueprint system with player name dropdown.
+// Fixed: player dropdown names, position parsing, block count display.
 
 class DrainedBases {
     constructor() {
@@ -24,30 +24,25 @@ class DrainedBases {
 
     getDefaultBlueprints() {
         return [
-            { 
-                id: 1, 
-                name: "2x1 Starter", 
-                description: "Compact starter base with airlock, TC, and sleeping bag.", 
-                price: 250, 
-                blocks: 5, 
-                shortname: "2x1_starter", 
-                image: "https://www.corrosionhour.com/img/items/wood.png",
+            {
+                id: 1,
+                name: "2x1 Starter",
+                description: "Compact starter base with airlock, TC, and sleeping bag.",
+                price: 250,
                 blockData: [
                     { shortname: "wall.frame", x: 0, y: 0, z: 0 },
                     { shortname: "floor", x: 0, y: 0, z: 1 },
                     { shortname: "door.hinged.wood", x: 0, y: 0, z: -1 },
                     { shortname: "cupboard.tool", x: 0, y: 0, z: 1 },
                     { shortname: "sleepingbag", x: 1, y: 0, z: 0 }
-                ]
+                ],
+                image: "https://www.corrosionhour.com/img/items/wood.png"
             },
-            { 
-                id: 2, 
-                name: "2x2 Medium Base", 
-                description: "Spacious 2x2 with airlock, TC, bags, and storage.", 
-                price: 500, 
-                blocks: 9, 
-                shortname: "2x2_medium", 
-                image: "https://www.corrosionhour.com/img/items/metal.fragments.png",
+            {
+                id: 2,
+                name: "2x2 Medium Base",
+                description: "Spacious 2x2 with airlock, TC, bags, and storage.",
+                price: 500,
                 blockData: [
                     { shortname: "wall.frame", x: 0, y: 0, z: 0 },
                     { shortname: "floor", x: 0, y: 0, z: 1 },
@@ -58,16 +53,14 @@ class DrainedBases {
                     { shortname: "sleepingbag", x: 0, y: 0, z: 2 },
                     { shortname: "sleepingbag", x: 2, y: 0, z: 0 },
                     { shortname: "box.wooden", x: 0, y: 0, z: 2 }
-                ]
+                ],
+                image: "https://www.corrosionhour.com/img/items/metal.fragments.png"
             },
-            { 
-                id: 3, 
-                name: "3x3 Fortress", 
-                description: "Large 3x3 with honeycomb potential, TC, multiple bags, storage.", 
-                price: 1000, 
-                blocks: 16, 
-                shortname: "3x3_fortress", 
-                image: "https://www.corrosionhour.com/img/items/hq.metal.ore.png",
+            {
+                id: 3,
+                name: "3x3 Fortress",
+                description: "Large 3x3 with honeycomb potential, TC, multiple bags, storage.",
+                price: 1000,
                 blockData: [
                     { shortname: "floor", x: 0, y: 0, z: 0 }, { shortname: "floor", x: 1, y: 0, z: 0 }, { shortname: "floor", x: 2, y: 0, z: 0 },
                     { shortname: "floor", x: 0, y: 0, z: 1 }, { shortname: "floor", x: 1, y: 0, z: 1 }, { shortname: "floor", x: 2, y: 0, z: 1 },
@@ -77,7 +70,8 @@ class DrainedBases {
                     { shortname: "cupboard.tool", x: 1, y: 0, z: 1 },
                     { shortname: "sleepingbag", x: 0, y: 0, z: 3 }, { shortname: "sleepingbag", x: 2, y: 0, z: 3 },
                     { shortname: "box.wooden", x: 0, y: 0, z: 3 }, { shortname: "box.wooden", x: 2, y: 0, z: 3 }
-                ]
+                ],
+                image: "https://www.corrosionhour.com/img/items/hq.metal.ore.png"
             }
         ];
     }
@@ -93,7 +87,9 @@ class DrainedBases {
                 // Ensure blockData is present
                 this.blueprints = this.blueprints.map(bp => {
                     const defaultBp = this.getDefaultBlueprints().find(d => d.id === bp.id);
-                    if (defaultBp && (!bp.blockData || bp.blockData.length === 0)) bp.blockData = defaultBp.blockData;
+                    if (defaultBp && (!bp.blockData || bp.blockData.length === 0)) {
+                        bp.blockData = defaultBp.blockData;
+                    }
                     return bp;
                 });
             }
@@ -117,7 +113,7 @@ class DrainedBases {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/drained/purchases/${encodeURIComponent(playerId)}`);
             if (!res.ok) throw new Error();
             this.purchases = await res.json();
-        } catch (err) { 
+        } catch (err) {
             this.purchases = [];
         }
     }
@@ -159,61 +155,61 @@ class DrainedBases {
     async fetchBalance() {
         const isMaster = window.accessControl && window.accessControl.isMasterUser();
         if (isMaster) {
-            document.getElementById('bps-player-balance').innerText = '∞ (MASTER)';
+            const balanceEl = document.getElementById('bps-player-balance');
+            if (balanceEl) balanceEl.innerText = '∞ (MASTER)';
             return;
         }
         const playerId = AppState.user.platformId;
-        if (!playerId) { 
-            document.getElementById('bps-player-balance').innerText = '? (Set Platform ID)';
+        if (!playerId) {
+            const balanceEl = document.getElementById('bps-player-balance');
+            if (balanceEl) balanceEl.innerText = '? (Set Platform ID)';
             return;
         }
         try {
             const res = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
-            document.getElementById('bps-player-balance').innerText = parseInt(res) || 0;
-        } catch { 
-            document.getElementById('bps-player-balance').innerText = '?';
+            const balance = parseInt(res) || 0;
+            const balanceEl = document.getElementById('bps-player-balance');
+            if (balanceEl) balanceEl.innerText = balance;
+        } catch {
+            const balanceEl = document.getElementById('bps-player-balance');
+            if (balanceEl) balanceEl.innerText = '?';
         }
     }
 
     updatePlayerDropdown() {
-    const select = document.getElementById('deploy-player-select');
-    if (!select) return;
-    const players = AppState.players || [];
-    let options = '<option value="">Select a player...</option>';
-    if (players.length === 0) {
-        options = '<option value="">No players online</option>';
-    } else {
-        players.forEach(p => {
-            // Try common name properties in order
-            let name = p.DisplayName || p.displayName || p.name || p.playerName || p.username;
-            // If still undefined, see if there's a property that looks like a name
-            if (!name && typeof p === 'object') {
-                const possible = Object.values(p).find(v => typeof v === 'string' && v.length > 0 && v.length < 50 && !v.includes('STEAM'));
-                if (possible) name = possible;
-            }
-            if (name) {
-                name = name.replace(/[<>]/g, ''); // sanitize
-                options += `<option value="${name}">${name}</option>`;
-            } else {
-                console.warn('No name found for player:', p);
-            }
-        });
+        const select = document.getElementById('deploy-player-select');
+        if (!select) return;
+        const players = AppState.players || [];
+        let options = '<option value="">Select a player...</option>';
+        if (players.length === 0) {
+            options = '<option value="">No players online</option>';
+        } else {
+            players.forEach(p => {
+                const name = p.name || p.displayName || p.DisplayName;
+                if (name && typeof name === 'string') {
+                    options += `<option value="${name.replace(/[<>]/g, '')}">${name}</option>`;
+                }
+            });
+        }
+        select.innerHTML = options;
     }
-    select.innerHTML = options;
-}
 
     renderGallery() {
         const container = document.getElementById('bps-gallery');
         if (!container) return;
-        if (!this.blueprints.length) { container.innerHTML = '<div class="no-blueprints">No blueprints available</div>'; return; }
+        if (!this.blueprints.length) {
+            container.innerHTML = '<div class="no-blueprints">No blueprints available</div>';
+            return;
+        }
         const isMaster = window.accessControl && window.accessControl.isMasterUser();
         container.innerHTML = this.blueprints.map(bp => {
             const owned = this.purchases.some(p => p.blueprint_id === bp.id && !p.deployed_at);
             const priceDisplay = isMaster ? 'FREE (Master)' : `${bp.price} scrap`;
-            const blockCount = (bp.blockData && bp.blockData.length) ? bp.blockData.length : (bp.blocks || 0);
+            const blockCount = Array.isArray(bp.blockData) ? bp.blockData.length : (bp.blocks || 0);
+            const imageUrl = this.getItemImage(bp.image || bp.shortname);
             return `
                 <div class="bp-card" data-id="${bp.id}">
-                    <img src="${this.getItemImage(bp.image || bp.shortname)}" class="bp-image" onerror="this.src='https://www.corrosionhour.com/img/items/wood.png'">
+                    <img src="${imageUrl}" class="bp-image" onerror="this.src='https://www.corrosionhour.com/img/items/wood.png'">
                     <div class="bp-name">${this.escapeHtml(bp.name)}</div>
                     <div class="bp-desc">${this.escapeHtml(bp.description || '')}</div>
                     <div class="bp-specs"><span>📦 ${blockCount} blocks</span><span>💰 ${priceDisplay}</span></div>
@@ -237,7 +233,10 @@ class DrainedBases {
         const container = document.getElementById('bps-owned-list');
         if (!container) return;
         const owned = this.purchases.filter(p => !p.deployed_at);
-        if (owned.length === 0) { container.innerHTML = '<div class="no-owned">No purchased blueprints ready to deploy.</div>'; return; }
+        if (owned.length === 0) {
+            container.innerHTML = '<div class="no-owned">No purchased blueprints ready to deploy.</div>';
+            return;
+        }
         container.innerHTML = owned.map(p => {
             const bp = this.blueprints.find(b => b.id === p.blueprint_id);
             return `<div class="owned-item"><span>${bp ? bp.name : 'Unknown'}</span><button class="small-btn deploy-owned" data-id="${p.blueprint_id}">Deploy</button></div>`;
@@ -273,8 +272,14 @@ class DrainedBases {
         try {
             const balanceRes = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
             const balance = parseInt(balanceRes) || 0;
-            if (balance < bp.price) { toast.error(`You need ${bp.price} scrap. You have ${balance}.`); return; }
-        } catch { toast.error('Could not verify balance'); return; }
+            if (balance < bp.price) {
+                toast.error(`You need ${bp.price} scrap. You have ${balance}.`);
+                return;
+            }
+        } catch {
+            toast.error('Could not verify balance');
+            return;
+        }
         
         try {
             await ConnectionManager.executeCommand(`economy.remove "${playerId}" ${bp.price}`);
@@ -287,7 +292,9 @@ class DrainedBases {
             toast.success(`Blueprint "${bp.name}" purchased!`);
             await this.loadMyPurchases();
             this.renderGallery(); this.renderOwned(); this.fetchBalance();
-        } catch (err) { toast.error(err.message); }
+        } catch (err) {
+            toast.error(err.message);
+        }
     }
 
     openDeployModal(blueprintId) {
@@ -300,19 +307,51 @@ class DrainedBases {
         const blueprintId = this.deployingId;
         if (!blueprintId) return;
         const bp = this.blueprints.find(b => b.id === blueprintId);
-        if (!bp || !bp.blockData) { toast.error('Blueprint data missing'); return; }
+        if (!bp || !bp.blockData || bp.blockData.length === 0) {
+            toast.error('Blueprint data missing');
+            return;
+        }
         
         const select = document.getElementById('deploy-player-select');
         const targetPlayer = select.value;
-        if (!targetPlayer) { toast.error('Select a player'); return; }
+        if (!targetPlayer) {
+            toast.error('Select a player');
+            return;
+        }
         
         let position = null;
         try {
             const posRaw = await ConnectionManager.executeCommand(`player.position "${targetPlayer}"`);
-            const match = posRaw.match(/X:\s*([-\d.]+),\s*Y:\s*([-\d.]+),\s*Z:\s*([-\d.]+)/i);
-            if (match) position = { x: parseFloat(match[1]), y: parseFloat(match[2]), z: parseFloat(match[3]) };
-            else throw new Error('Could not parse position');
-        } catch (err) { toast.error(`Failed to get player position: ${err.message}`); document.getElementById('deploy-modal').classList.add('hidden'); return; }
+            console.log('Raw position response:', posRaw);
+            if (posRaw && typeof posRaw === 'string') {
+                // Try format: "X: 123.45, Y: 45.67, Z: 789.01"
+                let match = posRaw.match(/X:\s*([-\d.]+),\s*Y:\s*([-\d.]+),\s*Z:\s*([-\d.]+)/i);
+                if (match) {
+                    position = {
+                        x: parseFloat(match[1]),
+                        y: parseFloat(match[2]),
+                        z: parseFloat(match[3])
+                    };
+                } else {
+                    // Try just numbers: "123.45 45.67 789.01"
+                    const nums = posRaw.match(/-?\d+\.?\d*/g);
+                    if (nums && nums.length >= 3) {
+                        position = {
+                            x: parseFloat(nums[0]),
+                            y: parseFloat(nums[1]),
+                            z: parseFloat(nums[2])
+                        };
+                    }
+                }
+            }
+            if (!position) {
+                throw new Error('Could not parse position from response');
+            }
+        } catch (err) {
+            toast.error(`Failed to get player position: ${err.message}`);
+            document.getElementById('deploy-modal').classList.add('hidden');
+            return;
+        }
         
         const offsetX = 2, offsetZ = 2;
         let successCount = 0;
@@ -322,7 +361,9 @@ class DrainedBases {
                 await ConnectionManager.executeCommand(cmd);
                 successCount++;
                 await new Promise(r => setTimeout(r, 150));
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error(`Failed to spawn ${block.shortname}:`, err);
+            }
         }
         
         if (successCount > 0) {
@@ -336,12 +377,16 @@ class DrainedBases {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ playerId: AppState.user.platformId, blueprintId })
                     });
-                } catch (err) { console.warn(err); }
+                } catch (err) {
+                    console.warn(err);
+                }
                 await this.loadMyPurchases();
             }
             this.renderGallery(); this.renderOwned();
             toast.success(`Base deployed for ${targetPlayer}! ${successCount}/${bp.blockData.length} blocks placed.`);
-        } else { toast.error('Failed to deploy base. Check logs.'); }
+        } else {
+            toast.error('Failed to deploy base. Check logs.');
+        }
         
         document.getElementById('deploy-modal').classList.add('hidden');
         this.deployingId = null;
@@ -355,11 +400,18 @@ class DrainedBases {
         });
     }
 
-    escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+    escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
 
     async refresh() {
-        await this.loadBlueprints(); await this.loadMyPurchases();
-        this.renderGallery(); this.renderOwned(); this.fetchBalance(); this.updatePlayerDropdown();
+        await this.loadBlueprints();
+        await this.loadMyPurchases();
+        this.renderGallery();
+        this.renderOwned();
+        this.fetchBalance();
+        this.updatePlayerDropdown();
         toast.success('Blueprints refreshed');
     }
 }
