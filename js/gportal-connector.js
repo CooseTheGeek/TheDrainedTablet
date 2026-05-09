@@ -1,4 +1,5 @@
 // gportal-connector.js – DRAINED TABLET ULTIMATE v7.0.0
+// Force master detection, save servers, connect via GPortal API.
 
 class GPortalConnector {
     constructor() {
@@ -10,14 +11,25 @@ class GPortalConnector {
     }
 
     async init() {
-        const username = AppState.user?.username || localStorage.getItem('tdl_username');
-        this.isMaster = (username === 'CooseTheGeek');
+        // Force master detection
+        const session = localStorage.getItem('tdl_session');
+        let isMaster = false;
+        if (session) {
+            try {
+                const sess = JSON.parse(session);
+                if (sess.role === 'master' || sess.username === 'CooseTheGeek') isMaster = true;
+            } catch(e) {}
+        }
+        const username = localStorage.getItem('tdl_username');
+        if (username === 'CooseTheGeek') isMaster = true;
+        this.isMaster = isMaster;
         console.log('GPortalConnector: isMaster =', this.isMaster);
+        
         if (this.isMaster) {
             this.loadLocalServers();
         }
         this.createHTML();
-        this.attachEvents();
+        this.attachEvents(); // always attach events; UI may be disabled but buttons still work for master
         await this.checkApiStatus();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'gportal') this.refresh();
@@ -49,7 +61,7 @@ class GPortalConnector {
         const badge = document.querySelector('#gportal-api-status .status-badge');
         if (badge) {
             badge.className = `status-badge ${this.apiReady ? 'online' : 'offline'}`;
-            badge.innerText = this.apiReady ? 'Connected' : 'Disconnected';
+            badge.innerText = this.apiReady ? 'Ready' : 'Offline';
         }
     }
 
@@ -63,7 +75,7 @@ class GPortalConnector {
             AppState.connection.status = 'connected';
         } else if (this.apiReady) {
             statusDot.className = 'dot connecting';
-            statusText.innerText = 'CONNECTING...';
+            statusText.innerText = 'READY (GPortal)';
             AppState.connection.status = 'connecting';
         } else {
             statusDot.className = 'dot offline';
@@ -79,9 +91,9 @@ class GPortalConnector {
         tab.innerHTML = `
             <div class="gportal-container">
                 <div class="gportal-header">
-                    <h2>🔌 SERVER CONNECTOR (GPortal API)</h2>
+                    <h2>🔌 GPORTAL CONNECTOR</h2>
                     <div class="api-status" id="gportal-api-status">
-                        API Status: <span class="status-badge ${this.apiReady ? 'online' : 'offline'}">${this.apiReady ? 'Connected' : 'Disconnected'}</span>
+                        API Status: <span class="status-badge">Unknown</span>
                     </div>
                 </div>
                 <div class="gportal-grid">
@@ -112,20 +124,23 @@ class GPortalConnector {
     }
 
     attachEvents() {
-        if (!this.isMaster) {
-            console.warn('Not master – GPortal controls disabled');
-            return;
-        }
-        document.getElementById('save-server-btn')?.addEventListener('click', () => this.saveServer());
-        document.getElementById('connect-saved-btn')?.addEventListener('click', () => this.connectSelectedServer());
-        document.getElementById('gportal-send-command')?.addEventListener('click', () => this.sendCommand());
-        document.getElementById('refresh-servers-btn')?.addEventListener('click', () => this.refresh());
-        document.getElementById('gportal-command')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.sendCommand();
+        // Attach events regardless of master status; UI elements exist only for master, but we'll still try.
+        const saveBtn = document.getElementById('save-server-btn');
+        const connectBtn = document.getElementById('connect-saved-btn');
+        const sendBtn = document.getElementById('gportal-send-command');
+        const refreshBtn = document.getElementById('refresh-servers-btn');
+        const commandInput = document.getElementById('gportal-command');
+        if (saveBtn) saveBtn.addEventListener('click', (e) => this.saveServer(e));
+        if (connectBtn) connectBtn.addEventListener('click', (e) => this.connectSelectedServer(e));
+        if (sendBtn) sendBtn.addEventListener('click', (e) => this.sendCommand(e));
+        if (refreshBtn) refreshBtn.addEventListener('click', (e) => this.refresh(e));
+        if (commandInput) commandInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.sendCommand(e);
         });
     }
 
-    saveServer() {
+    saveServer(event) {
+        if (event) event.preventDefault();
         const name = document.getElementById('server-name').value.trim();
         const ip = document.getElementById('server-ip').value.trim();
         const port = parseInt(document.getElementById('server-port').value);
@@ -139,6 +154,7 @@ class GPortalConnector {
         this.saveLocalServers();
         toast.success(`Server "${name}" saved`);
         this.renderServers();
+        // Clear form
         document.getElementById('server-name').value = '';
         document.getElementById('server-ip').value = '';
         document.getElementById('server-port').value = '28916';
@@ -212,7 +228,8 @@ class GPortalConnector {
         }
     }
 
-    async sendCommand() {
+    async sendCommand(event) {
+        if (event) event.preventDefault();
         if (!this.connectedServer) {
             toast.error('No active connection. Connect to a server first.');
             return;
