@@ -1,12 +1,12 @@
-// core.js – DRAINED TABLET ULTIMATE v7.0.0 (GPortal API ready)
+// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with platform support)
 
 window.AppState = {
     user: {
         username: localStorage.getItem('tdl_username') || null,
         role: localStorage.getItem('tdl_role') || null,
         platform: localStorage.getItem('tdl_platform') || null,
-        avatar: localStorage.getItem('tdl_avatar') || null,
         platformId: localStorage.getItem('tdl_platform_id') || null,
+        avatar: localStorage.getItem('tdl_avatar') || null,
         settings: JSON.parse(localStorage.getItem('tdl_settings') || '{}')
     },
     connection: {
@@ -51,7 +51,6 @@ window.ConnectionManager = {
     },
 
     async executeCommand(command) {
-        // Use GPortal API if the connector is ready
         if (window.gportalConnector && window.gportalConnector.apiReady) {
             const res = await fetch(`${AppState.connection.bridgeUrl}/api/gportal/command`, {
                 method: 'POST',
@@ -62,8 +61,6 @@ window.ConnectionManager = {
             if (data.success) return data.result;
             throw new Error(data.error || 'GPortal command failed');
         }
-
-        // Fallback to legacy RCON (if ever needed)
         if (AppState.connection.status !== 'connected' || !AppState.connection.server) {
             throw new Error('Not connected to any server');
         }
@@ -104,7 +101,7 @@ window.ConnectionManager = {
     }
 };
 
-// GPortal player list polling (use the GPortal command endpoint)
+// GPortal player list polling
 setInterval(async () => {
     if (window.gportalConnector && window.gportalConnector.apiReady) {
         try {
@@ -122,7 +119,6 @@ setInterval(async () => {
                         name: p.DisplayName || p.displayName || p.name || 'Unknown'
                     }));
                 } else if (typeof raw === 'string') {
-                    // Attempt to parse as JSON if it's a stringified array
                     try {
                         const parsed = JSON.parse(raw);
                         if (Array.isArray(parsed)) {
@@ -131,10 +127,8 @@ setInterval(async () => {
                             }));
                         }
                     } catch(e) {
-                        // Fallback: split by newline
                         const lines = raw.split('\n').filter(l => l.trim());
                         players = lines.map(line => {
-                            // Try to extract name: often format like "Name (STEAM_...)"
                             const match = line.match(/^([^\(]+)/);
                             return { name: match ? match[1].trim() : line.trim() };
                         });

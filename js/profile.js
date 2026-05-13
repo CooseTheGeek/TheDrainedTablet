@@ -1,6 +1,6 @@
 // profile.js – DRAINED TABLET ULTIMATE v7.0.0
 // User profile with tabbed interface: ID Card, Customize ID Card, and Settings
-// Enhanced with avatar cropping using Cropper.js, live preview, and persistent storage.
+// Enhanced with avatar cropping using Cropper.js, live preview, persistent storage, and bridge sync.
 
 class Profile {
     constructor() {
@@ -23,8 +23,36 @@ class Profile {
         localStorage.setItem('tdl_saved_servers', JSON.stringify(this.savedServers));
     }
 
-    loadProfileData() {
+    async loadProfileData() {
         const username = AppState.user?.username || 'default';
+        // First try to get from bridge if logged in
+        const sessionStr = localStorage.getItem('tdl_session');
+        if (sessionStr) {
+            try {
+                const session = JSON.parse(sessionStr);
+                if (session.token) {
+                    const res = await fetch('https://drained-bridge.onrender.com/api/user/profile', {
+                        headers: { 'Authorization': `Bearer ${session.token}` }
+                    });
+                    if (res.ok) {
+                        const profile = await res.json();
+                        return {
+                            expires: '05/24/2024',
+                            portalId: '#523489',
+                            region: 'North America',
+                            serverName: 'Geek\'s Survival Base',
+                            logoText: 'GEEK BASE',
+                            discordId: profile.discord_id || 'Not linked',
+                            discordConnected: !!profile.discord_id,
+                            tagline: 'NEW GEN | US',
+                            platform: profile.platform || '',
+                            platformId: profile.platform_id || ''
+                        };
+                    }
+                }
+            } catch (e) { console.warn(e); }
+        }
+        // Fallback to localStorage
         const saved = localStorage.getItem(`tdl_profile_${username}`);
         if (saved) {
             return JSON.parse(saved);
@@ -48,7 +76,7 @@ class Profile {
         localStorage.setItem(`tdl_profile_${username}`, JSON.stringify(data));
     }
 
-    init() {
+    async init() {
         this.createHTML();
         this.attachEvents();
         this.populateUserInfo();
@@ -437,7 +465,7 @@ class Profile {
         }
     }
 
-    saveCroppedAvatar() {
+    async saveCroppedAvatar() {
         if (!this.cropper) return;
         const canvas = this.cropper.getCroppedCanvas({
             width: 300,
@@ -448,9 +476,26 @@ class Profile {
         const croppedImage = canvas.toDataURL('image/png');
         AppState.user.avatar = croppedImage;
         localStorage.setItem('tdl_avatar', croppedImage);
+        await this.updateAvatarOnBridge(croppedImage);
         this.updateAllAvatars();
         this.closeCropModal();
         toast.success('Avatar updated');
+    }
+
+    async updateAvatarOnBridge(avatarUrl) {
+        const sessionStr = localStorage.getItem('tdl_session');
+        if (sessionStr) {
+            try {
+                const session = JSON.parse(sessionStr);
+                if (session.token) {
+                    await fetch('https://drained-bridge.onrender.com/api/user/avatar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                        body: JSON.stringify({ avatarUrl })
+                    });
+                }
+            } catch(e) { console.warn(e); }
+        }
     }
 
     removeAvatar() {
@@ -476,7 +521,7 @@ class Profile {
         this.updateHeaderAvatar();
     }
 
-    saveCustomizations() {
+    async saveCustomizations() {
         this.profileData = {
             tagline: document.getElementById('edit-tagline').value,
             expires: document.getElementById('edit-expires').value,
@@ -497,6 +542,21 @@ class Profile {
             AppState.user.platformId = platformIdInput.value;
             localStorage.setItem('tdl_platform', platformSelect.value);
             localStorage.setItem('tdl_platform_id', platformIdInput.value);
+
+            // Update in bridge if session exists
+            const sessionStr = localStorage.getItem('tdl_session');
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    if (session.token) {
+                        await fetch('https://drained-bridge.onrender.com/api/user/profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                            body: JSON.stringify({ platform: platformSelect.value, platformId: platformIdInput.value })
+                        });
+                    }
+                } catch(e) { console.warn(e); }
+            }
         }
 
         this.saveProfileData(this.profileData);

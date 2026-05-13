@@ -6,6 +6,7 @@ class MasterControl {
     constructor() {
         this.access = window.accessControl;
         this.commands = window.serverCommands;
+        this.usersList = [];
         this.init();
     }
 
@@ -15,6 +16,7 @@ class MasterControl {
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'master') {
                 this.refresh();
+                this.loadDashboardUsers();
             }
         });
     }
@@ -23,7 +25,6 @@ class MasterControl {
         const tab = document.getElementById('tab-master');
         if (!tab) return;
 
-        // Check access – only master can see this tab
         if (!this.access.isMaster()) {
             tab.innerHTML = '<div class="access-denied">🔒 Master access only</div>';
             return;
@@ -219,7 +220,7 @@ class MasterControl {
                 </div>
 
                 <!-- Raw Command Executor -->
-                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem;">
+                <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⚡ RAW COMMAND EXECUTOR</h3>
                     <div style="display: flex; gap: 0.5rem;">
                         <input type="text" id="master-raw-command" placeholder="Enter any RCON command..." style="flex: 1; padding: 0.8rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
@@ -229,39 +230,12 @@ class MasterControl {
                 </div>
             </div>
         `;
+
+        this.setupRangeListeners();
+        this.loadDashboardUsers();
     }
 
-    attachEvents() {
-        // Quick actions
-        document.querySelectorAll('.master-quick-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const action = e.target.dataset.action;
-                this.executeQuickAction(action);
-            });
-        });
-
-        // Apply buttons
-        document.getElementById('master-apply-core')?.addEventListener('click', () => this.applyCoreSettings());
-        document.getElementById('master-apply-performance')?.addEventListener('click', () => this.applyPerformanceSettings());
-        document.getElementById('master-apply-world')?.addEventListener('click', () => this.applyWorldSettings());
-        document.getElementById('master-apply-decay')?.addEventListener('click', () => this.applyDecaySettings());
-        document.getElementById('master-apply-economy')?.addEventListener('click', () => this.applyEconomySettings());
-
-        // Plugin buttons
-        document.getElementById('master-plugin-load')?.addEventListener('click', () => this.loadPlugin());
-        document.getElementById('master-plugin-unload')?.addEventListener('click', () => this.unloadPlugin());
-        document.getElementById('master-plugin-reload')?.addEventListener('click', () => this.reloadPlugin());
-
-        // User management
-        document.getElementById('master-add-user')?.addEventListener('click', () => this.addUser());
-
-        // Raw command
-        document.getElementById('master-execute-raw')?.addEventListener('click', () => this.executeRawCommand());
-        document.getElementById('master-raw-command')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.executeRawCommand();
-        });
-
-        // Range input listeners
+    setupRangeListeners() {
         const ranges = [
             { id: 'master-tickrate', val: 'master-tickrate-val' },
             { id: 'master-fps', val: 'master-fps-val' },
@@ -295,8 +269,37 @@ class MasterControl {
                 });
             }
         });
+    }
 
-        this.loadUsers();
+    attachEvents() {
+        // Quick actions
+        document.querySelectorAll('.master-quick-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.target.dataset.action;
+                this.executeQuickAction(action);
+            });
+        });
+
+        // Apply buttons
+        document.getElementById('master-apply-core')?.addEventListener('click', () => this.applyCoreSettings());
+        document.getElementById('master-apply-performance')?.addEventListener('click', () => this.applyPerformanceSettings());
+        document.getElementById('master-apply-world')?.addEventListener('click', () => this.applyWorldSettings());
+        document.getElementById('master-apply-decay')?.addEventListener('click', () => this.applyDecaySettings());
+        document.getElementById('master-apply-economy')?.addEventListener('click', () => this.applyEconomySettings());
+
+        // Plugin buttons
+        document.getElementById('master-plugin-load')?.addEventListener('click', () => this.loadPlugin());
+        document.getElementById('master-plugin-unload')?.addEventListener('click', () => this.unloadPlugin());
+        document.getElementById('master-plugin-reload')?.addEventListener('click', () => this.reloadPlugin());
+
+        // User management (legacy local user add)
+        document.getElementById('master-add-user')?.addEventListener('click', () => this.addUser());
+
+        // Raw command
+        document.getElementById('master-execute-raw')?.addEventListener('click', () => this.executeRawCommand());
+        document.getElementById('master-raw-command')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.executeRawCommand();
+        });
     }
 
     async executeQuickAction(action) {
@@ -322,7 +325,6 @@ class MasterControl {
                 break;
             case 'backup':
                 toast.info('Creating backup...');
-                // This would call a backup API
                 setTimeout(() => toast.success('Backup created'), 2000);
                 break;
             case 'broadcast':
@@ -339,7 +341,6 @@ class MasterControl {
             case 'wipe':
                 if (confirm('⚠️ WIPE SERVER? ⚠️\nThis will erase everything!')) {
                     toast.error('Server wipe initiated');
-                    // Actual wipe command
                 }
                 break;
         }
@@ -389,7 +390,7 @@ class MasterControl {
             await this.commands.setTime(parseFloat(time));
             await this.commands.setDayLength(parseInt(day));
             await this.commands.setNightLength(parseInt(night));
-            await this.commands.setWeather(clouds, rain, wind, 0); // fog 0
+            await this.commands.setWeather(clouds, rain, wind, 0);
             toast.success('World settings applied');
         } catch (err) {
             toast.error(err.message);
@@ -461,36 +462,7 @@ class MasterControl {
         }
     }
 
-    loadUsers() {
-        const list = document.getElementById('master-users-list');
-        if (!list) return;
-        const users = window.authSystem?.users || {};
-        let html = '';
-        for (let [username, data] of Object.entries(users)) {
-            if (username === 'CooseTheGeek') continue; // don't show master
-            html += `
-                <div class="user-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid var(--glass-border);">
-                    <span>${username}</span>
-                    <span style="color: var(--text-secondary);">Code: ${data.code}</span>
-                    <button class="small-btn delete-user" data-user="${username}" style="background: var(--error); color: #fff;">Remove</button>
-                </div>
-            `;
-        }
-        if (!html) html = '<div style="color: var(--text-secondary);">No server owners added</div>';
-        list.innerHTML = html;
-
-        list.querySelectorAll('.delete-user').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const user = btn.dataset.user;
-                if (confirm(`Remove user ${user}?`)) {
-                    window.authSystem?.removeUser(user, 'CooseTheGeek');
-                    this.loadUsers();
-                    toast.info(`User ${user} removed`);
-                }
-            });
-        });
-    }
-
+    // Legacy local user add (for backward compatibility)
     addUser() {
         const username = document.getElementById('master-new-user').value.trim();
         const code = document.getElementById('master-new-code').value.trim();
@@ -504,10 +476,10 @@ class MasterControl {
         }
         try {
             window.authSystem?.addUser(username, code, 'CooseTheGeek');
-            this.loadUsers();
+            toast.success(`User ${username} added`);
             document.getElementById('master-new-user').value = '';
             document.getElementById('master-new-code').value = '';
-            toast.success(`User ${username} added`);
+            this.loadDashboardUsers();
         } catch (err) {
             toast.error(err.message);
         }
@@ -530,9 +502,223 @@ class MasterControl {
         input.value = '';
     }
 
+    // ---------- Dashboard User Management via Bridge ----------
+    async loadDashboardUsers() {
+        if (!this.access.isMasterUser()) return;
+        const masterCode = '0827';
+        try {
+            const res = await fetch('https://drained-bridge.onrender.com/api/admin/users', {
+                headers: { 'Authorization': `Bearer ${masterCode}` }
+            });
+            this.usersList = await res.json();
+            const container = document.getElementById('master-users-list');
+            if (!container) return;
+            if (this.usersList.length === 0) {
+                container.innerHTML = '<div class="no-users">No registered users yet</div>';
+                return;
+            }
+            let html = '<table class="user-table"><tr><th>Username</th><th>Platform</th><th>Platform ID</th><th>Role</th><th>Permissions</th><th>Status</th><th>Actions</th></tr>';
+            for (const u of this.usersList) {
+                const permSummary = u.permissions && Object.keys(u.permissions).length > 0 ? Object.keys(u.permissions).join(', ') : 'default';
+                html += `
+                    <tr>
+                        <td>${u.username}</td>
+                        <td>${u.platform || '-'}</td>
+                        <td>${u.platform_id || '-'}</td>
+                        <td>
+                            <select class="user-role" data-id="${u.id}" data-current="${u.role}">
+                                <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+                                <option value="owner" ${u.role === 'owner' ? 'selected' : ''}>Owner</option>
+                                <option value="master" ${u.role === 'master' ? 'selected' : ''}>Master</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="small-btn edit-permissions" data-id="${u.id}" data-username="${u.username}">✏️ Permissions</button>
+                            <br><small>${permSummary}</small>
+                        </td>
+                        <td>${u.disabled ? '🔴 Disabled' : '🟢 Active'}</td>
+                        <td>
+                            <button class="small-btn toggle-disable" data-id="${u.id}" data-disabled="${u.disabled}">${u.disabled ? 'Enable' : 'Disable'}</button>
+                            <button class="small-btn reset-pw" data-id="${u.id}">Reset PW</button>
+                            <button class="small-btn delete-user" data-id="${u.id}">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }
+            html += '</table>';
+            container.innerHTML = html;
+
+            document.querySelectorAll('.user-role').forEach(select => {
+                select.addEventListener('change', (e) => this.updateUserRole(e.target.dataset.id, e.target.value));
+            });
+            document.querySelectorAll('.toggle-disable').forEach(btn => {
+                btn.addEventListener('click', () => this.toggleUserDisable(btn.dataset.id, btn.dataset.disabled === 'true'));
+            });
+            document.querySelectorAll('.reset-pw').forEach(btn => {
+                btn.addEventListener('click', () => this.resetUserPassword(btn.dataset.id));
+            });
+            document.querySelectorAll('.delete-user').forEach(btn => {
+                btn.addEventListener('click', () => this.deleteUser(btn.dataset.id));
+            });
+            document.querySelectorAll('.edit-permissions').forEach(btn => {
+                btn.addEventListener('click', () => this.openPermissionEditor(btn.dataset.id, btn.dataset.username));
+            });
+        } catch (err) {
+            console.error(err);
+            const container = document.getElementById('master-users-list');
+            if (container) container.innerHTML = '<div class="error">Failed to load users</div>';
+        }
+    }
+
+    async updateUserRole(userId, newRole) {
+        const masterCode = '0827';
+        try {
+            await fetch(`https://drained-bridge.onrender.com/api/admin/users/${userId}/role`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${masterCode}` },
+                body: JSON.stringify({ role: newRole })
+            });
+            toast.success('Role updated');
+            this.loadDashboardUsers();
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async toggleUserDisable(userId, currentlyDisabled) {
+        const masterCode = '0827';
+        try {
+            await fetch(`https://drained-bridge.onrender.com/api/admin/users/${userId}/disable`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${masterCode}` }
+            });
+            toast.success(`User ${currentlyDisabled ? 'enabled' : 'disabled'}`);
+            this.loadDashboardUsers();
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async resetUserPassword(userId) {
+        const newPassword = prompt('Enter new password (min 6 characters):');
+        if (!newPassword || newPassword.length < 6) {
+            toast.error('Password must be at least 6 characters');
+            return;
+        }
+        const masterCode = '0827';
+        try {
+            await fetch(`https://drained-bridge.onrender.com/api/admin/users/${userId}/password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${masterCode}` },
+                body: JSON.stringify({ newPassword })
+            });
+            toast.success('Password reset');
+            this.loadDashboardUsers();
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    async deleteUser(userId) {
+        if (!confirm('Permanently delete this user?')) return;
+        const masterCode = '0827';
+        try {
+            await fetch(`https://drained-bridge.onrender.com/api/admin/users/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${masterCode}` }
+            });
+            toast.success('User deleted');
+            this.loadDashboardUsers();
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }
+
+    openPermissionEditor(userId, username) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'perm-modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <h3>Edit Permissions for ${username}</h3>
+                <div class="permissions-list">
+                    <p><strong>Tab Access</strong></p>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:home" checked disabled> Home (always enabled)</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:profile"> Profile Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:shop"> Shop Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:garage"> Motorpool Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:drained-bases"> Drained Bases Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:claims"> Claims Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:combatlog"> Combat Log Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:idcard"> ID Card Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:settings"> Settings Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:more"> More Tools Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:economy"> Economy Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:livemap"> Live Map Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:teleport"> Teleport Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:vehicles"> Vehicles Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:events"> Events Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:items"> Items Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:kits"> Kits Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:world"> World Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:backups"> Backups Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:logs"> Logs Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:console"> Console Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:gportal"> GPortal Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:recovery"> Recovery Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:performance"> Performance Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:deepseek"> DeepSeek AI Tab</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:master-control"> Master Control Tab</label>
+                    <hr>
+                    <p><strong>Command Permissions</strong></p>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:kick"> Can Kick Players</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:ban"> Can Ban Players</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:give"> Can Give Items</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:spawn"> Can Spawn Entities</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:economy"> Can Modify Economy</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:teleport"> Can Teleport</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:kit"> Can Manage Kits</label>
+                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:zone"> Can Edit Zones</label>
+                </div>
+                <div class="modal-actions">
+                    <button id="save-permissions" class="modal-btn primary">Save Permissions</button>
+                    <button id="cancel-permissions" class="modal-btn">Cancel</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+
+        const user = this.usersList.find(u => u.id == userId);
+        if (user && user.permissions) {
+            for (const [perm, val] of Object.entries(user.permissions)) {
+                const cb = modal.querySelector(`.perm-checkbox[data-perm="${perm}"]`);
+                if (cb && val === true) cb.checked = true;
+            }
+        }
+
+        modal.querySelector('#save-permissions').addEventListener('click', async () => {
+            const permissions = {};
+            modal.querySelectorAll('.perm-checkbox').forEach(cb => {
+                if (cb.checked && cb.dataset.perm) {
+                    permissions[cb.dataset.perm] = true;
+                }
+            });
+            const masterCode = '0827';
+            await fetch(`https://drained-bridge.onrender.com/api/admin/users/${userId}/permissions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${masterCode}` },
+                body: JSON.stringify({ permissions })
+            });
+            toast.success('Permissions updated');
+            modal.remove();
+            this.loadDashboardUsers();
+        });
+        modal.querySelector('#cancel-permissions').addEventListener('click', () => modal.remove());
+    }
+
     refresh() {
-        // Reload users list if visible
-        this.loadUsers();
+        this.loadDashboardUsers();
     }
 }
 

@@ -1,38 +1,38 @@
-// sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0
+// sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0 (with permission filtering)
 
 class SidebarManager {
     constructor() {
         this.allTabs = [
-            { id: "home", name: "Home", icon: "🏠", requiredRole: "user" },
-            { id: "profile", name: "Profile", icon: "👤", requiredRole: "user" },
-            { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user" },
-            { id: "shop", name: "Shop", icon: "🏪", requiredRole: "user" },
-            { id: "claims", name: "Claims", icon: "📦", requiredRole: "user" },
-            { id: "garage", name: "Motorpool", icon: "🏍️", requiredRole: "user" },
-            { id: "horde", name: "Horde", icon: "🧟", requiredRole: "master" },
-            { id: "combatlog", name: "Combat Log", icon: "⚔️", requiredRole: "user" },
-            { id: "idcard", name: "ID Card", icon: "🪪", requiredRole: "user" },
-            { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "master" },
-            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "user" },
-            { id: "more", name: "More Tools", icon: "📊", requiredRole: "user" },
-            { id: "players", name: "Players", icon: "👥", requiredRole: "master" },
-            { id: "master", name: "Master Control", icon: "👑", requiredRole: "user" },
-            { id: "economy", name: "Economy", icon: "💰", requiredRole: "user" },
-            { id: "livemap", name: "Live Map", icon: "🗺️", requiredRole: "user" },
-            { id: "vehicles", name: "Vehicles", icon: "🚗", requiredRole: "user" },
-            { id: "teleport", name: "Teleport", icon: "📍", requiredRole: "user" },
-            { id: "events", name: "Events", icon: "🎉", requiredRole: "user" },
-            { id: "items", name: "Items", icon: "📦", requiredRole: "user" },
-            { id: "kits", name: "Kits", icon: "🧰", requiredRole: "user" },
-            { id: "world", name: "World", icon: "🌍", requiredRole: "user" },
-            { id: "backups", name: "Backups", icon: "💾", requiredRole: "user" },
-            { id: "logs", name: "Logs", icon: "📜", requiredRole: "user" },
-            { id: "console", name: "Console", icon: "🖥️", requiredRole: "user" },
-            { id: "gportal", name: "GPortal", icon: "🔌", requiredRole: "user" },
-            { id: "health", name: "Health", icon: "📡", requiredRole: "master" },
-            { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "user" },
-            { id: "performance", name: "Performance", icon: "📊", requiredRole: "user" },
-            { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "user" }
+            { id: "home", name: "Home", icon: "🏠", requiredRole: "user", permission: "tab:home" },
+            { id: "profile", name: "Profile", icon: "👤", requiredRole: "user", permission: "tab:profile" },
+            { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user", permission: "tab:drained-bases" },
+            { id: "shop", name: "Shop", icon: "🏪", requiredRole: "user", permission: "tab:shop" },
+            { id: "claims", name: "Claims", icon: "📦", requiredRole: "user", permission: "tab:claims" },
+            { id: "garage", name: "Motorpool", icon: "🏍️", requiredRole: "user", permission: "tab:garage" },
+            { id: "horde", name: "Horde", icon: "🧟", requiredRole: "master", permission: "tab:horde" },
+            { id: "combatlog", name: "Combat Log", icon: "⚔️", requiredRole: "user", permission: "tab:combatlog" },
+            { id: "idcard", name: "ID Card", icon: "🪪", requiredRole: "user", permission: "tab:idcard" },
+            { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "master", permission: "tab:resources" },
+            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "user", permission: "tab:settings" },
+            { id: "more", name: "More Tools", icon: "📊", requiredRole: "user", permission: "tab:more" },
+            { id: "players", name: "Players", icon: "👥", requiredRole: "master", permission: "tab:players" },
+            { id: "master", name: "Master Control", icon: "👑", requiredRole: "user", permission: "tab:master-control" },
+            { id: "economy", name: "Economy", icon: "💰", requiredRole: "user", permission: "tab:economy" },
+            { id: "livemap", name: "Live Map", icon: "🗺️", requiredRole: "user", permission: "tab:livemap" },
+            { id: "vehicles", name: "Vehicles", icon: "🚗", requiredRole: "user", permission: "tab:vehicles" },
+            { id: "teleport", name: "Teleport", icon: "📍", requiredRole: "user", permission: "tab:teleport" },
+            { id: "events", name: "Events", icon: "🎉", requiredRole: "user", permission: "tab:events" },
+            { id: "items", name: "Items", icon: "📦", requiredRole: "user", permission: "tab:items" },
+            { id: "kits", name: "Kits", icon: "🧰", requiredRole: "user", permission: "tab:kits" },
+            { id: "world", name: "World", icon: "🌍", requiredRole: "user", permission: "tab:world" },
+            { id: "backups", name: "Backups", icon: "💾", requiredRole: "user", permission: "tab:backups" },
+            { id: "logs", name: "Logs", icon: "📜", requiredRole: "user", permission: "tab:logs" },
+            { id: "console", name: "Console", icon: "🖥️", requiredRole: "user", permission: "tab:console" },
+            { id: "gportal", name: "GPortal", icon: "🔌", requiredRole: "user", permission: "tab:gportal" },
+            { id: "health", name: "Health", icon: "📡", requiredRole: "master", permission: "tab:health" },
+            { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "user", permission: "tab:recovery" },
+            { id: "performance", name: "Performance", icon: "📊", requiredRole: "user", permission: "tab:performance" },
+            { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "user", permission: "tab:deepseek" }
         ];
         this.defaultSelectedIds = ["home", "profile", "drained-bases", "more", "settings", "garage"];
         this.maxTabs = 6;
@@ -91,12 +91,17 @@ class SidebarManager {
         }
         const role = AppState.user?.role || 'user';
         const effectiveRole = isMasterUser ? 'master' : role;
+        const access = this.access;
         return this.allTabs.filter(tab => {
-            if (effectiveRole === 'user') return tab.requiredRole === 'user';
-            if (tab.requiredRole === 'user') return true;
-            if (tab.requiredRole === 'master') return effectiveRole === 'master' || effectiveRole === 'owner';
-            if (tab.requiredRole === 'owner') return effectiveRole === 'owner';
-            return false;
+            // Role check
+            if (effectiveRole === 'user' && tab.requiredRole !== 'user') return false;
+            if (tab.requiredRole === 'master' && effectiveRole !== 'master' && effectiveRole !== 'owner') return false;
+            if (tab.requiredRole === 'owner' && effectiveRole !== 'owner') return false;
+            // Permission check (if access controller loaded)
+            if (access && access.hasPermission && !access.hasPermission('tab', tab.id) && !isMasterUser) {
+                return false;
+            }
+            return true;
         });
     }
 

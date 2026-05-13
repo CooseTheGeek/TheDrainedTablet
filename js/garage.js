@@ -1,5 +1,6 @@
-// garage.js – DRAINED TABLET ULTIMATE v7.0.0
-// Full vehicle shop with fallback images and admin editing.
+// garage.js – DRAINED TABLET ULTIMATE v7.0.0 – Full Motorpool with all vehicles
+// (Only the purchaseVehicle method is shown here; the rest of the file is the same as previously sent.
+// For brevity, I include the full file again but with the critical fix.)
 
 class Garage {
     constructor() {
@@ -9,24 +10,31 @@ class Garage {
         this.init();
     }
 
-    getDefaultVehicles() {
+    getAllVehicles() {
         const defaultImg = "https://www.corrosionhour.com/img/items/wood.png";
         return [
+            // AIR VEHICLES
             { id: 1, name: "Minicopter", shortname: "minicopter", price: 750, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/minicopter.png", offsetY: 1, offsetZ: 4, category: "air" },
-            { id: 2, name: "Scrap Transport Heli", shortname: "scraptransporthelicopter", price: 1500, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/scraptransporthelicopter.png", offsetY: 1, offsetZ: 6, category: "air" },
+            { id: 2, name: "Scrap Transport Helicopter", shortname: "scraptransporthelicopter", price: 1500, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/scraptransporthelicopter.png", offsetY: 1, offsetZ: 6, category: "air" },
             { id: 3, name: "Attack Helicopter", shortname: "attackhelicopter", price: 5000, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/attackhelicopter.png", offsetY: 1, offsetZ: 8, category: "air" },
             { id: 4, name: "Hot Air Balloon", shortname: "hotairballoon", price: 400, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/hotairballoon.png", offsetY: 1, offsetZ: 6, category: "air" },
+            // LAND VEHICLES – Cars
             { id: 5, name: "2 Module Car", shortname: "2module_car", price: 250, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/2module_car.png", offsetY: 1, offsetZ: 3, category: "land" },
             { id: 6, name: "3 Module Car", shortname: "3module_car", price: 300, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/3module_car.png", offsetY: 1, offsetZ: 4, category: "land" },
             { id: 7, name: "4 Module Car", shortname: "4module_car", price: 350, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/4module_car.png", offsetY: 1, offsetZ: 5, category: "land" },
-            { id: 8, name: "Motorbike", shortname: "motorbike", price: 150, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/motorbike.png", offsetY: 1, offsetZ: 2, category: "land" },
-            { id: 9, name: "Motorbike with Sidecar", shortname: "motorbike_sidecar", price: 200, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/motorbike_sidecar.png", offsetY: 1, offsetZ: 2, category: "land" },
-            { id: 10, name: "Bicycle", shortname: "pedalbike", price: 50, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/pedalbike.png", offsetY: 1, offsetZ: 2, category: "land" },
-            { id: 11, name: "Tricycle", shortname: "pedaltrike", price: 75, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/pedaltrike.png", offsetY: 1, offsetZ: 2, category: "land" },
-            { id: 12, name: "Horse", shortname: "testridablehorse", price: 200, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/horse.png", offsetY: 0, offsetZ: 2, category: "land" },
-            { id: 13, name: "Rowboat", shortname: "rowboat", price: 100, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/rowboat.png", offsetY: 2, offsetZ: 4, category: "water" },
-            { id: 14, name: "RHIB", shortname: "rhib", price: 300, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/rhib.png", offsetY: 2, offsetZ: 6, category: "water" },
-            { id: 15, name: "Kayak", shortname: "kayak", price: 80, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/kayak.png", offsetY: 2, offsetZ: 4, category: "water" }
+            { id: 8, name: "Shreddable Pickup Truck", shortname: "shreddable_pickuptruck", price: 450, stock: -1, enabled: true, image: defaultImg, offsetY: 1, offsetZ: 5, category: "land" },
+            // LAND VEHICLES – Bikes
+            { id: 9, name: "Bicycle", shortname: "pedalbike", price: 50, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/pedalbike.png", offsetY: 1, offsetZ: 2, category: "land" },
+            { id: 10, name: "Tricycle", shortname: "pedaltrike", price: 75, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/pedaltrike.png", offsetY: 1, offsetZ: 2, category: "land" },
+            { id: 11, name: "Motorbike", shortname: "motorbike", price: 150, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/motorbike.png", offsetY: 1, offsetZ: 2, category: "land" },
+            { id: 12, name: "Motorbike with Sidecar", shortname: "motorbike_sidecar", price: 200, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/motorbike_sidecar.png", offsetY: 1, offsetZ: 2, category: "land" },
+            // LAND VEHICLES – Other
+            { id: 13, name: "Ridable Horse", shortname: "testridablehorse", price: 200, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/horse.png", offsetY: 0, offsetZ: 2, category: "land" },
+            { id: 14, name: "Magnet Crane", shortname: "magnetcrane", price: 1000, stock: -1, enabled: true, image: defaultImg, offsetY: 1, offsetZ: 4, category: "land" },
+            // WATER VEHICLES
+            { id: 15, name: "Rowboat", shortname: "rowboat", price: 100, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/rowboat.png", offsetY: 2, offsetZ: 4, category: "water" },
+            { id: 16, name: "RHIB", shortname: "rhib", price: 300, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/rhib.png", offsetY: 2, offsetZ: 6, category: "water" },
+            { id: 17, name: "Kayak", shortname: "kayak", price: 80, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/kayak.png", offsetY: 2, offsetZ: 4, category: "water" }
         ];
     }
 
@@ -45,7 +53,7 @@ class Garage {
             if (saved) {
                 this.vehicles = JSON.parse(saved);
             } else {
-                this.vehicles = this.getDefaultVehicles();
+                this.vehicles = this.getAllVehicles();
                 this.saveVehicles();
             }
             resolve();
@@ -177,7 +185,8 @@ class Garage {
         if (!confirm(`Buy ${vehicle.name} for ${vehicle.price} scrap? It will spawn at your position.`)) return;
         let position = null;
         try {
-            const posRaw = await ConnectionManager.executeCommand(`printpos ${AppState.user.username}`);
+            // FIXED: Use playerId (Gamertag/PSN ID) instead of dashboard username
+            const posRaw = await ConnectionManager.executeCommand(`printpos ${playerId}`);
             const match = posRaw.match(/\(([-\d.]+),\s*([-\d.]+),\s*([-\d.]+)\)/);
             if (match) position = { x: parseFloat(match[1]), y: parseFloat(match[2]), z: parseFloat(match[3]) };
             else throw new Error();
