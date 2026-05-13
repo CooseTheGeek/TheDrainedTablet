@@ -1,5 +1,5 @@
 // garage.js – DRAINED TABLET ULTIMATE v7.0.0
-// Full vehicle shop – all air, land, water vehicles. Admin editable (CooseTheGeek only).
+// Full vehicle shop with fallback images and admin editing.
 
 class Garage {
     constructor() {
@@ -10,25 +10,23 @@ class Garage {
     }
 
     getDefaultVehicles() {
+        const defaultImg = "https://www.corrosionhour.com/img/items/wood.png";
         return [
-            // Air
-            { id: 1, name: "Minicopter", shortname: "minicopter", price: 750, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 4, category: "air" },
-            { id: 2, name: "Scrap Transport Heli", shortname: "scraptransporthelicopter", price: 1500, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 6, category: "air" },
-            { id: 3, name: "Attack Helicopter", shortname: "attackhelicopter", price: 5000, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 8, category: "air" },
-            { id: 4, name: "Hot Air Balloon", shortname: "hotairballoon", price: 400, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 6, category: "air" },
-            // Land
-            { id: 5, name: "2 Module Car", shortname: "2module_car", price: 250, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 3, category: "land" },
-            { id: 6, name: "3 Module Car", shortname: "3module_car", price: 300, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 4, category: "land" },
-            { id: 7, name: "4 Module Car", shortname: "4module_car", price: 350, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 5, category: "land" },
-            { id: 8, name: "Motorbike", shortname: "motorbike", price: 150, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 2, category: "land" },
-            { id: 9, name: "Motorbike with Sidecar", shortname: "motorbike_sidecar", price: 200, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 2, category: "land" },
-            { id: 10, name: "Bicycle", shortname: "pedalbike", price: 50, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 2, category: "land" },
-            { id: 11, name: "Tricycle", shortname: "pedaltrike", price: 75, stock: -1, enabled: true, image: "", offsetY: 1, offsetZ: 2, category: "land" },
-            { id: 12, name: "Horse", shortname: "testridablehorse", price: 200, stock: -1, enabled: true, image: "", offsetY: 0, offsetZ: 2, category: "land" },
-            // Water
-            { id: 13, name: "Rowboat", shortname: "rowboat", price: 100, stock: -1, enabled: true, image: "", offsetY: 2, offsetZ: 4, category: "water" },
-            { id: 14, name: "RHIB", shortname: "rhib", price: 300, stock: -1, enabled: true, image: "", offsetY: 2, offsetZ: 6, category: "water" },
-            { id: 15, name: "Kayak", shortname: "kayak", price: 80, stock: -1, enabled: true, image: "", offsetY: 2, offsetZ: 4, category: "water" }
+            { id: 1, name: "Minicopter", shortname: "minicopter", price: 750, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/minicopter.png", offsetY: 1, offsetZ: 4, category: "air" },
+            { id: 2, name: "Scrap Transport Heli", shortname: "scraptransporthelicopter", price: 1500, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/scraptransporthelicopter.png", offsetY: 1, offsetZ: 6, category: "air" },
+            { id: 3, name: "Attack Helicopter", shortname: "attackhelicopter", price: 5000, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/attackhelicopter.png", offsetY: 1, offsetZ: 8, category: "air" },
+            { id: 4, name: "Hot Air Balloon", shortname: "hotairballoon", price: 400, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/hotairballoon.png", offsetY: 1, offsetZ: 6, category: "air" },
+            { id: 5, name: "2 Module Car", shortname: "2module_car", price: 250, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/2module_car.png", offsetY: 1, offsetZ: 3, category: "land" },
+            { id: 6, name: "3 Module Car", shortname: "3module_car", price: 300, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/3module_car.png", offsetY: 1, offsetZ: 4, category: "land" },
+            { id: 7, name: "4 Module Car", shortname: "4module_car", price: 350, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/4module_car.png", offsetY: 1, offsetZ: 5, category: "land" },
+            { id: 8, name: "Motorbike", shortname: "motorbike", price: 150, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/motorbike.png", offsetY: 1, offsetZ: 2, category: "land" },
+            { id: 9, name: "Motorbike with Sidecar", shortname: "motorbike_sidecar", price: 200, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/motorbike_sidecar.png", offsetY: 1, offsetZ: 2, category: "land" },
+            { id: 10, name: "Bicycle", shortname: "pedalbike", price: 50, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/pedalbike.png", offsetY: 1, offsetZ: 2, category: "land" },
+            { id: 11, name: "Tricycle", shortname: "pedaltrike", price: 75, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/pedaltrike.png", offsetY: 1, offsetZ: 2, category: "land" },
+            { id: 12, name: "Horse", shortname: "testridablehorse", price: 200, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/horse.png", offsetY: 0, offsetZ: 2, category: "land" },
+            { id: 13, name: "Rowboat", shortname: "rowboat", price: 100, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/rowboat.png", offsetY: 2, offsetZ: 4, category: "water" },
+            { id: 14, name: "RHIB", shortname: "rhib", price: 300, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/rhib.png", offsetY: 2, offsetZ: 6, category: "water" },
+            { id: 15, name: "Kayak", shortname: "kayak", price: 80, stock: -1, enabled: true, image: "https://www.corrosionhour.com/img/items/kayak.png", offsetY: 2, offsetZ: 4, category: "water" }
         ];
     }
 
@@ -59,7 +57,7 @@ class Garage {
     }
 
     getUserPlatformId() {
-        return AppState.user.platformId || localStorage.getItem('tdl_platform_id');
+        return AppState.user?.platformId || localStorage.getItem('tdl_platform_id');
     }
 
     async getPlayerBalance() {
@@ -74,7 +72,7 @@ class Garage {
     createHTML() {
         const tab = document.getElementById('tab-garage');
         if (!tab) return;
-        const isAdmin = this.access.isMasterUser(); // only CooseTheGeek can edit
+        const isAdmin = this.access.isMasterUser();
 
         tab.innerHTML = `
             <div class="garage-container" style="padding:1rem;">
@@ -92,7 +90,6 @@ class Garage {
                     </select>
                 </div>
                 <div id="garage-vehicles" class="vehicles-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:1.5rem;"></div>
-                <!-- Admin Modal -->
                 <div id="garage-modal" class="modal hidden"><div class="modal-content" style="max-width:500px;"><h3 id="garage-modal-title">Add/Edit Vehicle</h3>
                 <div class="form-group"><label>Name</label><input type="text" id="vehicle-name"></div>
                 <div class="form-group"><label>Shortname</label><input type="text" id="vehicle-shortname"></div>
@@ -153,16 +150,15 @@ class Garage {
         let filtered = this.vehicles.filter(v => v.enabled && v.name.toLowerCase().includes(search));
         if (category !== 'all') filtered = filtered.filter(v => v.category === category);
         const isAdmin = this.access.isMasterUser();
-        if (isAdmin) filtered = this.vehicles; // admin sees all
         if (filtered.length === 0) { container.innerHTML = '<div style="text-align:center; padding:2rem;">No vehicles available</div>'; return; }
-        const defaultImg = window.DEFAULT_AVATAR;
+        const defaultImg = "https://www.corrosionhour.com/img/items/wood.png";
         container.innerHTML = filtered.map(v => `
-            <div class="vehicle-card glass-card">
-                <img src="${v.image || defaultImg}" style="width:100px; height:100px; object-fit:contain; margin:0 auto 1rem;" onerror="this.src='${defaultImg}'">
-                <div style="font-weight:600; text-align:center;">${v.name}</div>
+            <div class="vehicle-card" style="background:var(--glass-bg); backdrop-filter:blur(var(--glass-blur)); border:1px solid var(--glass-border); border-radius:16px; padding:1rem;">
+                <img src="${v.image || defaultImg}" style="width:100px; height:100px; object-fit:contain; margin:0 auto 1rem; display:block;" onerror="this.src='${defaultImg}'">
+                <div style="font-weight:600; text-align:center;">${this.escapeHtml(v.name)}</div>
                 <div style="display:flex; justify-content:space-between; margin-top:0.5rem;"><span>💰 ${v.price} scrap</span><span>${v.stock === -1 ? '∞' : v.stock}</span></div>
                 <div style="display:flex; gap:0.5rem; margin-top:1rem;">
-                    <button class="buy-vehicle small-btn" data-id="${v.id}" style="flex:2; background:var(--accent-primary);">Buy & Spawn</button>
+                    <button class="buy-vehicle small-btn" data-id="${v.id}" style="flex:2; background:var(--accent-primary); color:#000;">Buy & Spawn</button>
                     ${isAdmin ? `<button class="edit-vehicle small-btn" data-id="${v.id}">✏️</button><button class="delete-vehicle small-btn" data-id="${v.id}">🗑️</button>` : ''}
                 </div>
             </div>
@@ -201,7 +197,6 @@ class Garage {
         this.editingId = id;
         const modal = document.getElementById('garage-modal');
         document.getElementById('garage-modal-title').innerText = id ? 'Edit Vehicle' : 'Add Vehicle';
-        // reset
         document.getElementById('vehicle-name').value = '';
         document.getElementById('vehicle-shortname').value = '';
         document.getElementById('vehicle-price').value = '0';
@@ -257,6 +252,11 @@ class Garage {
         this.saveVehicles();
         this.renderVehicles();
         toast.info('Vehicle deleted');
+    }
+
+    escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
 
     refresh() {

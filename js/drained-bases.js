@@ -1,5 +1,5 @@
 // drained-bases.js – DRAINED TABLET ULTIMATE v7.0.0
-// Kit‑based base blueprints – gives all materials and deployables (TC, sleeping bag, lock, metal door). No auto‑build.
+// Kit‑based base blueprints with working images and admin controls.
 
 class DrainedBases {
     constructor() {
@@ -11,6 +11,7 @@ class DrainedBases {
     }
 
     getDefaultBlueprints() {
+        const defaultImg = "https://www.corrosionhour.com/img/items/wood.png";
         return [
             { id: 1, name: "2x1 Starter", description: "2x1 with TC, sleeping bag, key lock, and sheet metal door.", price: 350,
               materials: { wood: 300, stone: 0, metal: 100, hqm: 0 },
@@ -48,7 +49,7 @@ class DrainedBases {
     saveBlueprints() { localStorage.setItem('tdl_drained_blueprints', JSON.stringify(this.blueprints)); }
 
     async loadMyPurchases() {
-        const playerId = AppState.user.platformId;
+        const playerId = AppState.user?.platformId;
         if (!playerId) {
             if (this.access.isMasterUser()) {
                 const mp = localStorage.getItem('tdl_master_purchases');
@@ -85,7 +86,7 @@ class DrainedBases {
             <div class="form-group"><label>Price (scrap)</label><input type="number" id="bp-price"></div>
             <div class="form-group"><label>Image URL</label><input type="text" id="bp-image"></div>
             <h4>Materials</h4><div class="form-row"><label>Wood</label><input type="number" id="bp-wood"><label>Stone</label><input type="number" id="bp-stone"><label>Metal</label><input type="number" id="bp-metal"><label>HQM</label><input type="number" id="bp-hqm"></div>
-            <h4>Extra Items (shortname, amount)</h4><div id="bp-items-list"></div><button id="add-bp-item" class="small-btn">+ Add Item</button>
+            <h4>Extra Items</h4><div id="bp-items-list"></div><button id="add-bp-item" class="small-btn">+ Add Item</button>
             <div class="modal-actions"><button id="bp-save" class="modal-btn primary">Save</button><button id="bp-cancel" class="modal-btn">Cancel</button></div>
             </div></div>
         `;
@@ -186,7 +187,7 @@ class DrainedBases {
 
     async fetchBalance() {
         if (this.access.isMasterUser()) { document.getElementById('bps-player-balance').innerText = '∞ (MASTER)'; return; }
-        const playerId = AppState.user.platformId;
+        const playerId = AppState.user?.platformId;
         if (!playerId) { document.getElementById('bps-player-balance').innerText = '?'; return; }
         try {
             const res = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
@@ -198,14 +199,15 @@ class DrainedBases {
         const container = document.getElementById('bps-gallery');
         if (!container) return;
         const isAdmin = this.access.isMasterUser();
+        const defaultImg = "https://www.corrosionhour.com/img/items/wood.png";
         container.innerHTML = this.blueprints.map(bp => `
-            <div class="bp-card">
-                <img src="${bp.image || window.DEFAULT_AVATAR}" class="bp-image" onerror="this.src=window.DEFAULT_AVATAR">
-                <div class="bp-name">${this.escapeHtml(bp.name)}</div>
-                <div class="bp-desc">${this.escapeHtml(bp.description || '')}</div>
-                <div class="bp-price">💰 ${bp.price} scrap</div>
-                <div class="bp-actions">
-                    <button class="bp-btn primary purchase-bp" data-id="${bp.id}">🛒 Purchase</button>
+            <div class="bp-card" style="background:var(--glass-bg); backdrop-filter:blur(var(--glass-blur)); border:1px solid var(--glass-border); border-radius:16px; padding:1rem;">
+                <img src="${bp.image || defaultImg}" class="bp-image" style="width:100px; height:100px; object-fit:contain; display:block; margin:0 auto 0.5rem;" onerror="this.src='${defaultImg}'">
+                <div class="bp-name" style="font-weight:600; text-align:center;">${this.escapeHtml(bp.name)}</div>
+                <div class="bp-desc" style="font-size:0.8rem; color:var(--text-secondary); text-align:center;">${this.escapeHtml(bp.description || '')}</div>
+                <div class="bp-price" style="text-align:center; margin:0.5rem 0;">💰 ${bp.price} scrap</div>
+                <div class="bp-actions" style="display:flex; gap:0.5rem;">
+                    <button class="bp-btn primary purchase-bp" data-id="${bp.id}" style="flex:2;">🛒 Purchase</button>
                     ${isAdmin ? `<button class="bp-btn edit-bp" data-id="${bp.id}">✏️</button><button class="bp-btn delete-bp" data-id="${bp.id}">🗑️</button>` : ''}
                 </div>
             </div>
@@ -240,7 +242,7 @@ class DrainedBases {
             toast.success(`Blueprint "${bp.name}" added to your kits (Master)`);
             return;
         }
-        const playerId = AppState.user.platformId;
+        const playerId = AppState.user?.platformId;
         if (!playerId) { toast.error('Platform ID not set'); return; }
         try {
             const bal = await ConnectionManager.executeCommand(`economy.balance "${playerId}"`);
@@ -261,20 +263,17 @@ class DrainedBases {
     async claimKit(blueprintId) {
         const bp = this.blueprints.find(b => b.id === blueprintId);
         if (!bp) return;
-        const playerId = AppState.user.platformId || (this.access.isMasterUser() ? 'master' : null);
+        const playerId = AppState.user?.platformId || (this.access.isMasterUser() ? 'master' : null);
         if (!playerId) { toast.error('No player ID'); return; }
-        // Give materials
         if (bp.materials.wood > 0) await ConnectionManager.executeCommand(`inventory.give "${playerId}" wood ${bp.materials.wood}`);
         if (bp.materials.stone > 0) await ConnectionManager.executeCommand(`inventory.give "${playerId}" stones ${bp.materials.stone}`);
         if (bp.materials.metal > 0) await ConnectionManager.executeCommand(`inventory.give "${playerId}" metal.fragments ${bp.materials.metal}`);
         if (bp.materials.hqm > 0) await ConnectionManager.executeCommand(`inventory.give "${playerId}" metal.refined ${bp.materials.hqm}`);
-        // Give extra items
         if (bp.items) {
             for (const item of bp.items) {
                 await ConnectionManager.executeCommand(`inventory.give "${playerId}" ${item.shortname} ${item.amount}`);
             }
         }
-        // Mark as deployed
         if (this.access.isMasterUser()) {
             const purchase = this.purchases.find(p => p.blueprint_id === blueprintId && !p.deployed_at);
             if (purchase) purchase.deployed_at = new Date().toISOString();
@@ -282,7 +281,7 @@ class DrainedBases {
         } else {
             await fetch(`${AppState.connection.bridgeUrl}/api/drained/deploy`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: AppState.user.platformId, blueprintId })
+                body: JSON.stringify({ playerId: AppState.user?.platformId, blueprintId })
             });
             await this.loadMyPurchases();
         }
