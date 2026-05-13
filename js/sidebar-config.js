@@ -13,29 +13,29 @@ class SidebarManager {
             { id: "combatlog", name: "Combat Log", icon: "⚔️", requiredRole: "user" },
             { id: "idcard", name: "ID Card", icon: "🪪", requiredRole: "user" },
             { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "master" },
-            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "master" },
-            { id: "more", name: "More Tools", icon: "📊", requiredRole: "master" },
+            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "user" },
+            { id: "more", name: "More Tools", icon: "📊", requiredRole: "user" },
             { id: "players", name: "Players", icon: "👥", requiredRole: "master" },
-            { id: "master", name: "Master Control", icon: "👑", requiredRole: "master" },
-            { id: "economy", name: "Economy", icon: "💰", requiredRole: "master" },
-            { id: "livemap", name: "Live Map", icon: "🗺️", requiredRole: "master" },
-            { id: "vehicles", name: "Vehicles", icon: "🚗", requiredRole: "master" },
-            { id: "teleport", name: "Teleport", icon: "📍", requiredRole: "master" },
-            { id: "events", name: "Events", icon: "🎉", requiredRole: "master" },
-            { id: "items", name: "Items", icon: "📦", requiredRole: "master" },
-            { id: "kits", name: "Kits", icon: "🧰", requiredRole: "master" },
-            { id: "world", name: "World", icon: "🌍", requiredRole: "master" },
-            { id: "backups", name: "Backups", icon: "💾", requiredRole: "owner" },
-            { id: "logs", name: "Logs", icon: "📜", requiredRole: "master" },
-            { id: "console", name: "Console", icon: "🖥️", requiredRole: "master" },
-            { id: "gportal", name: "GPortal", icon: "🔌", requiredRole: "owner" },
+            { id: "master", name: "Master Control", icon: "👑", requiredRole: "user" },
+            { id: "economy", name: "Economy", icon: "💰", requiredRole: "user" },
+            { id: "livemap", name: "Live Map", icon: "🗺️", requiredRole: "user" },
+            { id: "vehicles", name: "Vehicles", icon: "🚗", requiredRole: "user" },
+            { id: "teleport", name: "Teleport", icon: "📍", requiredRole: "user" },
+            { id: "events", name: "Events", icon: "🎉", requiredRole: "user" },
+            { id: "items", name: "Items", icon: "📦", requiredRole: "user" },
+            { id: "kits", name: "Kits", icon: "🧰", requiredRole: "user" },
+            { id: "world", name: "World", icon: "🌍", requiredRole: "user" },
+            { id: "backups", name: "Backups", icon: "💾", requiredRole: "user" },
+            { id: "logs", name: "Logs", icon: "📜", requiredRole: "user" },
+            { id: "console", name: "Console", icon: "🖥️", requiredRole: "user" },
+            { id: "gportal", name: "GPortal", icon: "🔌", requiredRole: "user" },
             { id: "health", name: "Health", icon: "📡", requiredRole: "master" },
-            { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "owner" },
-            { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
-            { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" }
+            { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "user" },
+            { id: "performance", name: "Performance", icon: "📊", requiredRole: "user" },
+            { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "user" }
         ];
-        this.defaultSelectedIds = ["home", "profile", "drained-bases", "more", "settings", "garage", "settings", "more"];
-        this.maxTabs = 8;
+        this.defaultSelectedIds = ["home", "profile", "drained-bases", "more", "settings", "garage"];
+        this.maxTabs = 6;
         this.selectedIds = [];
         this.access = window.accessControl;
         this.init();
