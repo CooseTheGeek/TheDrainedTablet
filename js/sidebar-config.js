@@ -34,7 +34,7 @@ class SidebarManager {
             { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
             { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" }
         ];
-        this.defaultSelectedIds = ["home", "profile", "drained-bases", "shop", "claims", "garage", "settings", "more"];
+        this.defaultSelectedIds = ["home", "profile", "drained-bases", "more", "settings", "garage", "settings", "more"];
         this.maxTabs = 8;
         this.selectedIds = [];
         this.access = window.accessControl;
