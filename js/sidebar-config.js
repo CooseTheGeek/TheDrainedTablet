@@ -4,6 +4,8 @@
 class SidebarManager {
     constructor() {
         this.allTabs = [
+            { id: "horde", name: "Horde", icon: "🧟", requiredRole: "user" },
+            { id: "garage", name: "Motorpool", icon: "🏍️", requiredRole: "user" },
             { id: "home", name: "Home", icon: "🏠", requiredRole: "user" },
             { id: "profile", name: "Profile", icon: "👤", requiredRole: "user" },
             { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user" },
@@ -33,7 +35,7 @@ class SidebarManager {
             { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
             { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" }
         ];
-        this.defaultSelectedIds = ["home", "profile", "drained-bases", "shop", "settings", "more"];
+        this.defaultSelectedIds = ["home", "profile", "drained-bases", "garage", "settings", "more"];
         this.maxTabs = 6;
         this.selectedIds = [];
         this.access = window.accessControl;
