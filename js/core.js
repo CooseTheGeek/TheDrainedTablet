@@ -1,4 +1,6 @@
-// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with platformId support)
+// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with platformId support and bridge logging)
+
+console.log('Bridge URL configured as:', 'https://drained-bridge.onrender.com');
 
 window.AppState = {
     user: {
