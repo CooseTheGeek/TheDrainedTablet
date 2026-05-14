@@ -1,4 +1,4 @@
-// security.js – with fallback master login when API unreachable
+// security.js – with master fallback and proper role detection
 
 class Security {
     constructor() {
@@ -26,7 +26,7 @@ class Security {
             return;
         }
 
-        // HARDCODED MASTER FALLBACK – works even if API is down
+        // Hardcoded master fallback – works even if API down
         if (username === 'CooseTheGeek' && password === '0827') {
             console.log('Master login using hardcoded credentials');
             const sessionToken = 'master_fallback_' + Date.now();
@@ -68,7 +68,6 @@ class Security {
             }));
             localStorage.setItem('tdl_username', data.username);
             localStorage.setItem('tdl_role', data.role);
-            // Fetch profile
             const profileRes = await fetch('https://drained-bridge.onrender.com/api/user/profile', {
                 headers: { 'Authorization': `Bearer ${data.sessionToken}` }
             });
@@ -94,10 +93,6 @@ class Security {
         } catch (err) {
             console.error('Login error:', err);
             document.getElementById('login-error').innerText = 'Connection error. Try again later.';
-            // If API fails and not master, show error
-            if (username !== 'CooseTheGeek') {
-                document.getElementById('login-error').innerText = 'Server unreachable. Try again later.';
-            }
         }
     }
 
@@ -111,7 +106,7 @@ class Security {
         try {
             const session = JSON.parse(sessionStr);
             if (session.expires > Date.now()) {
-                // Verify with bridge if possible, but if bridge down, accept session
+                // Verify with bridge if possible
                 try {
                     const res = await fetch('https://drained-bridge.onrender.com/api/verify', {
                         method: 'POST',
@@ -130,7 +125,6 @@ class Security {
                     }
                 } catch (e) {
                     console.warn('Bridge verification failed, but session exists – proceeding anyway.');
-                    // If bridge is down but we have a session, assume it's still valid
                     AppState.user = { username: session.username, role: session.role };
                     document.getElementById('security-door').style.display = 'none';
                     document.getElementById('dashboard').classList.remove('hidden');

@@ -1,5 +1,4 @@
-// settings.js – DRAINED TABLET ULTIMATE v7.0.0
-// Dashboard settings: modern card layout, with extra customization options.
+// settings.js – DRAINED TABLET ULTIMATE v7.0.0 (Modern settings with sidebar customizer)
 
 class Settings {
     constructor() {
@@ -40,7 +39,6 @@ class Settings {
     }
 
     saveSettings() {
-        // Gather all values (no recursion!)
         this.settings.defaultTab = document.getElementById('default-tab').value;
         this.settings.theme = document.getElementById('theme-select').value;
         this.settings.sidebarPosition = document.getElementById('sidebar-position').value;
@@ -57,8 +55,6 @@ class Settings {
         this.settings.fontSize = document.getElementById('font-size').value;
         this.settings.glassBlur = parseInt(document.getElementById('glass-blur').value);
         this.settings.borderRadius = parseInt(document.getElementById('border-radius').value);
-        // customBackground is separate, not overwritten here
-
         localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
         this.applySettings();
         toast.success('Settings saved');
@@ -81,7 +77,7 @@ class Settings {
         const tab = document.getElementById('tab-settings');
         if (!tab) return;
 
-        const isMaster = this.access.hasRole('master');
+        const isMaster = this.access.isMasterUser();
 
         tab.innerHTML = `
             <div class="settings-modern">
@@ -242,7 +238,7 @@ class Settings {
                         </div>
                     </div>
 
-                    ${isMaster ? `
+                    ${this.access.isMasterUser() ? `
                     <div class="settings-card">
                         <div class="card-header">📐 Layout Management</div>
                         <div class="card-body">
@@ -256,7 +252,7 @@ class Settings {
                     ` : ''}
 
                     <div class="settings-card">
-                        <div class="card-header">📑 Sidebar Tabs</div>
+                        <div class="card-header">📑 Sidebar Tabs (User Mode)</div>
                         <div class="card-body">
                             <div id="sidebar-tabs-customizer"></div>
                         </div>
@@ -286,10 +282,20 @@ class Settings {
             </div>
         `;
 
-        if (isMaster) this.renderLayoutList();
+        if (this.access.isMasterUser()) this.renderLayoutList();
         this.setupRangeListeners();
         this.renderSidebarCustomizer();
         this.attachBackgroundUpload();
+    }
+
+    renderSidebarCustomizer() {
+        const container = document.getElementById('sidebar-tabs-customizer');
+        if (container && window.sidebarManager) {
+            container.innerHTML = window.sidebarManager.getSelectionUI();
+            window.sidebarManager.attachSettingsEvents();
+        } else if (container) {
+            container.innerHTML = '<p>Sidebar manager not loaded.</p>';
+        }
     }
 
     setupRangeListeners() {
@@ -314,12 +320,10 @@ class Settings {
         if (upload) {
             upload.addEventListener('change', (e) => {
                 const file = e.target.files[0];
-                if (!file) return;
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     this.settings.customBackground = ev.target.result;
                     this.applySettings();
-                    toast.success('Background image applied');
                     localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
                 };
                 reader.readAsDataURL(file);
@@ -329,7 +333,6 @@ class Settings {
             clear.addEventListener('click', () => {
                 this.settings.customBackground = null;
                 this.applySettings();
-                toast.info('Background cleared');
                 localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
             });
         }
@@ -341,34 +344,20 @@ class Settings {
         document.getElementById('export-data')?.addEventListener('click', () => this.exportData());
         document.getElementById('import-data')?.addEventListener('click', () => this.importData());
         document.getElementById('clear-data')?.addEventListener('click', () => this.clearData());
-        if (this.access.hasRole('master')) {
+        if (this.access.isMasterUser()) {
             document.getElementById('save-layout')?.addEventListener('click', () => this.saveLayout());
             document.getElementById('reset-layout')?.addEventListener('click', () => this.resetLayout());
         }
     }
 
-    renderSidebarCustomizer() {
-        const container = document.getElementById('sidebar-tabs-customizer');
-        if (container && window.sidebarManager && window.sidebarManager.getSelectionUI) {
-            container.innerHTML = window.sidebarManager.getSelectionUI();
-            window.sidebarManager.attachSettingsEvents();
-        } else if (container) {
-            container.innerHTML = '<p>Sidebar manager not loaded.</p>';
-        }
-    }
-
     applySettings() {
-        // Theme
         document.body.className = `theme-${this.settings.theme}`;
-        // Compact mode
         document.body.classList.toggle('compact', this.settings.compactMode);
-        // Animations
         if (!this.settings.animations || this.settings.reducedMotion) {
             document.body.classList.add('no-animations');
         } else {
             document.body.classList.remove('no-animations');
         }
-        // Live background
         if (this.settings.liveBackground && !this.settings.customBackground) {
             document.body.classList.remove('no-live-bg');
             document.body.style.backgroundImage = '';
@@ -382,14 +371,11 @@ class Settings {
             document.body.style.backgroundImage = '';
             document.body.classList.remove('has-custom-bg');
         }
-        // Font size
         document.documentElement.style.fontSize = 
             this.settings.fontSize === 'small' ? '12px' :
             this.settings.fontSize === 'large' ? '16px' : '14px';
-        // Glass blur and border radius
         document.documentElement.style.setProperty('--glass-blur', `${this.settings.glassBlur}px`);
         document.documentElement.style.setProperty('--border-radius', `${this.settings.borderRadius}px`);
-        // Language
         document.documentElement.lang = this.settings.language;
     }
 

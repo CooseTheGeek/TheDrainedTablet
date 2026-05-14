@@ -1,11 +1,8 @@
-// profile.js – DRAINED TABLET ULTIMATE v7.0.0
-// User profile with tabbed interface: ID Card, Customize ID Card, and Settings
-// Enhanced with avatar cropping using Cropper.js, live preview, persistent storage, and bridge sync.
+// profile.js – DRAINED TABLET ULTIMATE v7.0.0 (Modern social profile page)
 
 class Profile {
     constructor() {
         this.tablet = window.drainedTablet;
-        this.auth = window.authSystem;
         this.db = window.database;
         this.savedServers = this.loadServers();
         this.platforms = ['ps5', 'ps4', 'xbox', 'xboxone'];
@@ -25,7 +22,6 @@ class Profile {
 
     async loadProfileData() {
         const username = AppState.user?.username || 'default';
-        // First try to get from bridge if logged in
         const sessionStr = localStorage.getItem('tdl_session');
         if (sessionStr) {
             try {
@@ -37,37 +33,38 @@ class Profile {
                     if (res.ok) {
                         const profile = await res.json();
                         return {
-                            expires: '05/24/2024',
-                            portalId: '#523489',
-                            region: 'North America',
-                            serverName: 'Geek\'s Survival Base',
-                            logoText: 'GEEK BASE',
-                            discordId: profile.discord_id || 'Not linked',
-                            discordConnected: !!profile.discord_id,
-                            tagline: 'NEW GEN | US',
+                            avatar: profile.avatar_url || window.DEFAULT_AVATAR,
+                            cover: localStorage.getItem('tdl_cover_photo') || '',
+                            username: profile.username,
+                            role: profile.role,
                             platform: profile.platform || '',
-                            platformId: profile.platform_id || ''
+                            platformId: profile.platform_id || '',
+                            tagline: 'Survivor',
+                            joined: new Date().toLocaleDateString(),
+                            stats: {
+                                kills: 0,
+                                deaths: 0,
+                                raids: 0,
+                                basesBuilt: 0
+                            },
+                            discordLinked: !!profile.discord_id
                         };
                     }
                 }
-            } catch (e) { console.warn(e); }
+            } catch(e) { console.warn(e); }
         }
-        // Fallback to localStorage
-        const saved = localStorage.getItem(`tdl_profile_${username}`);
-        if (saved) {
-            return JSON.parse(saved);
-        }
+        // Fallback
         return {
-            expires: '05/24/2024',
-            portalId: '#523489',
-            region: 'North America',
-            serverName: 'Geek\'s Survival Base',
-            logoText: 'GEEK BASE',
-            discordId: 'Geek#1234',
-            discordConnected: true,
-            tagline: 'NEW GEN | US',
-            platform: AppState.user?.platform || '',
-            platformId: AppState.user?.platformId || ''
+            avatar: localStorage.getItem('tdl_avatar') || window.DEFAULT_AVATAR,
+            cover: localStorage.getItem('tdl_cover_photo') || '',
+            username: username,
+            role: AppState.user?.role || 'user',
+            platform: localStorage.getItem('tdl_platform') || '',
+            platformId: localStorage.getItem('tdl_platform_id') || '',
+            tagline: 'Survivor',
+            joined: new Date().toLocaleDateString(),
+            stats: { kills: 0, deaths: 0, raids: 0, basesBuilt: 0 },
+            discordLinked: false
         };
     }
 
@@ -79,20 +76,32 @@ class Profile {
     async init() {
         this.createHTML();
         this.attachEvents();
-        this.populateUserInfo();
-        this.renderServers();
-        this.updateHeaderAvatar();
+        this.updateStats();
         window.addEventListener('tab-changed', (e) => {
-            if (e.detail.tab === 'profile') {
-                this.refresh();
-            }
+            if (e.detail.tab === 'profile') this.refresh();
         });
     }
 
-    updateHeaderAvatar() {
-        const headerAvatar = document.getElementById('profile-avatar');
-        if (headerAvatar) {
-            headerAvatar.src = AppState.user.avatar || window.DEFAULT_AVATAR;
+    async updateStats() {
+        if (AppState.connection.status === 'connected') {
+            try {
+                const kills = await ConnectionManager.executeCommand(`stats.kills ${this.profileData.platformId}`);
+                const deaths = await ConnectionManager.executeCommand(`stats.deaths ${this.profileData.platformId}`);
+                this.profileData.stats = { kills: parseInt(kills) || 0, deaths: parseInt(deaths) || 0, raids: 0, basesBuilt: 0 };
+                this.updateStatsDisplay();
+            } catch(e) {}
+        }
+    }
+
+    updateStatsDisplay() {
+        const statsDiv = document.getElementById('profile-stats');
+        if (statsDiv) {
+            statsDiv.innerHTML = `
+                <div class="stat-box"><span class="stat-value">${this.profileData.stats.kills}</span><span class="stat-label">Kills</span></div>
+                <div class="stat-box"><span class="stat-value">${this.profileData.stats.deaths}</span><span class="stat-label">Deaths</span></div>
+                <div class="stat-box"><span class="stat-value">${this.profileData.stats.raids}</span><span class="stat-label">Raids</span></div>
+                <div class="stat-box"><span class="stat-value">${this.profileData.stats.basesBuilt}</span><span class="stat-label">Bases</span></div>
+            `;
         }
     }
 
@@ -100,336 +109,185 @@ class Profile {
         const tab = document.getElementById('tab-profile');
         if (!tab) return;
 
-        const coverUrl = AppState.user.coverPhoto || '';
-        const avatarUrl = AppState.user.avatar || window.DEFAULT_AVATAR;
-
         tab.innerHTML = `
-            <div class="profile-container">
-                <div class="profile-header">
-                    <h2>👤 USER PROFILE</h2>
+            <div class="profile-modern">
+                <div class="profile-cover">
+                    <img id="profile-cover-img" src="${this.profileData.cover || 'https://via.placeholder.com/1200x300?text=Cover+Image'}" alt="Cover">
+                    <button id="change-cover-btn" class="edit-cover-btn">📷 Change Cover</button>
                 </div>
-
-                <div class="profile-tabs">
-                    <button class="profile-tab active" data-tab="idcard">🪪 ID Card</button>
-                    <button class="profile-tab" data-tab="customize">🎨 Customize ID Card</button>
-                    <button class="profile-tab" data-tab="settings">⚙️ Settings</button>
-                </div>
-
-                <!-- ID Card Tab -->
-                <div id="profile-idcard" class="profile-tab-content active">
-                    <div class="id-card-wrapper">
-                        <div class="id-card" id="id-card">
-                            <div class="id-card-header">
-                                <span class="card-title">⚡ THE DRAINED LAND'S</span>
-                                <span class="card-badge">OFFICIAL</span>
-                            </div>
-                            <div class="card-avatar" id="card-avatar">
-                                ${this.getAvatarHTML('large')}
-                            </div>
-                            <div class="card-username" id="card-username">${AppState.user.username || 'SURVIVOR'}</div>
-                            <div class="card-tagline" id="card-tagline">${this.profileData.tagline}</div>
-                            <div class="card-metadata">
-                                <div class="metadata-item">
-                                    <span class="metadata-label">Expires</span>
-                                    <span class="metadata-value" id="card-expires">${this.profileData.expires}</span>
-                                </div>
-                                <div class="metadata-item">
-                                    <span class="metadata-label">Portal ID</span>
-                                    <span class="metadata-value" id="card-portal-id">${this.profileData.portalId}</span>
-                                </div>
-                                <div class="metadata-item">
-                                    <span class="metadata-label">Region</span>
-                                    <span class="metadata-value" id="card-region">${this.profileData.region}</span>
-                                </div>
-                                <div class="metadata-item">
-                                    <span class="metadata-label">Name</span>
-                                    <span class="metadata-value" id="card-server-name">${this.profileData.serverName}</span>
-                                </div>
-                            </div>
-                            <div class="card-logo-block">
-                                <span class="logo-text" id="card-logo">${this.profileData.logoText}</span>
-                            </div>
-                            <div class="card-discord">
-                                <span class="discord-id" id="card-discord-id">${this.profileData.discordId}</span>
-                                <span class="discord-badge" id="card-discord-badge">${this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED'}</span>
-                            </div>
-                            <div class="card-actions">
-                                <button id="manage-server" class="btn-manage">MANAGE SERVER</button>
-                                <button id="delete-server" class="btn-delete">DELETE</button>
-                            </div>
-                        </div>
+                <div class="profile-avatar-container">
+                    <div class="profile-avatar" id="profile-avatar-container">
+                        <img id="profile-avatar-img" src="${this.profileData.avatar}" alt="Avatar">
+                        <button id="change-avatar-btn" class="edit-avatar-btn">✏️</button>
+                    </div>
+                    <h2 id="profile-display-name">${this.profileData.username}</h2>
+                    <div class="profile-role">${this.profileData.role.toUpperCase()}</div>
+                    <div class="profile-platform">
+                        <span class="platform-badge">${this.profileData.platform.toUpperCase()}</span>
+                        <span class="platform-id">${this.profileData.platformId}</span>
+                    </div>
+                    <div class="profile-tagline">
+                        <input type="text" id="profile-tagline-input" value="${this.profileData.tagline}" maxlength="60">
                     </div>
                 </div>
 
-                <!-- Customize ID Card Tab -->
-                <div id="profile-customize" class="profile-tab-content">
-                    <div class="two-col">
-                        <div class="customize-form">
-                            <h3>Customize Your ID Card</h3>
-                            <div class="form-section">
-                                <h3>Avatar</h3>
-                                <div class="form-group">
-                                    <div class="avatar-controls">
-                                        <img id="custom-avatar-preview" class="avatar-preview-small" src="${avatarUrl}" onerror="this.src=window.DEFAULT_AVATAR">
-                                        <div>
-                                            <button id="upload-avatar" class="small-btn">📤 Upload</button>
-                                            <button id="remove-avatar" class="small-btn">🗑️ Remove</button>
-                                        </div>
-                                    </div>
-                                </div>
+                <div class="profile-content">
+                    <div class="profile-section">
+                        <h3>📊 STATISTICS</h3>
+                        <div id="profile-stats" class="stats-grid"></div>
+                    </div>
+
+                    <div class="profile-section">
+                        <h3>🔗 LINKED ACCOUNTS</h3>
+                        <div class="linked-accounts">
+                            <div class="account-item">
+                                <span>Discord</span>
+                                <span id="discord-status">${this.profileData.discordLinked ? '✅ Linked' : '❌ Not linked'}</span>
+                                <button id="link-discord-btn" class="small-btn">${this.profileData.discordLinked ? 'Manage' : 'Link'}</button>
                             </div>
-                            <div class="form-section">
-                                <h3>Identity</h3>
-                                <div class="form-group">
-                                    <label>Display Name</label>
-                                    <input type="text" id="edit-username" value="${AppState.user.username || ''}">
-                                </div>
-                                <div class="form-group">
-                                    <label>Tagline</label>
-                                    <input type="text" id="edit-tagline" value="${this.profileData.tagline}">
-                                </div>
-                            </div>
-                            <div class="form-section">
-                                <h3>Server Metadata</h3>
-                                <div class="form-group">
-                                    <label>Expires</label>
-                                    <input type="text" id="edit-expires" value="${this.profileData.expires}">
-                                </div>
-                                <div class="form-group">
-                                    <label>Portal ID</label>
-                                    <input type="text" id="edit-portal-id" value="${this.profileData.portalId}">
-                                </div>
-                                <div class="form-group">
-                                    <label>Region</label>
-                                    <input type="text" id="edit-region" value="${this.profileData.region}">
-                                </div>
-                                <div class="form-group">
-                                    <label>Server Name</label>
-                                    <input type="text" id="edit-server-name" value="${this.profileData.serverName}">
-                                </div>
-                            </div>
-                            <div class="form-section">
-                                <h3>Logo Text</h3>
-                                <div class="form-group">
-                                    <input type="text" id="edit-logo" value="${this.profileData.logoText}">
-                                </div>
-                            </div>
-                            <div class="form-section">
-                                <h3>Discord</h3>
-                                <div class="form-group">
-                                    <label>Discord ID</label>
-                                    <input type="text" id="edit-discord-id" value="${this.profileData.discordId}">
-                                </div>
-                                <div class="checkbox-item">
-                                    <label>
-                                        <input type="checkbox" id="edit-discord-connected" ${this.profileData.discordConnected ? 'checked' : ''}> Discord Connected
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="form-actions">
-                                <button id="save-customize" class="btn-save primary">Save Changes</button>
-                                <button id="cancel-customize" class="btn-cancel">Cancel</button>
-                            </div>
-                        </div>
-                        <div class="preview-card">
-                            <h3 class="preview-title">Live Preview</h3>
-                            <div class="preview-id-card" id="preview-id-card">
-                                <div class="id-card-header">
-                                    <span class="card-title">⚡ THE DRAINED LAND'S</span>
-                                    <span class="card-badge">OFFICIAL</span>
-                                </div>
-                                <div class="card-avatar">
-                                    ${this.getAvatarHTML('preview')}
-                                </div>
-                                <div class="card-username" id="preview-username">${AppState.user.username || 'SURVIVOR'}</div>
-                                <div class="card-tagline" id="preview-tagline">${this.profileData.tagline}</div>
-                                <div class="card-metadata">
-                                    <div class="metadata-item">
-                                        <span class="metadata-label">Expires</span>
-                                        <span class="metadata-value" id="preview-expires">${this.profileData.expires}</span>
-                                    </div>
-                                    <div class="metadata-item">
-                                        <span class="metadata-label">Portal ID</span>
-                                        <span class="metadata-value" id="preview-portal-id">${this.profileData.portalId}</span>
-                                    </div>
-                                    <div class="metadata-item">
-                                        <span class="metadata-label">Region</span>
-                                        <span class="metadata-value" id="preview-region">${this.profileData.region}</span>
-                                    </div>
-                                    <div class="metadata-item">
-                                        <span class="metadata-label">Name</span>
-                                        <span class="metadata-value" id="preview-server-name">${this.profileData.serverName}</span>
-                                    </div>
-                                </div>
-                                <div class="card-logo-block">
-                                    <span class="logo-text" id="preview-logo">${this.profileData.logoText}</span>
-                                </div>
-                                <div class="card-discord">
-                                    <span class="discord-id" id="preview-discord-id">${this.profileData.discordId}</span>
-                                    <span class="discord-badge" id="preview-discord-badge">${this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED'}</span>
-                                </div>
+                            <div class="account-item">
+                                <span>GPortal</span>
+                                <span id="gportal-status">Not connected</span>
+                                <button id="link-gportal-btn" class="small-btn">Connect</button>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Settings Tab -->
-                <div id="profile-settings" class="profile-tab-content">
-                    <div class="profile-settings">
-                        <h3>Connected Accounts</h3>
-                        <div class="connection-buttons">
-                            <button id="connect-discord" class="connection-btn ${localStorage.getItem('discord_linked') === 'true' ? 'linked' : ''}">
-                                <span>🔗</span> Discord ${localStorage.getItem('discord_linked') === 'true' ? '(Linked)' : ''}
-                            </button>
-                            <button id="connect-gportal" class="connection-btn">
-                                <span>🔌</span> GPortal
-                            </button>
+                    <div class="profile-section">
+                        <h3>🆔 ID CARD & CUSTOMIZATION</h3>
+                        <div class="id-card-preview" id="id-card-preview">
+                            <div class="id-card-mini">
+                                <div class="id-avatar"><img src="${this.profileData.avatar}" width="40"></div>
+                                <div class="id-info">
+                                    <strong>${this.profileData.username}</strong>
+                                    <span>${this.profileData.platformId}</span>
+                                </div>
+                            </div>
                         </div>
+                        <button id="edit-id-card-btn" class="small-btn">Edit ID Card</button>
+                    </div>
 
-                        <h3>Saved Servers</h3>
-                        <div id="servers-list" class="servers-list"></div>
-                        <button id="add-server" class="profile-btn">➕ ADD SERVER</button>
-
-                        <h3>Account Actions</h3>
-                        <div class="connection-buttons">
-                            <button id="change-password" class="connection-btn">🔐 Change Password</button>
-                            <button id="enable-2fa" class="connection-btn">🔒 Enable 2FA</button>
-                            <button id="logout-all" class="connection-btn warning">🚪 Logout All Devices</button>
+                    <div class="profile-section">
+                        <h3>⚙️ ACCOUNT SETTINGS</h3>
+                        <div class="account-settings">
+                            <div class="setting-row">
+                                <label>Platform</label>
+                                <select id="edit-platform">
+                                    <option value="ps5" ${this.profileData.platform === 'ps5' ? 'selected' : ''}>PlayStation 5</option>
+                                    <option value="ps4" ${this.profileData.platform === 'ps4' ? 'selected' : ''}>PlayStation 4</option>
+                                    <option value="xbox" ${this.profileData.platform === 'xbox' ? 'selected' : ''}>Xbox Series X|S</option>
+                                    <option value="xboxone" ${this.profileData.platform === 'xboxone' ? 'selected' : ''}>Xbox One</option>
+                                </select>
+                            </div>
+                            <div class="setting-row">
+                                <label>Platform ID</label>
+                                <input type="text" id="edit-platform-id" value="${this.profileData.platformId}">
+                            </div>
+                            <div class="setting-row">
+                                <label>Change Password</label>
+                                <button id="change-password-btn" class="small-btn">Change Password</button>
+                            </div>
+                            <div class="setting-row">
+                                <label>Delete Account</label>
+                                <button id="delete-account-btn" class="small-btn danger">Delete Account</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Crop Modal (hidden by default) -->
-            <div id="crop-modal" class="modal hidden">
+            <!-- ID Card Editor Modal -->
+            <div id="id-card-modal" class="modal hidden">
                 <div class="modal-content">
-                    <h3>✂️ Crop Avatar</h3>
-                    <div class="crop-container">
-                        <img id="crop-image" src="" alt="Crop">
+                    <h3>Customize ID Card</h3>
+                    <div class="id-card-editor">
+                        <div class="preview-area">
+                            <canvas id="id-card-canvas" width="400" height="250"></canvas>
+                        </div>
+                        <div class="editor-controls">
+                            <div class="form-group">
+                                <label>Card Background Color</label>
+                                <input type="color" id="card-bg-color" value="#1a1a2e">
+                            </div>
+                            <div class="form-group">
+                                <label>Text Color</label>
+                                <input type="color" id="card-text-color" value="#e0e0e0">
+                            </div>
+                            <div class="form-group">
+                                <label>Accent Color</label>
+                                <input type="color" id="card-accent-color" value="#d4af37">
+                            </div>
+                            <div class="form-group">
+                                <label>Border Style</label>
+                                <select id="card-border-style">
+                                    <option value="solid">Solid</option>
+                                    <option value="glow">Glow</option>
+                                    <option value="gradient">Gradient</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Show QR Code</label>
+                                <input type="checkbox" id="card-show-qr">
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-actions">
-                        <button id="crop-save" class="modal-btn primary">Save</button>
-                        <button id="crop-cancel" class="modal-btn">Cancel</button>
+                        <button id="save-id-card" class="modal-btn primary">Save</button>
+                        <button id="download-id-card" class="modal-btn">Download PNG</button>
+                        <button id="close-id-card" class="modal-btn">Cancel</button>
                     </div>
                 </div>
             </div>
         `;
-    }
 
-    getAvatarHTML(size = 'large') {
-        const avatar = AppState.user.avatar || window.DEFAULT_AVATAR;
-        return `<img src="${avatar}" alt="avatar" class="avatar-img" onerror="this.src=window.DEFAULT_AVATAR">`;
-    }
-
-    getPlatformDisplay(platform) {
-        const map = {
-            ps5: 'PlayStation 5',
-            ps4: 'PlayStation 4',
-            xbox: 'Xbox Series X|S',
-            xboxone: 'Xbox One'
-        };
-        return map[platform] || platform;
+        this.updateStatsDisplay();
     }
 
     attachEvents() {
-        // Tab switching
-        document.querySelectorAll('.profile-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
-                e.target.classList.add('active');
-                document.getElementById(`profile-${e.target.dataset.tab}`).classList.add('active');
-            });
+        document.getElementById('change-cover-btn')?.addEventListener('click', () => this.uploadCover());
+        document.getElementById('change-avatar-btn')?.addEventListener('click', () => this.uploadAvatar());
+        document.getElementById('profile-tagline-input')?.addEventListener('change', (e) => this.saveTagline(e.target.value));
+        document.getElementById('edit-id-card-btn')?.addEventListener('click', () => this.openIdCardModal());
+        document.getElementById('save-id-card')?.addEventListener('click', () => this.saveIdCard());
+        document.getElementById('download-id-card')?.addEventListener('click', () => this.downloadIdCard());
+        document.getElementById('close-id-card')?.addEventListener('click', () => {
+            document.getElementById('id-card-modal').classList.add('hidden');
         });
-
-        // Avatar upload & crop
-        document.getElementById('upload-avatar')?.addEventListener('click', () => this.uploadAndCropAvatar());
-        document.getElementById('remove-avatar')?.addEventListener('click', () => this.removeAvatar());
-        document.getElementById('card-avatar')?.addEventListener('click', () => this.uploadAndCropAvatar());
-
-        // Live preview updates
-        document.getElementById('edit-username')?.addEventListener('input', (e) => {
-            document.getElementById('preview-username').innerText = e.target.value || 'SURVIVOR';
-        });
-        document.getElementById('edit-tagline')?.addEventListener('input', (e) => {
-            document.getElementById('preview-tagline').innerText = e.target.value;
-        });
-        document.getElementById('edit-expires')?.addEventListener('input', (e) => {
-            document.getElementById('preview-expires').innerText = e.target.value;
-        });
-        document.getElementById('edit-portal-id')?.addEventListener('input', (e) => {
-            document.getElementById('preview-portal-id').innerText = e.target.value;
-        });
-        document.getElementById('edit-region')?.addEventListener('input', (e) => {
-            document.getElementById('preview-region').innerText = e.target.value;
-        });
-        document.getElementById('edit-server-name')?.addEventListener('input', (e) => {
-            document.getElementById('preview-server-name').innerText = e.target.value;
-        });
-        document.getElementById('edit-logo')?.addEventListener('input', (e) => {
-            document.getElementById('preview-logo').innerText = e.target.value;
-        });
-        document.getElementById('edit-discord-id')?.addEventListener('input', (e) => {
-            document.getElementById('preview-discord-id').innerText = e.target.value;
-        });
-        document.getElementById('edit-discord-connected')?.addEventListener('change', (e) => {
-            const badge = document.getElementById('preview-discord-badge');
-            badge.innerText = e.target.checked ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED';
-        });
-
-        // Save/Cancel in Customize tab
-        document.getElementById('save-customize')?.addEventListener('click', () => this.saveCustomizations());
-        document.getElementById('cancel-customize')?.addEventListener('click', () => {
-            document.querySelector('.profile-tab[data-tab="idcard"]').click();
-        });
-
-        // Main ID card buttons
-        document.getElementById('manage-server')?.addEventListener('click', () => {
-            toast.info('Manage Server clicked – implement your logic');
-        });
-        document.getElementById('delete-server')?.addEventListener('click', () => {
-            if (confirm('Are you sure you want to delete this server?')) {
-                toast.error('Server deletion triggered');
-            }
-        });
-
-        // Settings buttons
-        document.getElementById('connect-discord')?.addEventListener('click', () => this.connectDiscord());
-        document.getElementById('connect-gportal')?.addEventListener('click', () => this.connectGPortal());
-        document.getElementById('change-password')?.addEventListener('click', () => this.changePassword());
-        document.getElementById('enable-2fa')?.addEventListener('click', () => this.enable2FA());
-        document.getElementById('logout-all')?.addEventListener('click', () => this.logoutAll());
-
-        // Server management
-        document.getElementById('add-server')?.addEventListener('click', () => this.addServer());
-
-        // Crop modal buttons
-        document.getElementById('crop-save')?.addEventListener('click', () => this.saveCroppedAvatar());
-        document.getElementById('crop-cancel')?.addEventListener('click', () => this.closeCropModal());
-
-        // Delegate for server actions
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('load-server')) {
-                const id = e.target.dataset.id;
-                this.loadServer(id);
-            }
-            if (e.target.classList.contains('delete-server')) {
-                const id = e.target.dataset.id;
-                this.deleteServer(id);
-            }
-        });
+        document.getElementById('link-discord-btn')?.addEventListener('click', () => this.linkDiscord());
+        document.getElementById('link-gportal-btn')?.addEventListener('click', () => this.linkGPortal());
+        document.getElementById('change-password-btn')?.addEventListener('click', () => this.changePassword());
+        document.getElementById('delete-account-btn')?.addEventListener('click', () => this.deleteAccount());
+        document.getElementById('edit-platform')?.addEventListener('change', (e) => this.savePlatform(e.target.value));
+        document.getElementById('edit-platform-id')?.addEventListener('change', (e) => this.savePlatformId(e.target.value));
     }
 
-    uploadAndCropAvatar() {
+    uploadCover() {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
         input.onchange = (e) => {
             const file = e.target.files[0];
-            if (!file) return;
             const reader = new FileReader();
-            reader.onload = (event) => {
-                this.showCropModal(event.target.result);
+            reader.onload = (ev) => {
+                const coverImg = document.getElementById('profile-cover-img');
+                coverImg.src = ev.target.result;
+                localStorage.setItem('tdl_cover_photo', ev.target.result);
+                toast.success('Cover photo updated');
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    }
+
+    uploadAvatar() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                this.showCropModal(ev.target.result);
             };
             reader.readAsDataURL(file);
         };
@@ -437,268 +295,221 @@ class Profile {
     }
 
     showCropModal(imageSrc) {
-        const modal = document.getElementById('crop-modal');
-        const img = document.getElementById('crop-image');
-        img.src = imageSrc;
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>Crop Avatar</h3>
+                <img id="crop-image" src="${imageSrc}" style="max-width: 100%;">
+                <div class="modal-actions">
+                    <button id="crop-confirm" class="modal-btn primary">Crop & Save</button>
+                    <button id="crop-cancel" class="modal-btn">Cancel</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
         modal.classList.remove('hidden');
 
-        img.onload = () => {
-            if (this.cropper) this.cropper.destroy();
-            this.cropper = new Cropper(img, {
-                aspectRatio: 1,
-                viewMode: 1,
-                dragMode: 'move',
-                autoCropArea: 1,
-                cropBoxResizable: true,
-                cropBoxMovable: true,
-                background: false
-            });
+        const img = document.getElementById('crop-image');
+        let cropper = new Cropper(img, { aspectRatio: 1, viewMode: 1 });
+
+        document.getElementById('crop-confirm').onclick = () => {
+            const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
+            const cropped = canvas.toDataURL();
+            document.getElementById('profile-avatar-img').src = cropped;
+            localStorage.setItem('tdl_avatar', cropped);
+            toast.success('Avatar updated');
+            cropper.destroy();
+            modal.remove();
+        };
+        document.getElementById('crop-cancel').onclick = () => {
+            cropper.destroy();
+            modal.remove();
         };
     }
 
-    closeCropModal() {
-        const modal = document.getElementById('crop-modal');
-        modal.classList.add('hidden');
-        if (this.cropper) {
-            this.cropper.destroy();
-            this.cropper = null;
-        }
-    }
-
-    async saveCroppedAvatar() {
-        if (!this.cropper) return;
-        const canvas = this.cropper.getCroppedCanvas({
-            width: 300,
-            height: 300,
-            imageSmoothingEnabled: true,
-            imageSmoothingQuality: 'high'
-        });
-        const croppedImage = canvas.toDataURL('image/png');
-        AppState.user.avatar = croppedImage;
-        localStorage.setItem('tdl_avatar', croppedImage);
-        await this.updateAvatarOnBridge(croppedImage);
-        this.updateAllAvatars();
-        this.closeCropModal();
-        toast.success('Avatar updated');
-    }
-
-    async updateAvatarOnBridge(avatarUrl) {
-        const sessionStr = localStorage.getItem('tdl_session');
-        if (sessionStr) {
-            try {
-                const session = JSON.parse(sessionStr);
-                if (session.token) {
-                    await fetch('https://drained-bridge.onrender.com/api/user/avatar', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
-                        body: JSON.stringify({ avatarUrl })
-                    });
-                }
-            } catch(e) { console.warn(e); }
-        }
-    }
-
-    removeAvatar() {
-        AppState.user.avatar = null;
-        localStorage.removeItem('tdl_avatar');
-        this.updateAllAvatars();
-        toast.info('Avatar removed');
-    }
-
-    updateAllAvatars() {
-        const cardAvatar = document.getElementById('card-avatar');
-        if (cardAvatar) cardAvatar.innerHTML = this.getAvatarHTML('large');
-        const previewAvatar = document.querySelector('.preview-id-card .card-avatar');
-        if (previewAvatar) previewAvatar.innerHTML = this.getAvatarHTML('preview');
-        const customPreview = document.getElementById('custom-avatar-preview');
-        if (customPreview) {
-            if (AppState.user.avatar) {
-                customPreview.src = AppState.user.avatar;
-            } else {
-                customPreview.src = window.DEFAULT_AVATAR;
-            }
-        }
-        this.updateHeaderAvatar();
-    }
-
-    async saveCustomizations() {
-        this.profileData = {
-            tagline: document.getElementById('edit-tagline').value,
-            expires: document.getElementById('edit-expires').value,
-            portalId: document.getElementById('edit-portal-id').value,
-            region: document.getElementById('edit-region').value,
-            serverName: document.getElementById('edit-server-name').value,
-            logoText: document.getElementById('edit-logo').value,
-            discordId: document.getElementById('edit-discord-id').value,
-            discordConnected: document.getElementById('edit-discord-connected').checked,
-            platform: document.getElementById('edit-platform')?.value || '',
-            platformId: document.getElementById('edit-platform-id')?.value || ''
-        };
-
-        const platformSelect = document.getElementById('edit-platform');
-        const platformIdInput = document.getElementById('edit-platform-id');
-        if (platformSelect && platformIdInput) {
-            AppState.user.platform = platformSelect.value;
-            AppState.user.platformId = platformIdInput.value;
-            localStorage.setItem('tdl_platform', platformSelect.value);
-            localStorage.setItem('tdl_platform_id', platformIdInput.value);
-
-            // Update in bridge if session exists
-            const sessionStr = localStorage.getItem('tdl_session');
-            if (sessionStr) {
-                try {
-                    const session = JSON.parse(sessionStr);
-                    if (session.token) {
-                        await fetch('https://drained-bridge.onrender.com/api/user/profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
-                            body: JSON.stringify({ platform: platformSelect.value, platformId: platformIdInput.value })
-                        });
-                    }
-                } catch(e) { console.warn(e); }
-            }
-        }
-
+    saveTagline(value) {
+        this.profileData.tagline = value;
         this.saveProfileData(this.profileData);
-
-        // Update main card
-        document.getElementById('card-tagline').innerText = this.profileData.tagline;
-        document.getElementById('card-expires').innerText = this.profileData.expires;
-        document.getElementById('card-portal-id').innerText = this.profileData.portalId;
-        document.getElementById('card-region').innerText = this.profileData.region;
-        document.getElementById('card-server-name').innerText = this.profileData.serverName;
-        document.getElementById('card-logo').innerText = this.profileData.logoText;
-        document.getElementById('card-discord-id').innerText = this.profileData.discordId;
-        document.getElementById('card-discord-badge').innerText = this.profileData.discordConnected ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED';
-
-        toast.success('ID Card updated');
-        document.querySelector('.profile-tab[data-tab="idcard"]').click();
+        toast.success('Tagline updated');
     }
 
-    renderServers() {
-        const listDiv = document.getElementById('servers-list');
-        if (!listDiv) return;
-        if (this.savedServers.length === 0) {
-            listDiv.innerHTML = '<div class="no-servers">No saved servers</div>';
-            return;
+    savePlatform(platform) {
+        this.profileData.platform = platform;
+        localStorage.setItem('tdl_platform', platform);
+        this.saveProfileData(this.profileData);
+        toast.success('Platform updated');
+    }
+
+    savePlatformId(platformId) {
+        this.profileData.platformId = platformId;
+        localStorage.setItem('tdl_platform_id', platformId);
+        this.saveProfileData(this.profileData);
+        toast.success('Platform ID updated');
+    }
+
+    openIdCardModal() {
+        this.drawIdCardPreview();
+        document.getElementById('id-card-modal').classList.remove('hidden');
+        document.getElementById('card-bg-color').addEventListener('input', () => this.drawIdCardPreview());
+        document.getElementById('card-text-color').addEventListener('input', () => this.drawIdCardPreview());
+        document.getElementById('card-accent-color').addEventListener('input', () => this.drawIdCardPreview());
+        document.getElementById('card-border-style').addEventListener('change', () => this.drawIdCardPreview());
+        document.getElementById('card-show-qr').addEventListener('change', () => this.drawIdCardPreview());
+    }
+
+    drawIdCardPreview() {
+        const canvas = document.getElementById('id-card-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = 400, h = 250;
+        canvas.width = w;
+        canvas.height = h;
+
+        const bgColor = document.getElementById('card-bg-color').value;
+        const textColor = document.getElementById('card-text-color').value;
+        const accentColor = document.getElementById('card-accent-color').value;
+        const borderStyle = document.getElementById('card-border-style').value;
+        const showQR = document.getElementById('card-show-qr').checked;
+
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, w, h);
+
+        if (borderStyle === 'solid') {
+            ctx.strokeStyle = accentColor;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(5, 5, w - 10, h - 10);
+        } else if (borderStyle === 'glow') {
+            ctx.shadowColor = accentColor;
+            ctx.shadowBlur = 10;
+            ctx.strokeStyle = accentColor;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(5, 5, w - 10, h - 10);
+            ctx.shadowBlur = 0;
+        } else if (borderStyle === 'gradient') {
+            const grad = ctx.createLinearGradient(0, 0, w, h);
+            grad.addColorStop(0, accentColor);
+            grad.addColorStop(1, '#ffffff');
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 4;
+            ctx.strokeRect(5, 5, w - 10, h - 10);
         }
-        let html = '';
-        this.savedServers.forEach(server => {
-            html += `
-                <div class="server-card">
-                    <div class="server-info">
-                        <span class="server-name">${server.name}</span>
-                        <span class="server-address">${server.ip}:${server.port}</span>
-                    </div>
-                    <div class="server-actions">
-                        <button class="small-btn load-server" data-id="${server.id}">📂 LOAD</button>
-                        <button class="small-btn delete-server" data-id="${server.id}">🗑️</button>
-                    </div>
-                </div>
-            `;
-        });
-        listDiv.innerHTML = html;
-    }
 
-    addServer() {
-        const name = prompt('Enter server name:');
-        if (!name) return;
-        const ip = prompt('Enter server IP:');
-        if (!ip) return;
-        const port = prompt('Enter RCON port (default 28916):', '28916');
-        if (!port) return;
-        const password = prompt('Enter RCON password:');
-        if (!password) return;
-        const server = {
-            id: 'server_' + Date.now(),
-            name,
-            ip,
-            port: parseInt(port),
-            password
+        // Avatar
+        const avatar = document.getElementById('profile-avatar-img').src;
+        const avatarImg = new Image();
+        avatarImg.onload = () => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(60, 75, 35, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(avatarImg, 25, 40, 70, 70);
+            ctx.restore();
+            ctx.beginPath();
+            ctx.arc(60, 75, 35, 0, 2 * Math.PI);
+            ctx.strokeStyle = accentColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
         };
-        this.savedServers.push(server);
-        this.saveServers();
-        this.renderServers();
-        toast.success('Server saved');
+        avatarImg.src = avatar;
+
+        // Text
+        ctx.fillStyle = textColor;
+        ctx.font = 'bold 20px Inter';
+        ctx.fillText(this.profileData.username, 120, 70);
+        ctx.font = '14px Inter';
+        ctx.fillStyle = accentColor;
+        ctx.fillText(this.profileData.role.toUpperCase(), 120, 95);
+        ctx.fillStyle = textColor;
+        ctx.font = '12px Inter';
+        ctx.fillText(this.profileData.platformId, 120, 115);
+        ctx.fillText(this.profileData.tagline, 120, 140);
+
+        // QR code placeholder
+        if (showQR) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(w - 70, h - 70, 50, 50);
+            ctx.fillStyle = '#000';
+            ctx.font = '10px monospace';
+            ctx.fillText('QR', w - 50, h - 45);
+        }
+
+        // Logo
+        ctx.fillStyle = accentColor;
+        ctx.font = 'italic 12px Inter';
+        ctx.fillText('⚡ THE DRAINED LAND\'S', w - 130, h - 10);
     }
 
-    loadServer(id) {
-        const server = this.savedServers.find(s => s.id === id);
-        if (!server) return;
-        const ipField = document.getElementById('server-ip');
-        const portField = document.getElementById('server-port');
-        const passField = document.getElementById('server-password');
-        if (ipField) ipField.value = server.ip;
-        if (portField) portField.value = server.port;
-        if (passField) passField.value = server.password;
-        toast.success(`Loaded server: ${server.name}`);
+    saveIdCard() {
+        // Save settings to localStorage for next time
+        const settings = {
+            bgColor: document.getElementById('card-bg-color').value,
+            textColor: document.getElementById('card-text-color').value,
+            accentColor: document.getElementById('card-accent-color').value,
+            borderStyle: document.getElementById('card-border-style').value,
+            showQR: document.getElementById('card-show-qr').checked
+        };
+        localStorage.setItem('tdl_id_card_settings', JSON.stringify(settings));
+        toast.success('ID card settings saved');
+        document.getElementById('id-card-modal').classList.add('hidden');
     }
 
-    deleteServer(id) {
-        if (!confirm('Delete this server?')) return;
-        this.savedServers = this.savedServers.filter(s => s.id !== id);
-        this.saveServers();
-        this.renderServers();
-        toast.info('Server deleted');
+    downloadIdCard() {
+        const canvas = document.getElementById('id-card-canvas');
+        const link = document.createElement('a');
+        link.download = `idcard_${this.profileData.username}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
     }
 
-    connectDiscord() {
+    linkDiscord() {
         window.location.href = 'https://drained-bridge.onrender.com/api/discord/login';
     }
 
-    connectGPortal() {
+    linkGPortal() {
         window.switchTab('gportal');
-        toast.info('Please connect your Discord first in the GPortal tab');
+        toast.info('Please set up GPortal connection in the GPortal tab');
     }
 
     changePassword() {
-        toast.info('Password change feature coming soon');
-    }
-
-    enable2FA() {
-        if (!window.userManagement) {
-            toast.error('User management not available');
+        const newPass = prompt('Enter new password (min 6 characters):');
+        if (!newPass || newPass.length < 6) {
+            toast.error('Password must be at least 6 characters');
             return;
         }
-        window.userManagement.enableTotp(AppState.user.username);
+        // Call API to update password
+        fetch('https://drained-bridge.onrender.com/api/user/password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${JSON.parse(localStorage.getItem('tdl_session')).token}` },
+            body: JSON.stringify({ password: newPass })
+        }).then(res => {
+            if (res.ok) toast.success('Password changed');
+            else toast.error('Failed to change password');
+        }).catch(() => toast.error('API unreachable, password not changed'));
     }
 
-    logoutAll() {
-        if (!confirm('This will log you out of all devices. Continue?')) return;
-        localStorage.removeItem('tdl_session');
-        location.reload();
-    }
-
-    populateUserInfo() {
-        this.updateAllAvatars();
-        document.getElementById('card-username').innerText = AppState.user.username || 'SURVIVOR';
-        document.getElementById('preview-username').innerText = AppState.user.username || 'SURVIVOR';
-        document.getElementById('edit-username').value = AppState.user.username || '';
+    deleteAccount() {
+        if (!confirm('⚠️ PERMANENTLY DELETE YOUR ACCOUNT? All data will be lost.')) return;
+        fetch('https://drained-bridge.onrender.com/api/user/delete', {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${JSON.parse(localStorage.getItem('tdl_session')).token}` }
+        }).then(() => {
+            localStorage.clear();
+            location.reload();
+        }).catch(() => {
+            localStorage.clear();
+            location.reload();
+        });
     }
 
     refresh() {
-        this.renderServers();
-        this.populateUserInfo();
-        const discordBtn = document.getElementById('connect-discord');
-        if (discordBtn) {
-            if (localStorage.getItem('discord_linked') === 'true') {
-                discordBtn.classList.add('linked');
-                discordBtn.innerHTML = '<span>🔗</span> Discord (Linked)';
-            } else {
-                discordBtn.classList.remove('linked');
-                discordBtn.innerHTML = '<span>🔗</span> Discord';
-            }
-        }
+        this.createHTML();
+        this.attachEvents();
+        this.updateStats();
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     window.profile = new Profile();
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    const headerAvatar = document.getElementById('profile-avatar');
-    if (headerAvatar) {
-        headerAvatar.src = AppState.user?.avatar || window.DEFAULT_AVATAR;
-    }
 });

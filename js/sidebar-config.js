@@ -1,9 +1,9 @@
-// sidebar-config.js – DRAINED TABLET v7.0.0 (User/Mode sidebar)
+// sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0 (User/Mode sidebar with 6‑tab limit)
 
 class SidebarManager {
     constructor() {
-        // User tabs (shown when UI mode = 'user')
-        this.userTabs = [
+        // All user-available tabs (for selection)
+        this.userAvailableTabs = [
             { id: "home", name: "Home", icon: "🏠", requiredRole: "user" },
             { id: "profile", name: "Profile", icon: "👤", requiredRole: "user" },
             { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user" },
@@ -97,17 +97,46 @@ class SidebarManager {
             { id: "serverConnect", name: "Server Connect", icon: "🔌", requiredRole: "master" }
         ];
 
-        this.selectedIds = [];
-        this.maxTabs = 12;
+        this.userSelectedIds = [];
+        this.maxUserTabs = 6;
         this.access = window.accessControl;
         this.init();
+    }
+
+    init() {
+        this.loadUserSelection();
+        this.renderSidebar();
+        this.addEventDelegation();
+        window.addEventListener('tab-changed', () => this.highlightActiveTab());
+        window.addEventListener('mode-changed', () => this.renderSidebar());
+    }
+
+    loadUserSelection() {
+        const saved = localStorage.getItem('tdl_user_selected_tabs');
+        if (saved) {
+            this.userSelectedIds = JSON.parse(saved);
+            // Ensure we have exactly maxUserTabs items; if not, fill with defaults
+            if (this.userSelectedIds.length !== this.maxUserTabs) {
+                this.userSelectedIds = ["home", "profile", "drained-bases", "shop", "garage", "claims"];
+                this.saveUserSelection();
+            }
+        } else {
+            this.userSelectedIds = ["home", "profile", "drained-bases", "shop", "garage", "claims"];
+            this.saveUserSelection();
+        }
+    }
+
+    saveUserSelection() {
+        localStorage.setItem('tdl_user_selected_tabs', JSON.stringify(this.userSelectedIds));
     }
 
     getCurrentTabs() {
         const mode = this.access.getUIMode();
         if (mode === 'user') {
-            return this.userTabs;
+            // Return only the selected user tabs
+            return this.userAvailableTabs.filter(tab => this.userSelectedIds.includes(tab.id));
         } else {
+            // Admin mode: return all admin tabs
             return this.adminTabs;
         }
     }
@@ -145,11 +174,51 @@ class SidebarManager {
         });
     }
 
-    init() {
-        this.renderSidebar();
-        this.addEventDelegation();
-        window.addEventListener('tab-changed', () => this.highlightActiveTab());
-        window.addEventListener('mode-changed', () => this.renderSidebar());
+    // Called from Settings tab to render the customizer UI
+    getSelectionUI() {
+        let html = `
+            <div class="sidebar-customizer">
+                <h3>Customize Your Sidebar (User Mode)</h3>
+                <p>Select up to ${this.maxUserTabs} tabs to appear in the sidebar when in User Mode.</p>
+                <div class="tab-selection-list" id="user-tab-selection-list">
+        `;
+        for (const tab of this.userAvailableTabs) {
+            const isChecked = this.userSelectedIds.includes(tab.id);
+            const disabled = this.userSelectedIds.length >= this.maxUserTabs && !isChecked;
+            html += `
+                <label class="tab-checkbox" style="display: inline-block; margin: 0.5rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 8px;">
+                    <input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+                    <span class="tab-icon">${tab.icon}</span> ${tab.name}
+                </label>
+            `;
+        }
+        html += `
+                </div>
+                <button id="save-user-sidebar-tabs" class="settings-btn primary">Save Sidebar Tabs</button>
+            </div>
+        `;
+        return html;
+    }
+
+    attachSettingsEvents() {
+        const saveBtn = document.getElementById('save-user-sidebar-tabs');
+        if (!saveBtn) return;
+        saveBtn.addEventListener('click', () => {
+            const checkboxes = document.querySelectorAll('#user-tab-selection-list input:checked');
+            const newIds = Array.from(checkboxes).map(cb => cb.value);
+            if (newIds.length !== this.maxUserTabs) {
+                toast.error(`You must select exactly ${this.maxUserTabs} tabs`);
+                return;
+            }
+            this.userSelectedIds = newIds;
+            this.saveUserSelection();
+            this.renderSidebar();
+            toast.success('Sidebar updated');
+            // Re-render customizer to update disabled states
+            if (window.settings && window.settings.renderSidebarCustomizer) {
+                window.settings.renderSidebarCustomizer();
+            }
+        });
     }
 }
 

@@ -72,7 +72,7 @@
             </aside>
 
             <main class="main-content" id="main-content">
-                <!-- All tab panes – only those that are referenced in sidebar -->
+                <!-- All tab panes – kept intact -->
                 <div id="tab-home" class="tab-pane active"></div>
                 <div id="tab-players" class="tab-pane"></div>
                 <div id="tab-master" class="tab-pane"></div>
@@ -100,7 +100,7 @@
                 <div id="tab-drained-bases" class="tab-pane"></div>
                 <div id="tab-animals" class="tab-pane"></div>
                 <div id="tab-autoMod" class="tab-pane"></div>
-                <div id="tab-defence" class="tab-pane"></div>
+                <div id="tab-defense" class="tab-pane"></div>
                 <div id="tab-clans" class="tab-pane"></div>
                 <div id="tab-claims" class="tab-pane"></div>
                 <div id="tab-polls" class="tab-pane"></div>
@@ -274,6 +274,7 @@
                     localStorage.removeItem('tdl_platform');
                     localStorage.removeItem('tdl_platform_id');
                     localStorage.removeItem('tdl_ui_mode');
+                    localStorage.removeItem('tdl_user_selected_tabs');
                     location.reload();
                 });
             }

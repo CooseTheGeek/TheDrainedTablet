@@ -1,4 +1,4 @@
-// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (User/Master mode)
+// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (Master bypass)
 
 class AccessControl {
     constructor() {
@@ -25,12 +25,13 @@ class AccessControl {
                     if (res.ok) {
                         const profile = await res.json();
                         this.userPermissions = profile.permissions || {};
-                        if (profile.username === 'CooseTheGeek') {
-                            this.userPermissions = { '*': true };
-                        }
                     }
                 }
             } catch(e) { console.warn(e); }
+        }
+        // CooseTheGeek is always master regardless of stored permissions
+        if (this.isMasterUser()) {
+            this.userPermissions = { '*': true };
         }
     }
 
@@ -63,12 +64,16 @@ class AccessControl {
         this.uiMode = mode;
         localStorage.setItem('tdl_ui_mode', mode);
         if (window.sidebarManager) window.sidebarManager.renderSidebar();
+        if (window.settings && window.settings.renderSidebarCustomizer) window.settings.renderSidebarCustomizer();
         window.dispatchEvent(new CustomEvent('mode-changed', { detail: { mode } }));
         toast.success(`${mode === 'master' ? 'Admin Mode' : 'User Mode'} active`);
     }
 
     applyUIPermissions() {
-        // Additional UI hiding if needed
+        // Hide admin-only elements based on mode
+        document.querySelectorAll('.admin-only').forEach(el => {
+            el.style.display = this.isMasterUser() && this.uiMode === 'master' ? '' : 'none';
+        });
     }
 }
 
