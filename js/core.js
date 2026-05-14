@@ -1,4 +1,4 @@
-// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with platform support)
+// core.js – DRAINED TABLET ULTIMATE v7.0.0 (with platformId support)
 
 window.AppState = {
     user: {
@@ -101,7 +101,7 @@ window.ConnectionManager = {
     }
 };
 
-// GPortal player list polling
+// GPortal player list polling (unchanged)
 setInterval(async () => {
     if (window.gportalConnector && window.gportalConnector.apiReady) {
         try {

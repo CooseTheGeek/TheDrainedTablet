@@ -1,6 +1,4 @@
-// master-control.js – DRAINED TABLET ULTIMATE v7.0.0
-// Complete master control panel with unlimited power over everything.
-// Only accessible by master (CooseTheGeek).
+// master-control.js – DRAINED TABLET ULTIMATE v7.0.0 (Full version with user management)
 
 class MasterControl {
     constructor() {
@@ -210,12 +208,31 @@ class MasterControl {
 
                 <!-- Dashboard User Management (Master Only) -->
                 <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">👥 DASHBOARD USERS (SERVER OWNERS)</h3>
-                    <div id="master-users-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem;"></div>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <input type="text" id="master-new-user" placeholder="Username" style="flex: 1; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
-                        <input type="text" id="master-new-code" placeholder="4-digit code" maxlength="4" style="width: 100px; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
-                        <button id="master-add-user" class="master-btn" style="padding: 0.6rem 1.5rem; background: var(--success); color: #000; border: none; border-radius: 8px; cursor: pointer;">ADD USER</button>
+                    <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">👥 DASHBOARD USERS</h3>
+                    <div id="master-users-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Username</label>
+                            <input type="text" id="master-new-username" class="master-input" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;" placeholder="e.g., RustPlayer">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Password (min 6 chars)</label>
+                            <input type="password" id="master-new-password" class="master-input" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;" placeholder="********">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Platform</label>
+                            <select id="master-new-platform" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">
+                                <option value="ps5">PlayStation 5</option>
+                                <option value="ps4">PlayStation 4</option>
+                                <option value="xbox">Xbox Series X|S</option>
+                                <option value="xboxone">Xbox One</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 0.3rem; color: var(--text-secondary);">Platform ID</label>
+                            <input type="text" id="master-new-platform-id" class="master-input" style="width: 100%; padding: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;" placeholder="Gamertag / PSN ID">
+                        </div>
+                        <button id="master-add-user-btn" class="master-btn" style="padding: 0.6rem 1.5rem; background: var(--success); color: #000; border: none; border-radius: 8px; cursor: pointer;">➕ ADD USER</button>
                     </div>
                 </div>
 
@@ -233,6 +250,7 @@ class MasterControl {
 
         this.setupRangeListeners();
         this.loadDashboardUsers();
+        this.attachEvents();
     }
 
     setupRangeListeners() {
@@ -292,8 +310,8 @@ class MasterControl {
         document.getElementById('master-plugin-unload')?.addEventListener('click', () => this.unloadPlugin());
         document.getElementById('master-plugin-reload')?.addEventListener('click', () => this.reloadPlugin());
 
-        // User management (legacy local user add)
-        document.getElementById('master-add-user')?.addEventListener('click', () => this.addUser());
+        // User management
+        document.getElementById('master-add-user-btn')?.addEventListener('click', () => this.addUser());
 
         // Raw command
         document.getElementById('master-execute-raw')?.addEventListener('click', () => this.executeRawCommand());
@@ -462,29 +480,6 @@ class MasterControl {
         }
     }
 
-    // Legacy local user add (for backward compatibility)
-    addUser() {
-        const username = document.getElementById('master-new-user').value.trim();
-        const code = document.getElementById('master-new-code').value.trim();
-        if (!username || !code) {
-            toast.error('Username and code required');
-            return;
-        }
-        if (code.length !== 4 || !/^\d+$/.test(code)) {
-            toast.error('Code must be 4 digits');
-            return;
-        }
-        try {
-            window.authSystem?.addUser(username, code, 'CooseTheGeek');
-            toast.success(`User ${username} added`);
-            document.getElementById('master-new-user').value = '';
-            document.getElementById('master-new-code').value = '';
-            this.loadDashboardUsers();
-        } catch (err) {
-            toast.error(err.message);
-        }
-    }
-
     async executeRawCommand() {
         const input = document.getElementById('master-raw-command');
         const cmd = input.value.trim();
@@ -502,7 +497,7 @@ class MasterControl {
         input.value = '';
     }
 
-    // ---------- Dashboard User Management via Bridge ----------
+    // ========== USER MANAGEMENT METHODS ==========
     async loadDashboardUsers() {
         if (!this.access.isMasterUser()) return;
         const masterCode = '0827';
@@ -517,25 +512,14 @@ class MasterControl {
                 container.innerHTML = '<div class="no-users">No registered users yet</div>';
                 return;
             }
-            let html = '<table class="user-table"><tr><th>Username</th><th>Platform</th><th>Platform ID</th><th>Role</th><th>Permissions</th><th>Status</th><th>Actions</th></tr>';
+            let html = '<table class="user-table"><tr><th>Username</th><th>Platform</th><th>Platform ID</th><th>Role</th><th>Status</th><th>Actions</th></tr>';
             for (const u of this.usersList) {
-                const permSummary = u.permissions && Object.keys(u.permissions).length > 0 ? Object.keys(u.permissions).join(', ') : 'default';
                 html += `
                     <tr>
                         <td>${u.username}</td>
                         <td>${u.platform || '-'}</td>
                         <td>${u.platform_id || '-'}</td>
-                        <td>
-                            <select class="user-role" data-id="${u.id}" data-current="${u.role}">
-                                <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
-                                <option value="owner" ${u.role === 'owner' ? 'selected' : ''}>Owner</option>
-                                <option value="master" ${u.role === 'master' ? 'selected' : ''}>Master</option>
-                            </select>
-                        </td>
-                        <td>
-                            <button class="small-btn edit-permissions" data-id="${u.id}" data-username="${u.username}">✏️ Permissions</button>
-                            <br><small>${permSummary}</small>
-                        </td>
+                        <td>${u.role}</td>
                         <td>${u.disabled ? '🔴 Disabled' : '🟢 Active'}</td>
                         <td>
                             <button class="small-btn toggle-disable" data-id="${u.id}" data-disabled="${u.disabled}">${u.disabled ? 'Enable' : 'Disable'}</button>
@@ -548,9 +532,6 @@ class MasterControl {
             html += '</table>';
             container.innerHTML = html;
 
-            document.querySelectorAll('.user-role').forEach(select => {
-                select.addEventListener('change', (e) => this.updateUserRole(e.target.dataset.id, e.target.value));
-            });
             document.querySelectorAll('.toggle-disable').forEach(btn => {
                 btn.addEventListener('click', () => this.toggleUserDisable(btn.dataset.id, btn.dataset.disabled === 'true'));
             });
@@ -560,9 +541,6 @@ class MasterControl {
             document.querySelectorAll('.delete-user').forEach(btn => {
                 btn.addEventListener('click', () => this.deleteUser(btn.dataset.id));
             });
-            document.querySelectorAll('.edit-permissions').forEach(btn => {
-                btn.addEventListener('click', () => this.openPermissionEditor(btn.dataset.id, btn.dataset.username));
-            });
         } catch (err) {
             console.error(err);
             const container = document.getElementById('master-users-list');
@@ -570,15 +548,32 @@ class MasterControl {
         }
     }
 
-    async updateUserRole(userId, newRole) {
+    async addUser() {
+        const username = document.getElementById('master-new-username').value.trim();
+        const password = document.getElementById('master-new-password').value;
+        const platform = document.getElementById('master-new-platform').value;
+        const platformId = document.getElementById('master-new-platform-id').value.trim();
+        if (!username || !password || !platform || !platformId) {
+            toast.error('All fields required');
+            return;
+        }
+        if (password.length < 6) {
+            toast.error('Password must be at least 6 characters');
+            return;
+        }
         const masterCode = '0827';
         try {
-            await fetch(`https://drained-bridge.onrender.com/api/admin/users/${userId}/role`, {
+            const res = await fetch('https://drained-bridge.onrender.com/api/admin/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${masterCode}` },
-                body: JSON.stringify({ role: newRole })
+                body: JSON.stringify({ username, password, platform, platformId })
             });
-            toast.success('Role updated');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            toast.success(`User ${username} added`);
+            document.getElementById('master-new-username').value = '';
+            document.getElementById('master-new-password').value = '';
+            document.getElementById('master-new-platform-id').value = '';
             this.loadDashboardUsers();
         } catch (err) {
             toast.error(err.message);
@@ -634,95 +629,11 @@ class MasterControl {
         }
     }
 
-    openPermissionEditor(userId, username) {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.id = 'perm-modal';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 600px;">
-                <h3>Edit Permissions for ${username}</h3>
-                <div class="permissions-list">
-                    <p><strong>Tab Access</strong></p>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:home" checked disabled> Home (always enabled)</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:profile"> Profile Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:shop"> Shop Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:garage"> Motorpool Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:drained-bases"> Drained Bases Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:claims"> Claims Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:combatlog"> Combat Log Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:idcard"> ID Card Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:settings"> Settings Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:more"> More Tools Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:economy"> Economy Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:livemap"> Live Map Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:teleport"> Teleport Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:vehicles"> Vehicles Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:events"> Events Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:items"> Items Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:kits"> Kits Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:world"> World Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:backups"> Backups Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:logs"> Logs Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:console"> Console Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:gportal"> GPortal Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:recovery"> Recovery Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:performance"> Performance Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:deepseek"> DeepSeek AI Tab</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="tab:master-control"> Master Control Tab</label>
-                    <hr>
-                    <p><strong>Command Permissions</strong></p>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:kick"> Can Kick Players</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:ban"> Can Ban Players</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:give"> Can Give Items</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:spawn"> Can Spawn Entities</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:economy"> Can Modify Economy</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:teleport"> Can Teleport</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:kit"> Can Manage Kits</label>
-                    <label><input type="checkbox" class="perm-checkbox" data-perm="command:zone"> Can Edit Zones</label>
-                </div>
-                <div class="modal-actions">
-                    <button id="save-permissions" class="modal-btn primary">Save Permissions</button>
-                    <button id="cancel-permissions" class="modal-btn">Cancel</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.classList.remove('hidden');
-
-        const user = this.usersList.find(u => u.id == userId);
-        if (user && user.permissions) {
-            for (const [perm, val] of Object.entries(user.permissions)) {
-                const cb = modal.querySelector(`.perm-checkbox[data-perm="${perm}"]`);
-                if (cb && val === true) cb.checked = true;
-            }
-        }
-
-        modal.querySelector('#save-permissions').addEventListener('click', async () => {
-            const permissions = {};
-            modal.querySelectorAll('.perm-checkbox').forEach(cb => {
-                if (cb.checked && cb.dataset.perm) {
-                    permissions[cb.dataset.perm] = true;
-                }
-            });
-            const masterCode = '0827';
-            await fetch(`https://drained-bridge.onrender.com/api/admin/users/${userId}/permissions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${masterCode}` },
-                body: JSON.stringify({ permissions })
-            });
-            toast.success('Permissions updated');
-            modal.remove();
-            this.loadDashboardUsers();
-        });
-        modal.querySelector('#cancel-permissions').addEventListener('click', () => modal.remove());
-    }
-
     refresh() {
         this.loadDashboardUsers();
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.masterControl = new MasterControl();
 });

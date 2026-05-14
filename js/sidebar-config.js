@@ -1,119 +1,124 @@
-// sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0 (with permission filtering)
+// sidebar-config.js – DRAINED TABLET v7.0.0 (User/Mode sidebar)
 
 class SidebarManager {
     constructor() {
-        this.allTabs = [
-            { id: "home", name: "Home", icon: "🏠", requiredRole: "user", permission: "tab:home" },
-            { id: "profile", name: "Profile", icon: "👤", requiredRole: "user", permission: "tab:profile" },
-            { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user", permission: "tab:drained-bases" },
-            { id: "shop", name: "Shop", icon: "🏪", requiredRole: "user", permission: "tab:shop" },
-            { id: "claims", name: "Claims", icon: "📦", requiredRole: "user", permission: "tab:claims" },
-            { id: "garage", name: "Motorpool", icon: "🏍️", requiredRole: "user", permission: "tab:garage" },
-            { id: "horde", name: "Horde", icon: "🧟", requiredRole: "master", permission: "tab:horde" },
-            { id: "combatlog", name: "Combat Log", icon: "⚔️", requiredRole: "user", permission: "tab:combatlog" },
-            { id: "idcard", name: "ID Card", icon: "🪪", requiredRole: "user", permission: "tab:idcard" },
-            { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "master", permission: "tab:resources" },
-            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "user", permission: "tab:settings" },
-            { id: "more", name: "More Tools", icon: "📊", requiredRole: "user", permission: "tab:more" },
-            { id: "players", name: "Players", icon: "👥", requiredRole: "master", permission: "tab:players" },
-            { id: "master", name: "Master Control", icon: "👑", requiredRole: "user", permission: "tab:master-control" },
-            { id: "economy", name: "Economy", icon: "💰", requiredRole: "user", permission: "tab:economy" },
-            { id: "livemap", name: "Live Map", icon: "🗺️", requiredRole: "user", permission: "tab:livemap" },
-            { id: "vehicles", name: "Vehicles", icon: "🚗", requiredRole: "user", permission: "tab:vehicles" },
-            { id: "teleport", name: "Teleport", icon: "📍", requiredRole: "user", permission: "tab:teleport" },
-            { id: "events", name: "Events", icon: "🎉", requiredRole: "user", permission: "tab:events" },
-            { id: "items", name: "Items", icon: "📦", requiredRole: "user", permission: "tab:items" },
-            { id: "kits", name: "Kits", icon: "🧰", requiredRole: "user", permission: "tab:kits" },
-            { id: "world", name: "World", icon: "🌍", requiredRole: "user", permission: "tab:world" },
-            { id: "backups", name: "Backups", icon: "💾", requiredRole: "user", permission: "tab:backups" },
-            { id: "logs", name: "Logs", icon: "📜", requiredRole: "user", permission: "tab:logs" },
-            { id: "console", name: "Console", icon: "🖥️", requiredRole: "user", permission: "tab:console" },
-            { id: "gportal", name: "GPortal", icon: "🔌", requiredRole: "user", permission: "tab:gportal" },
-            { id: "health", name: "Health", icon: "📡", requiredRole: "master", permission: "tab:health" },
-            { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "user", permission: "tab:recovery" },
-            { id: "performance", name: "Performance", icon: "📊", requiredRole: "user", permission: "tab:performance" },
-            { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "user", permission: "tab:deepseek" }
+        // User tabs (shown when UI mode = 'user')
+        this.userTabs = [
+            { id: "home", name: "Home", icon: "🏠", requiredRole: "user" },
+            { id: "profile", name: "Profile", icon: "👤", requiredRole: "user" },
+            { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user" },
+            { id: "shop", name: "Shop", icon: "🏪", requiredRole: "user" },
+            { id: "claims", name: "Claims", icon: "📦", requiredRole: "user" },
+            { id: "garage", name: "Motorpool", icon: "🏍️", requiredRole: "user" },
+            { id: "combatlog", name: "Combat Log", icon: "⚔️", requiredRole: "user" },
+            { id: "defense", name: "Base Defense", icon: "🛡️", requiredRole: "user" },
+            { id: "clans", name: "Clans", icon: "👥", requiredRole: "user" },
+            { id: "polls", name: "Polls", icon: "🗳️", requiredRole: "user" },
+            { id: "trading", name: "Trading Floor", icon: "💰", requiredRole: "user" },
+            { id: "raid", name: "Raid Detector", icon: "🎮", requiredRole: "user" },
+            { id: "playerHub", name: "Player Stats", icon: "📈", requiredRole: "user" },
+            { id: "livemap", name: "Live Map", icon: "🗺️", requiredRole: "user" },
+            { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "user" },
+            { id: "more", name: "More Tools", icon: "🔧", requiredRole: "user" },
+            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "user" }
         ];
-        this.defaultSelectedIds = ["home", "profile", "drained-bases", "more", "settings", "garage"];
-        this.maxTabs = 6;
+
+        // Full admin tabs (original 90+ tabs)
+        this.adminTabs = [
+            { id: "home", name: "Home", icon: "🏠", requiredRole: "user" },
+            { id: "players", name: "Players", icon: "👥", requiredRole: "master" },
+            { id: "master", name: "Master Control", icon: "👑", requiredRole: "master" },
+            { id: "horde", name: "Horde", icon: "🧟", requiredRole: "master" },
+            { id: "garage", name: "Motorpool", icon: "🏍️", requiredRole: "user" },
+            { id: "economy", name: "Economy", icon: "💰", requiredRole: "master" },
+            { id: "livemap", name: "Live Map", icon: "🗺️", requiredRole: "user" },
+            { id: "teleport", name: "Teleport", icon: "📍", requiredRole: "master" },
+            { id: "events", name: "Events", icon: "🎉", requiredRole: "master" },
+            { id: "items", name: "Items", icon: "📦", requiredRole: "master" },
+            { id: "kits", name: "Kits", icon: "🧰", requiredRole: "master" },
+            { id: "world", name: "World", icon: "🌍", requiredRole: "master" },
+            { id: "backups", name: "Backups", icon: "💾", requiredRole: "master" },
+            { id: "logs", name: "Logs", icon: "📜", requiredRole: "master" },
+            { id: "console", name: "Console", icon: "🖥️", requiredRole: "master" },
+            { id: "gportal", name: "GPortal", icon: "🔌", requiredRole: "master" },
+            { id: "health", name: "Health", icon: "📡", requiredRole: "master" },
+            { id: "recovery", name: "Recovery", icon: "🔄", requiredRole: "master" },
+            { id: "performance", name: "Performance", icon: "📊", requiredRole: "master" },
+            { id: "deepseek", name: "DeepSeek AI", icon: "🤖", requiredRole: "master" },
+            { id: "profile", name: "Profile", icon: "👤", requiredRole: "user" },
+            { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "user" },
+            { id: "more", name: "More Tools", icon: "🔧", requiredRole: "user" },
+            { id: "resources", name: "Knowledge Base", icon: "📚", requiredRole: "user" },
+            { id: "drained-bases", name: "Drained Bases", icon: "🏕️", requiredRole: "user" },
+            { id: "animals", name: "Animals", icon: "🐻", requiredRole: "master" },
+            { id: "autoMod", name: "Auto‑Mod", icon: "🛡️", requiredRole: "master" },
+            { id: "defense", name: "Base Defense", icon: "🛡️", requiredRole: "user" },
+            { id: "clans", name: "Clans", icon: "👥", requiredRole: "user" },
+            { id: "claims", name: "Claims", icon: "📦", requiredRole: "user" },
+            { id: "polls", name: "Polls", icon: "🗳️", requiredRole: "user" },
+            { id: "zones", name: "Zones", icon: "🗺️", requiredRole: "master" },
+            { id: "zorp", name: "ZORP Zones", icon: "🎮", requiredRole: "master" },
+            { id: "combatlog", name: "Combat Log", icon: "⚔️", requiredRole: "user" },
+            { id: "idcard", name: "ID Card", icon: "🪪", requiredRole: "user" },
+            { id: "audit", name: "Audit Log", icon: "📋", requiredRole: "master" },
+            { id: "orchestrator", name: "Event Orchestrator", icon: "🎭", requiredRole: "master" },
+            { id: "discord", name: "Discord Sync", icon: "🔗", requiredRole: "master" },
+            { id: "voice", name: "Voice Commands", icon: "🎤", requiredRole: "user" },
+            { id: "trading", name: "Trading Floor", icon: "💰", requiredRole: "user" },
+            { id: "raid", name: "Raid Detector", icon: "⚡", requiredRole: "user" },
+            { id: "map3d", name: "3D Map", icon: "🏔️", requiredRole: "user" },
+            { id: "drainedAI", name: "Drained AI", icon: "🤖", requiredRole: "master" },
+            { id: "inventoryViewer", name: "Inventory Viewer", icon: "👁️", requiredRole: "master" },
+            { id: "psych", name: "Psychological", icon: "🧠", requiredRole: "master" },
+            { id: "predictive", name: "Predictive", icon: "📈", requiredRole: "master" },
+            { id: "profiling", name: "Profiling", icon: "🎯", requiredRole: "master" },
+            { id: "playerHub", name: "Player Hub", icon: "📊", requiredRole: "user" },
+            { id: "playerActions", name: "Player Actions", icon: "👢", requiredRole: "master" },
+            { id: "modifiers", name: "Modifiers", icon: "⚙️", requiredRole: "master" },
+            { id: "entities", name: "Entities", icon: "🚗", requiredRole: "master" },
+            { id: "spawn", name: "Spawn", icon: "🎯", requiredRole: "master" },
+            { id: "kitVending", name: "Kit Vending", icon: "🏪", requiredRole: "master" },
+            { id: "heli", name: "Helicopter", icon: "🚁", requiredRole: "master" },
+            { id: "explosives", name: "Explosives", icon: "💣", requiredRole: "user" },
+            { id: "traps", name: "Traps", icon: "🪤", requiredRole: "master" },
+            { id: "underwater", name: "Underwater", icon: "🌊", requiredRole: "master" },
+            { id: "halloween", name: "Halloween", icon: "🎃", requiredRole: "master" },
+            { id: "decay", name: "Decay", icon: "⏳", requiredRole: "master" },
+            { id: "scheduler", name: "Scheduler", icon: "📅", requiredRole: "master" },
+            { id: "monuments", name: "Monuments", icon: "🏛️", requiredRole: "master" },
+            { id: "global", name: "Global", icon: "🌍", requiredRole: "master" },
+            { id: "status", name: "Status", icon: "📊", requiredRole: "user" },
+            { id: "mobile", name: "Mobile Sync", icon: "📱", requiredRole: "master" },
+            { id: "heatmap", name: "Heatmap", icon: "🔥", requiredRole: "user" },
+            { id: "alliance", name: "Alliance", icon: "🤝", requiredRole: "user" },
+            { id: "shop", name: "Shop", icon: "🏪", requiredRole: "user" },
+            { id: "theme", name: "Theme Studio", icon: "🎨", requiredRole: "user" },
+            { id: "branding", name: "Branding", icon: "🏷️", requiredRole: "master" },
+            { id: "serverConnect", name: "Server Connect", icon: "🔌", requiredRole: "master" }
+        ];
+
         this.selectedIds = [];
+        this.maxTabs = 12;
         this.access = window.accessControl;
         this.init();
     }
 
-    init() {
-        this.loadSelection();
-        this.renderSidebar();
-        this.addEventDelegation();
-        window.addEventListener('tab-changed', () => this.highlightActiveTab());
-    }
-
-    loadSelection() {
-        try {
-            const username = AppState.user?.username || localStorage.getItem('tdl_username');
-            const isMasterUser = username === 'CooseTheGeek';
-            const saved = localStorage.getItem('tdl_selected_tabs');
-            if (saved && isMasterUser) {
-                const parsed = JSON.parse(saved);
-                if (!parsed.includes('settings') || !parsed.includes('garage')) {
-                    localStorage.removeItem('tdl_selected_tabs');
-                    this.selectedIds = [...this.defaultSelectedIds];
-                    this.saveSelection();
-                    return;
-                }
-            }
-            if (saved) {
-                this.selectedIds = JSON.parse(saved);
-                if (this.selectedIds.length > this.maxTabs) {
-                    this.selectedIds = this.selectedIds.slice(0, this.maxTabs);
-                    this.saveSelection();
-                }
-            } else {
-                this.selectedIds = [...this.defaultSelectedIds];
-                this.saveSelection();
-            }
-        } catch (e) {
-            this.selectedIds = [...this.defaultSelectedIds];
-            this.saveSelection();
+    getCurrentTabs() {
+        const mode = this.access.getUIMode();
+        if (mode === 'user') {
+            return this.userTabs;
+        } else {
+            return this.adminTabs;
         }
-    }
-
-    saveSelection() {
-        localStorage.setItem('tdl_selected_tabs', JSON.stringify(this.selectedIds));
-    }
-
-    getAvailableTabs() {
-        const username = AppState.user?.username || localStorage.getItem('tdl_username');
-        const isMasterUser = username === 'CooseTheGeek';
-        if (isMasterUser && AppState.user) {
-            AppState.user.role = 'master';
-            localStorage.setItem('tdl_role', 'master');
-        }
-        const role = AppState.user?.role || 'user';
-        const effectiveRole = isMasterUser ? 'master' : role;
-        const access = this.access;
-        return this.allTabs.filter(tab => {
-            // Role check
-            if (effectiveRole === 'user' && tab.requiredRole !== 'user') return false;
-            if (tab.requiredRole === 'master' && effectiveRole !== 'master' && effectiveRole !== 'owner') return false;
-            if (tab.requiredRole === 'owner' && effectiveRole !== 'owner') return false;
-            // Permission check (if access controller loaded)
-            if (access && access.hasPermission && !access.hasPermission('tab', tab.id) && !isMasterUser) {
-                return false;
-            }
-            return true;
-        });
     }
 
     renderSidebar() {
         const container = document.getElementById('sidebar-nav-container');
         if (!container) return;
+        const tabs = this.getCurrentTabs();
         let html = '';
-        for (const id of this.selectedIds) {
-            const tab = this.allTabs.find(t => t.id === id);
-            if (tab && this.getAvailableTabs().find(t => t.id === id)) {
-                html += `<a href="#" class="nav-item" data-tab="${tab.id}"><span class="nav-icon">${tab.icon}</span> <span class="nav-text">${tab.name}</span></a>`;
-            }
+        for (const tab of tabs) {
+            html += `<a href="#" class="nav-item" data-tab="${tab.id}"><span class="nav-icon">${tab.icon}</span> <span class="nav-text">${tab.name}</span></a>`;
         }
         container.innerHTML = html;
         this.highlightActiveTab();
@@ -135,43 +140,16 @@ class SidebarManager {
             const item = e.target.closest('.nav-item');
             if (item && item.dataset.tab) {
                 e.preventDefault();
-                const tabId = item.dataset.tab;
-                window.switchTab(tabId);
+                window.switchTab(item.dataset.tab);
             }
         });
     }
 
-    getSelectionUI() {
-        const available = this.getAvailableTabs();
-        let html = `<div class="sidebar-customizer"><h3>Select up to ${this.maxTabs} sidebar tabs</h3><div class="tab-selection-list">`;
-        available.forEach(tab => {
-            const isChecked = this.selectedIds.includes(tab.id);
-            html += `<label class="tab-checkbox"><input type="checkbox" value="${tab.id}" ${isChecked ? 'checked' : ''} ${this.selectedIds.length >= this.maxTabs && !isChecked ? 'disabled' : ''}><span class="tab-icon">${tab.icon}</span> ${tab.name}</label>`;
-        });
-        html += '</div><button id="save-sidebar-tabs" class="settings-btn primary">Save Sidebar Tabs</button></div>';
-        return html;
-    }
-
-    attachSettingsEvents() {
-        const saveBtn = document.getElementById('save-sidebar-tabs');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                const checkboxes = document.querySelectorAll('.tab-checkbox input:checked');
-                const newIds = Array.from(checkboxes).map(cb => cb.value);
-                if (newIds.length > this.maxTabs) {
-                    toast.error(`You can only select up to ${this.maxTabs} tabs`);
-                    return;
-                }
-                this.selectedIds = newIds;
-                this.saveSelection();
-                this.renderSidebar();
-                toast.success('Sidebar updated');
-                const allCbs = document.querySelectorAll('.tab-checkbox input');
-                allCbs.forEach(cb => {
-                    cb.disabled = this.selectedIds.length >= this.maxTabs && !cb.checked;
-                });
-            });
-        }
+    init() {
+        this.renderSidebar();
+        this.addEventDelegation();
+        window.addEventListener('tab-changed', () => this.highlightActiveTab());
+        window.addEventListener('mode-changed', () => this.renderSidebar());
     }
 }
 

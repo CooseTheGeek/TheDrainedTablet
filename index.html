@@ -19,7 +19,7 @@
 <body>
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- SECURITY DOOR (UPDATED: USERNAME + PASSWORD) -->
+    <!-- SECURITY DOOR -->
     <div id="security-door" class="security-door">
         <div class="door-container glass-panel">
             <div class="door-header">
@@ -50,6 +50,7 @@
                 <div class="connection-status" id="connection-status">
                     <span class="dot offline"></span> <span id="conn-status-text">DISCONNECTED</span>
                 </div>
+                <button id="mode-toggle" class="header-btn" style="display: none;">👤 User</button>
                 <div class="profile-badge" id="profile-link">
                     <span id="profile-icon">👤</span>
                     <span id="profile-name">CooseTheGeek</span>
@@ -71,7 +72,7 @@
             </aside>
 
             <main class="main-content" id="main-content">
-                <!-- Tab panes -->
+                <!-- All tab panes – only those that are referenced in sidebar -->
                 <div id="tab-home" class="tab-pane active"></div>
                 <div id="tab-players" class="tab-pane"></div>
                 <div id="tab-master" class="tab-pane"></div>
@@ -79,7 +80,6 @@
                 <div id="tab-garage" class="tab-pane"></div>
                 <div id="tab-economy" class="tab-pane"></div>
                 <div id="tab-livemap" class="tab-pane"></div>
-                <div id="tab-vehicles" class="tab-pane"></div>
                 <div id="tab-teleport" class="tab-pane"></div>
                 <div id="tab-events" class="tab-pane"></div>
                 <div id="tab-items" class="tab-pane"></div>
@@ -100,7 +100,7 @@
                 <div id="tab-drained-bases" class="tab-pane"></div>
                 <div id="tab-animals" class="tab-pane"></div>
                 <div id="tab-autoMod" class="tab-pane"></div>
-                <div id="tab-defense" class="tab-pane"></div>
+                <div id="tab-defence" class="tab-pane"></div>
                 <div id="tab-clans" class="tab-pane"></div>
                 <div id="tab-claims" class="tab-pane"></div>
                 <div id="tab-polls" class="tab-pane"></div>
@@ -108,7 +108,6 @@
                 <div id="tab-zorp" class="tab-pane"></div>
                 <div id="tab-combatlog" class="tab-pane"></div>
                 <div id="tab-idcard" class="tab-pane"></div>
-                <!-- Old user-management tab removed (functionality now in Master Control) -->
                 <div id="tab-audit" class="tab-pane"></div>
                 <div id="tab-orchestrator" class="tab-pane"></div>
                 <div id="tab-discord" class="tab-pane"></div>
@@ -143,10 +142,6 @@
                 <div id="tab-shop" class="tab-pane"></div>
                 <div id="tab-theme" class="tab-pane"></div>
                 <div id="tab-branding" class="tab-pane"></div>
-                <div id="tab-server-management" class="tab-pane"></div>
-                <div id="tab-tools-integration" class="tab-pane"></div>
-                <div id="tab-players-hub" class="tab-pane"></div>
-                <div id="tab-game-mechanics" class="tab-pane"></div>
                 <div id="tab-serverConnect" class="tab-pane"></div>
             </main>
         </div>
@@ -161,7 +156,7 @@
     <div id="error-modal" class="modal hidden"><div class="modal-content"><h3>❌ Error</h3><p id="error-message"></p><div class="modal-actions"><button id="error-close" class="modal-btn">OK</button></div></div></div>
     <div id="confirm-modal" class="modal hidden"><div class="modal-content"><h3>⚠️ Confirm</h3><p id="confirm-message"></p><div class="modal-actions"><button id="confirm-yes" class="modal-btn primary">Yes</button><button id="confirm-no" class="modal-btn">No</button></div></div></div>
 
-    <!-- SCRIPTS (removed auth.js and securityDoor.js, removed user-management.js) -->
+    <!-- SCRIPTS -->
     <script src="js/core.js"></script>
     <script src="js/database.js"></script>
     <script src="js/access-control.js"></script>
@@ -181,7 +176,6 @@
     <script src="js/map-generation.js"></script>
     <script src="js/home.js"></script>
     <script src="js/players.js"></script>
-    <script src="js/vehicles.js"></script>
     <script src="js/teleport.js"></script>
     <script src="js/world.js"></script>
     <script src="js/events.js"></script>
@@ -243,10 +237,6 @@
     <script src="js/zorp.js"></script>
     <script src="js/resources.js"></script>
     <script src="js/sidebar-config.js"></script>
-    <script src="js/tools-integration.js"></script>
-    <script src="js/players-hub.js"></script>
-    <script src="js/game-mechanics.js"></script>
-    <script src="js/server-management.js"></script>
     <script src="js/drained-bases.js"></script>
     <script src="js/registration.js"></script>
     <script src="js/garage.js"></script>
@@ -283,6 +273,7 @@
                     localStorage.removeItem('tdl_role');
                     localStorage.removeItem('tdl_platform');
                     localStorage.removeItem('tdl_platform_id');
+                    localStorage.removeItem('tdl_ui_mode');
                     location.reload();
                 });
             }

@@ -1,17 +1,16 @@
-// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (with granular permissions)
+// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (User/Master mode)
 
 class AccessControl {
     constructor() {
-        this.tablet = window.drainedTablet;
-        this.auth = window.authSystem;
         this.roleHierarchy = { user: 1, owner: 2, master: 3 };
-        this.userPermissions = {}; // loaded from bridge after login
+        this.userPermissions = {};
+        this.uiMode = localStorage.getItem('tdl_ui_mode') || 'user';
         this.init();
     }
 
-    init() {
-        console.log('AccessControl initialized');
-        this.loadPermissions();
+    async init() {
+        await this.loadPermissions();
+        this.applyUIPermissions();
     }
 
     async loadPermissions() {
@@ -47,54 +46,29 @@ class AccessControl {
     }
 
     hasPermission(permission, context = null) {
-        // Master has all permissions
-        if (this.isMasterUser()) return true;
+        if (this.isMasterUser() && this.uiMode === 'master') return true;
         if (this.userPermissions['*']) return true;
         if (this.userPermissions[permission] === true) return true;
-        // Check specific context permission (e.g., "tab:garage")
         if (context && this.userPermissions[`${permission}:${context}`] === true) return true;
         return false;
     }
 
-    isMaster() {
-        if (this.isMasterUser()) return true;
-        return window.AppState?.user?.role === 'master';
+    getUIMode() {
+        return this.uiMode;
     }
 
-    isOwner() {
-        if (this.isMasterUser()) return true;
-        return window.AppState?.user?.role === 'owner';
-    }
-
-    guard(requiredRole) {
-        if (!this.hasRole(requiredRole)) {
-            throw new Error(`Access denied: ${requiredRole} role required`);
-        }
-    }
-
-    protect(fn, requiredRole) {
-        return (...args) => {
-            if (!this.hasRole(requiredRole)) {
-                console.warn(`Access denied to function ${fn.name || 'anonymous'}`);
-                return null;
-            }
-            return fn(...args);
-        };
+    setUIMode(mode) {
+        if (!this.isMasterUser()) return;
+        if (mode !== 'user' && mode !== 'master') return;
+        this.uiMode = mode;
+        localStorage.setItem('tdl_ui_mode', mode);
+        if (window.sidebarManager) window.sidebarManager.renderSidebar();
+        window.dispatchEvent(new CustomEvent('mode-changed', { detail: { mode } }));
+        toast.success(`${mode === 'master' ? 'Admin Mode' : 'User Mode'} active`);
     }
 
     applyUIPermissions() {
-        if (!this.hasRole('master')) {
-            document.querySelectorAll('.master-only').forEach(el => el.style.display = 'none');
-        }
-        if (!this.hasRole('owner')) {
-            document.querySelectorAll('.owner-only').forEach(el => el.style.display = 'none');
-        }
-        // Hide tabs based on permissions
-        if (!this.hasPermission('tab', 'master-control')) {
-            const masterNav = document.querySelector('.nav-item[data-tab="master"]');
-            if (masterNav) masterNav.style.display = 'none';
-        }
-        // Add more permission checks for other tabs as needed
+        // Additional UI hiding if needed
     }
 }
 

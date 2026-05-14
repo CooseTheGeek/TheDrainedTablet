@@ -1,4 +1,4 @@
-// security.js – updated for username/password login with profile fetch
+// security.js – updated for dual‑mode
 
 class Security {
     constructor() {
@@ -15,6 +15,7 @@ class Security {
             if (e.key === 'Enter') this.login();
         });
         this.checkExistingSession();
+        this.setupModeToggle();
     }
 
     async login() {
@@ -32,21 +33,19 @@ class Security {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-
-            // Store session
             localStorage.setItem('tdl_session', JSON.stringify({
                 username: data.username,
                 role: data.role,
                 token: data.sessionToken,
                 expires: Date.now() + 7 * 24 * 60 * 60 * 1000
             }));
-
-            // Fetch full profile (platform, platform_id, avatar)
+            localStorage.setItem('tdl_username', data.username);
+            localStorage.setItem('tdl_role', data.role);
             const profileRes = await fetch('https://drained-bridge.onrender.com/api/user/profile', {
                 headers: { 'Authorization': `Bearer ${data.sessionToken}` }
             });
-            const profile = await profileRes.json();
             if (profileRes.ok) {
+                const profile = await profileRes.json();
                 localStorage.setItem('tdl_platform', profile.platform || '');
                 localStorage.setItem('tdl_platform_id', profile.platform_id || '');
                 localStorage.setItem('tdl_avatar', profile.avatar_url || '');
@@ -60,10 +59,10 @@ class Security {
             } else {
                 AppState.user = { username: data.username, role: data.role };
             }
-
             document.getElementById('security-door').style.display = 'none';
             document.getElementById('dashboard').classList.remove('hidden');
-            toast.success(`Welcome back, ${data.username}!`);
+            this.updateModeToggleVisibility();
+            toast.success(`Welcome, ${data.username}!`);
         } catch (err) {
             document.getElementById('login-error').innerText = err.message;
         }
@@ -86,7 +85,6 @@ class Security {
                 });
                 const data = await res.json();
                 if (data.valid) {
-                    // Also fetch profile to ensure platform data is fresh
                     const profileRes = await fetch('https://drained-bridge.onrender.com/api/user/profile', {
                         headers: { 'Authorization': `Bearer ${session.token}` }
                     });
@@ -107,6 +105,7 @@ class Security {
                     }
                     document.getElementById('security-door').style.display = 'none';
                     document.getElementById('dashboard').classList.remove('hidden');
+                    this.updateModeToggleVisibility();
                 } else {
                     localStorage.removeItem('tdl_session');
                 }
@@ -115,6 +114,32 @@ class Security {
             }
         } catch (e) {
             localStorage.removeItem('tdl_session');
+        }
+    }
+
+    setupModeToggle() {
+        const toggleBtn = document.getElementById('mode-toggle');
+        if (!toggleBtn) return;
+        toggleBtn.addEventListener('click', () => {
+            if (!window.accessControl.isMasterUser()) {
+                toast.error('Only master can switch modes');
+                return;
+            }
+            const currentMode = window.accessControl.getUIMode();
+            const newMode = currentMode === 'user' ? 'master' : 'user';
+            window.accessControl.setUIMode(newMode);
+            toggleBtn.innerText = newMode === 'master' ? '👑 Master' : '👤 User';
+        });
+    }
+
+    updateModeToggleVisibility() {
+        const toggleBtn = document.getElementById('mode-toggle');
+        if (toggleBtn) {
+            const isMaster = window.accessControl.isMasterUser();
+            toggleBtn.style.display = isMaster ? 'inline-flex' : 'none';
+            if (isMaster) {
+                toggleBtn.innerText = window.accessControl.getUIMode() === 'master' ? '👑 Master' : '👤 User';
+            }
         }
     }
 }
