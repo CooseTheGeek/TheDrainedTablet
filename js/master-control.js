@@ -1,5 +1,4 @@
-// master-control.js – DRAINED TABLET ULTIMATE v7.0.0
-// Complete master control panel with all original features + user management
+// master-control.js – DRAINED TABLET v7.0.0 (Full with user management, user/master only)
 
 class MasterControl {
     constructor() {
@@ -23,7 +22,7 @@ class MasterControl {
     createHTML() {
         const tab = document.getElementById('tab-master');
         if (!tab) return;
-        if (!this.access.isMaster()) {
+        if (!this.access.isMasterUser()) {
             tab.innerHTML = '<div class="access-denied">🔒 Master access only</div>';
             return;
         }
@@ -39,11 +38,11 @@ class MasterControl {
                 <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⚡ QUICK ACTIONS</h3>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <button class="master-quick-btn" data-action="restart" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">🔄 Restart Server</button>
-                        <button class="master-quick-btn" data-action="save" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">💾 Save World</button>
-                        <button class="master-quick-btn" data-action="backup" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">📦 Create Backup</button>
-                        <button class="master-quick-btn" data-action="broadcast" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer;">📢 Broadcast</button>
-                        <button class="master-quick-btn" data-action="wipe" style="padding: 0.8rem 1.5rem; background: var(--error); color: #fff; border: none; border-radius: 8px; cursor: pointer;">⚠️ Wipe Server</button>
+                        <button class="master-quick-btn" data-action="restart" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">🔄 Restart Server</button>
+                        <button class="master-quick-btn" data-action="save" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">💾 Save World</button>
+                        <button class="master-quick-btn" data-action="backup" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">📦 Create Backup</button>
+                        <button class="master-quick-btn" data-action="broadcast" style="padding: 0.8rem 1.5rem; background: var(--bg-tertiary); border: 1px solid var(--glass-border); border-radius: 8px;">📢 Broadcast</button>
+                        <button class="master-quick-btn" data-action="wipe" style="padding: 0.8rem 1.5rem; background: var(--error); color: #fff; border: none; border-radius: 8px;">⚠️ Wipe Server</button>
                     </div>
                 </div>
 
@@ -51,10 +50,10 @@ class MasterControl {
                 <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">🖥️ SERVER CORE</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
-                        <div class="master-setting"><label>Server Name</label><input type="text" id="master-hostname" class="master-input" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
-                        <div class="master-setting"><label>Max Players</label><input type="number" id="master-maxplayers" class="master-input" value="100" min="1" max="500" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
-                        <div class="master-setting"><label>World Size</label><input type="number" id="master-worldsize" class="master-input" value="3500" min="1000" max="6000" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
-                        <div class="master-setting"><label>World Seed</label><input type="number" id="master-seed" class="master-input" value="10325" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
+                        <div><label>Server Name</label><input type="text" id="master-hostname" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
+                        <div><label>Max Players</label><input type="number" id="master-maxplayers" value="100" min="1" max="500" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
+                        <div><label>World Size</label><input type="number" id="master-worldsize" value="3500" min="1000" max="6000" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
+                        <div><label>World Seed</label><input type="number" id="master-seed" value="10325" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
                     </div>
                     <button id="master-apply-core" class="master-btn" style="margin-top:1rem; padding:0.6rem 1.5rem; background:var(--accent-primary); color:#000; border:none; border-radius:8px;">APPLY CORE SETTINGS</button>
                 </div>
@@ -63,9 +62,9 @@ class MasterControl {
                 <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⚡ PERFORMANCE TUNING</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
-                        <div class="master-setting"><label>Tickrate</label><input type="range" id="master-tickrate" min="10" max="100" value="30" style="width:100%;"><span id="master-tickrate-val">30</span></div>
-                        <div class="master-setting"><label>FPS Limit</label><input type="range" id="master-fps" min="30" max="300" value="60" style="width:100%;"><span id="master-fps-val">60</span></div>
-                        <div class="master-setting"><label>Craft Timescale</label><input type="range" id="master-craftscale" min="0.1" max="10" step="0.1" value="1.0" style="width:100%;"><span id="master-craftscale-val">1.0</span></div>
+                        <div><label>Tickrate</label><input type="range" id="master-tickrate" min="10" max="100" value="30" style="width:100%;"><span id="master-tickrate-val">30</span></div>
+                        <div><label>FPS Limit</label><input type="range" id="master-fps" min="30" max="300" value="60" style="width:100%;"><span id="master-fps-val">60</span></div>
+                        <div><label>Craft Timescale</label><input type="range" id="master-craftscale" min="0.1" max="10" step="0.1" value="1.0" style="width:100%;"><span id="master-craftscale-val">1.0</span></div>
                     </div>
                     <button id="master-apply-performance" class="master-btn" style="margin-top:1rem; padding:0.6rem 1.5rem; background:var(--accent-primary); color:#000; border:none; border-radius:8px;">APPLY PERFORMANCE SETTINGS</button>
                 </div>
@@ -74,12 +73,12 @@ class MasterControl {
                 <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">🌍 WORLD ENVIRONMENT</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
-                        <div class="master-setting"><label>Time of Day</label><input type="range" id="master-time" min="0" max="24" step="0.5" value="12" style="width:100%;"><span id="master-time-val">12:00</span></div>
-                        <div class="master-setting"><label>Day Length (min)</label><input type="range" id="master-daylength" min="5" max="240" value="45" style="width:100%;"><span id="master-daylength-val">45</span></div>
-                        <div class="master-setting"><label>Night Length (min)</label><input type="range" id="master-nightlength" min="5" max="240" value="15" style="width:100%;"><span id="master-nightlength-val">15</span></div>
-                        <div class="master-setting"><label>Clouds</label><input type="range" id="master-clouds" min="0" max="1" step="0.1" value="0.5" style="width:100%;"><span id="master-clouds-val">0.5</span></div>
-                        <div class="master-setting"><label>Rain</label><input type="range" id="master-rain" min="0" max="1" step="0.1" value="0" style="width:100%;"><span id="master-rain-val">0</span></div>
-                        <div class="master-setting"><label>Wind</label><input type="range" id="master-wind" min="0" max="1" step="0.1" value="0.5" style="width:100%;"><span id="master-wind-val">0.5</span></div>
+                        <div><label>Time</label><input type="range" id="master-time" min="0" max="24" step="0.5" value="12" style="width:100%;"><span id="master-time-val">12:00</span></div>
+                        <div><label>Day Length</label><input type="range" id="master-daylength" min="5" max="240" value="45" style="width:100%;"><span id="master-daylength-val">45</span></div>
+                        <div><label>Night Length</label><input type="range" id="master-nightlength" min="5" max="240" value="15" style="width:100%;"><span id="master-nightlength-val">15</span></div>
+                        <div><label>Clouds</label><input type="range" id="master-clouds" min="0" max="1" step="0.1" value="0.5" style="width:100%;"><span id="master-clouds-val">0.5</span></div>
+                        <div><label>Rain</label><input type="range" id="master-rain" min="0" max="1" step="0.1" value="0" style="width:100%;"><span id="master-rain-val">0</span></div>
+                        <div><label>Wind</label><input type="range" id="master-wind" min="0" max="1" step="0.1" value="0.5" style="width:100%;"><span id="master-wind-val">0.5</span></div>
                     </div>
                     <button id="master-apply-world" class="master-btn" style="margin-top:1rem; padding:0.6rem 1.5rem; background:var(--accent-primary); color:#000; border:none; border-radius:8px;">APPLY WORLD SETTINGS</button>
                 </div>
@@ -88,9 +87,9 @@ class MasterControl {
                 <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⏳ DECAY & UPKEEP</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
-                        <div class="master-setting"><label>Decay Scale</label><input type="range" id="master-decay-scale" min="0.1" max="5" step="0.1" value="1.0" style="width:100%;"><span id="master-decay-scale-val">1.0</span></div>
-                        <div class="master-setting"><label>Tick Rate (sec)</label><input type="range" id="master-decay-tick" min="60" max="3600" step="60" value="600" style="width:100%;"><span id="master-decay-tick-val">600</span></div>
-                        <div class="master-setting"><label>Upkeep Period (min)</label><input type="range" id="master-upkeep-period" min="60" max="2880" value="1440" style="width:100%;"><span id="master-upkeep-period-val">1440</span></div>
+                        <div><label>Decay Scale</label><input type="range" id="master-decay-scale" min="0.1" max="5" step="0.1" value="1.0" style="width:100%;"><span id="master-decay-scale-val">1.0</span></div>
+                        <div><label>Tick Rate</label><input type="range" id="master-decay-tick" min="60" max="3600" step="60" value="600" style="width:100%;"><span id="master-decay-tick-val">600</span></div>
+                        <div><label>Upkeep Period</label><input type="range" id="master-upkeep-period" min="60" max="2880" value="1440" style="width:100%;"><span id="master-upkeep-period-val">1440</span></div>
                     </div>
                     <button id="master-apply-decay" class="master-btn" style="margin-top:1rem; padding:0.6rem 1.5rem; background:var(--accent-primary); color:#000; border:none; border-radius:8px;">APPLY DECAY SETTINGS</button>
                 </div>
@@ -99,10 +98,10 @@ class MasterControl {
                 <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">💰 ECONOMY & MODIFIERS</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
-                        <div class="master-setting"><label>Starting Balance</label><input type="number" id="master-start-balance" value="1000" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
-                        <div class="master-setting"><label>Kill Reward</label><input type="number" id="master-kill-reward" value="50" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
-                        <div class="master-setting"><label>Gather Rate</label><input type="range" id="master-gather" min="0.5" max="5" step="0.1" value="1.0" style="width:100%;"><span id="master-gather-val">1.0</span></div>
-                        <div class="master-setting"><label>Furnace Speed</label><input type="range" id="master-furnace-speed" min="0.5" max="5" step="0.1" value="1.0" style="width:100%;"><span id="master-furnace-speed-val">1.0</span></div>
+                        <div><label>Starting Balance</label><input type="number" id="master-start-balance" value="1000" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
+                        <div><label>Kill Reward</label><input type="number" id="master-kill-reward" value="50" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
+                        <div><label>Gather Rate</label><input type="range" id="master-gather" min="0.5" max="5" step="0.1" value="1.0" style="width:100%;"><span id="master-gather-val">1.0</span></div>
+                        <div><label>Furnace Speed</label><input type="range" id="master-furnace-speed" min="0.5" max="5" step="0.1" value="1.0" style="width:100%;"><span id="master-furnace-speed-val">1.0</span></div>
                     </div>
                     <button id="master-apply-economy" class="master-btn" style="margin-top:1rem; padding:0.6rem 1.5rem; background:var(--accent-primary); color:#000; border:none; border-radius:8px;">APPLY ECONOMY SETTINGS</button>
                 </div>
@@ -117,9 +116,9 @@ class MasterControl {
                         <button id="master-plugin-reload" class="master-btn" style="padding:0.6rem 1.5rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;">RELOAD</button>
                     </div>
                     <div id="master-plugin-list" style="background:var(--bg-secondary); border-radius:8px; padding:1rem; max-height:200px; overflow-y:auto;">
-                        <div class="plugin-item" style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--glass-border);"><span>Kits</span><span style="color:var(--success);">Loaded</span></div>
-                        <div class="plugin-item" style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--glass-border);"><span>Economics</span><span style="color:var(--success);">Loaded</span></div>
-                        <div class="plugin-item" style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--glass-border);"><span>Zones</span><span style="color:var(--warning);">Not Loaded</span></div>
+                        <div class="plugin-item"><span>Kits</span><span style="color:var(--success);">Loaded</span></div>
+                        <div class="plugin-item"><span>Economics</span><span style="color:var(--success);">Loaded</span></div>
+                        <div class="plugin-item"><span>Zones</span><span style="color:var(--warning);">Not Loaded</span></div>
                     </div>
                 </div>
 
@@ -128,10 +127,10 @@ class MasterControl {
                     <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">👥 DASHBOARD USERS</h3>
                     <div id="master-users-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
-                        <div style="flex:1;"><label>Username</label><input type="text" id="master-new-username" class="master-input" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
-                        <div style="flex:1;"><label>Password</label><input type="password" id="master-new-password" class="master-input" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
+                        <div style="flex:1;"><label>Username</label><input type="text" id="master-new-username" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
+                        <div style="flex:1;"><label>Password</label><input type="password" id="master-new-password" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
                         <div style="flex:1;"><label>Platform</label><select id="master-new-platform" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"><option value="ps5">PS5</option><option value="xbox">Xbox Series X|S</option></select></div>
-                        <div style="flex:1;"><label>Platform ID</label><input type="text" id="master-new-platform-id" class="master-input" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
+                        <div style="flex:1;"><label>Platform ID</label><input type="text" id="master-new-platform-id" style="width:100%; padding:0.6rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"></div>
                         <button id="master-add-user-btn" class="master-btn" style="padding:0.6rem 1.5rem; background:var(--success); color:#000; border:none; border-radius:8px;">➕ ADD USER</button>
                     </div>
                 </div>
@@ -139,8 +138,8 @@ class MasterControl {
                 <!-- Raw Command Executor -->
                 <div class="master-section" style="background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">⚡ RAW COMMAND EXECUTOR</h3>
-                    <div style="display:flex; gap:0.5rem;"><input type="text" id="master-raw-command" placeholder="Enter any RCON command..." style="flex:1; padding:0.8rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"><button id="master-execute-raw" class="master-btn primary" style="padding:0.8rem 2rem; background:var(--accent-primary); color:#000; border:none; border-radius:8px;">EXECUTE</button></div>
-                    <div id="master-raw-output" style="margin-top:1rem; padding:1rem; background:var(--bg-secondary); border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:0.9rem; max-height:200px; overflow-y:auto;"></div>
+                    <div style="display:flex; gap:0.5rem;"><input type="text" id="master-raw-command" placeholder="RCON command" style="flex:1; padding:0.8rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); border-radius:8px;"><button id="master-execute-raw" class="master-btn primary" style="padding:0.8rem 2rem; background:var(--accent-primary); color:#000; border:none; border-radius:8px;">EXECUTE</button></div>
+                    <div id="master-raw-output" style="margin-top:1rem; padding:1rem; background:var(--bg-secondary); border-radius:8px; font-family:monospace; max-height:200px; overflow-y:auto;"></div>
                 </div>
             </div>
         `;
@@ -150,11 +149,7 @@ class MasterControl {
     }
 
     setupRangeListeners() {
-        const ranges = [
-            'master-tickrate','master-fps','master-craftscale','master-time','master-daylength','master-nightlength',
-            'master-clouds','master-rain','master-wind','master-decay-scale','master-decay-tick','master-upkeep-period',
-            'master-gather','master-furnace-speed'
-        ];
+        const ranges = ['master-tickrate','master-fps','master-craftscale','master-time','master-daylength','master-nightlength','master-clouds','master-rain','master-wind','master-decay-scale','master-decay-tick','master-upkeep-period','master-gather','master-furnace-speed'];
         ranges.forEach(id => {
             const input = document.getElementById(id);
             const span = document.getElementById(id + '-val');
@@ -184,7 +179,6 @@ class MasterControl {
         document.getElementById('master-plugin-reload')?.addEventListener('click', () => this.reloadPlugin());
         document.getElementById('master-add-user-btn')?.addEventListener('click', () => this.addUser());
         document.getElementById('master-execute-raw')?.addEventListener('click', () => this.executeRawCommand());
-        document.getElementById('master-raw-command')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') this.executeRawCommand(); });
     }
 
     async executeQuickAction(action) {
@@ -299,28 +293,37 @@ class MasterControl {
             const result = await ConnectionManager.executeCommand(cmd);
             output.innerText = result || 'Command executed (no output)';
         } catch(e){ output.innerText = `Error: ${e.message}`; }
-        document.getElementById('master-raw-command').value = '';
     }
 
-    // ========== USER MANAGEMENT ==========
+    // ========== USER MANAGEMENT (only user/master) ==========
     async loadDashboardUsers() {
         if(!this.access.isMasterUser()) return;
         const masterCode = '0827';
         try {
-            const res = await fetch('https://drained-bridge.onrender.com/api/admin/users', { headers: { 'Authorization': `Bearer ${masterCode}` } });
+            const res = await fetch('https://drained-bridge.onrender.com/api/admin/users', {
+                headers: { 'Authorization': `Bearer ${masterCode}` }
+            });
             this.usersList = await res.json();
             const container = document.getElementById('master-users-list');
             if(!container) return;
+            // Ensure CooseTheGeek is in the list (hardcoded)
+            let hasMaster = this.usersList.some(u => u.username === 'CooseTheGeek');
+            if (!hasMaster) {
+                this.usersList.unshift({ id: 'master_self', username: 'CooseTheGeek', platform: '-', platform_id: '-', role: 'master', disabled: false });
+            }
             if(!this.usersList.length) { container.innerHTML = '<div class="no-users">No registered users yet</div>'; return; }
             let html = '<table class="user-table"><tr><th>Username</th><th>Platform</th><th>Platform ID</th><th>Role</th><th>Status</th><th>Actions</th></tr>';
             for(const u of this.usersList) {
-                html += `<tr><td>${u.username}</td><td>${u.platform||'-'}</td><td>${u.platform_id||'-'}</td><td>${u.role}</td><td>${u.disabled ? '🔴 Disabled' : '🟢 Active'}</td><td><button class="small-btn toggle-disable" data-id="${u.id}" data-disabled="${u.disabled}">${u.disabled ? 'Enable' : 'Disable'}</button> <button class="small-btn reset-pw" data-id="${u.id}">Reset PW</button> <button class="small-btn delete-user" data-id="${u.id}">Delete</button></td></tr>`;
+                html += `<tr><td>${u.username}</td><td>${u.platform||'-'}</td><td>${u.platform_id||'-'}</td><td>${u.role === 'master' ? 'MASTER' : 'user'}</td><td>${u.disabled ? '🔴 Disabled' : '🟢 Active'}</td>
+                <td><button class="small-btn toggle-disable" data-id="${u.id}" data-disabled="${u.disabled}" ${u.username === 'CooseTheGeek' ? 'disabled' : ''}>${u.disabled ? 'Enable' : 'Disable'}</button>
+                <button class="small-btn reset-pw" data-id="${u.id}" ${u.username === 'CooseTheGeek' ? 'disabled' : ''}>Reset PW</button>
+                <button class="small-btn delete-user" data-id="${u.id}" ${u.username === 'CooseTheGeek' ? 'disabled' : ''}>Delete</button></td></tr>`;
             }
             html += '</table>';
             container.innerHTML = html;
-            document.querySelectorAll('.toggle-disable').forEach(btn => btn.addEventListener('click', () => this.toggleUserDisable(btn.dataset.id, btn.dataset.disabled === 'true')));
-            document.querySelectorAll('.reset-pw').forEach(btn => btn.addEventListener('click', () => this.resetUserPassword(btn.dataset.id)));
-            document.querySelectorAll('.delete-user').forEach(btn => btn.addEventListener('click', () => this.deleteUser(btn.dataset.id)));
+            document.querySelectorAll('.toggle-disable:not([disabled])').forEach(btn => btn.addEventListener('click', () => this.toggleUserDisable(btn.dataset.id, btn.dataset.disabled === 'true')));
+            document.querySelectorAll('.reset-pw:not([disabled])').forEach(btn => btn.addEventListener('click', () => this.resetUserPassword(btn.dataset.id)));
+            document.querySelectorAll('.delete-user:not([disabled])').forEach(btn => btn.addEventListener('click', () => this.deleteUser(btn.dataset.id)));
         } catch(e){ console.error(e); if(container) container.innerHTML = '<div class="error">Failed to load users</div>'; }
     }
 
@@ -382,9 +385,7 @@ class MasterControl {
         } catch(e){ toast.error(e.message); }
     }
 
-    refresh() {
-        this.loadDashboardUsers();
-    }
+    refresh() { this.loadDashboardUsers(); }
 }
 
 document.addEventListener('DOMContentLoaded', () => { window.masterControl = new MasterControl(); });
