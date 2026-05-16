@@ -1,4 +1,4 @@
-// access-control.js – Only user and master roles
+// access-control.js – DRAINED TABLET v7.0.0 (User/Master mode switching)
 
 class AccessControl {
     constructor() {
@@ -12,7 +12,7 @@ class AccessControl {
     }
 
     async loadPermissions() {
-        // No complex permissions needed – we use role only
+        // No complex permissions – role only
     }
 
     isMasterUser() {
@@ -22,7 +22,6 @@ class AccessControl {
 
     hasRole(requiredRole) {
         if (this.isMasterUser()) return true;
-        // Only 'user' is the other role
         return requiredRole === 'user';
     }
 
@@ -30,7 +29,7 @@ class AccessControl {
         return this.uiMode;
     }
 
-    async setUIMode(mode) {
+    setUIMode(mode) {
         if (!this.isMasterUser()) return;
         if (mode !== 'user' && mode !== 'master') return;
         this.uiMode = mode;
@@ -42,7 +41,6 @@ class AccessControl {
     }
 
     applyUIPermissions() {
-        // Hide admin elements if not in master mode
         const isMasterMode = this.isMasterUser() && this.uiMode === 'master';
         document.querySelectorAll('.admin-only').forEach(el => {
             el.style.display = isMasterMode ? '' : 'none';
