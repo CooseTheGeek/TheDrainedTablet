@@ -1,4 +1,4 @@
-// sidebar-config.js – DRAINED TABLET ULTIMATE v7.0.0 (User/Mode sidebar with 6‑tab limit)
+// sidebar-config.js – DRAINED TABLET v7.0.0 (Avatar above, 6‑pack tabs)
 
 class SidebarManager {
     constructor() {
@@ -23,7 +23,7 @@ class SidebarManager {
             { id: "settings", name: "Settings", icon: "⚙️", requiredRole: "user" }
         ];
 
-        // Full admin tabs (original 90+ tabs)
+        // Full admin tabs (original all)
         this.adminTabs = [
             { id: "home", name: "Home", icon: "🏠", requiredRole: "user" },
             { id: "players", name: "Players", icon: "👥", requiredRole: "master" },
@@ -109,13 +109,14 @@ class SidebarManager {
         this.addEventDelegation();
         window.addEventListener('tab-changed', () => this.highlightActiveTab());
         window.addEventListener('mode-changed', () => this.renderSidebar());
+        window.addEventListener('profile-updated', () => this.updateSidebarUserInfo());
+        this.updateSidebarUserInfo();
     }
 
     loadUserSelection() {
         const saved = localStorage.getItem('tdl_user_selected_tabs');
         if (saved) {
             this.userSelectedIds = JSON.parse(saved);
-            // Ensure we have exactly maxUserTabs items; if not, fill with defaults
             if (this.userSelectedIds.length !== this.maxUserTabs) {
                 this.userSelectedIds = ["home", "profile", "drained-bases", "shop", "garage", "claims"];
                 this.saveUserSelection();
@@ -133,53 +134,76 @@ class SidebarManager {
     getCurrentTabs() {
         const mode = this.access.getUIMode();
         if (mode === 'user') {
-            // Return only the selected user tabs
             return this.userAvailableTabs.filter(tab => this.userSelectedIds.includes(tab.id));
         } else {
-            // Admin mode: return all admin tabs
             return this.adminTabs;
         }
     }
 
     renderSidebar() {
-        const container = document.getElementById('sidebar-nav-container');
+        const container = document.getElementById('sidebar-tabs-container');
         if (!container) return;
         const tabs = this.getCurrentTabs();
         let html = '';
         for (const tab of tabs) {
-            html += `<a href="#" class="nav-item" data-tab="${tab.id}"><span class="nav-icon">${tab.icon}</span> <span class="nav-text">${tab.name}</span></a>`;
+            html += `
+                <div class="sidebar-tab" data-tab="${tab.id}">
+                    <div class="sidebar-tab-icon">${tab.icon}</div>
+                    <div class="sidebar-tab-name">${tab.name}</div>
+                </div>
+            `;
         }
         container.innerHTML = html;
         this.highlightActiveTab();
+        this.updateSidebarUserInfo();
+    }
+
+    updateSidebarUserInfo() {
+        const avatarImg = document.getElementById('sidebar-avatar')?.querySelector('img');
+        const usernameSpan = document.getElementById('sidebar-username');
+        const roleSpan = document.getElementById('sidebar-role');
+        if (avatarImg) {
+            const storedAvatar = localStorage.getItem('tdl_avatar');
+            if (storedAvatar && storedAvatar !== 'null') {
+                avatarImg.src = storedAvatar;
+            } else {
+                avatarImg.src = window.DEFAULT_AVATAR || "data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='25' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3Crect x='30' y='65' width='40' height='30' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3C/svg%3E";
+            }
+        }
+        if (usernameSpan) {
+            usernameSpan.innerText = AppState.user?.username || localStorage.getItem('tdl_username') || 'Survivor';
+        }
+        if (roleSpan) {
+            roleSpan.innerText = (AppState.user?.role || localStorage.getItem('tdl_role') || 'user').toUpperCase();
+        }
     }
 
     highlightActiveTab() {
         const activeTabId = document.querySelector('.tab-pane.active')?.id?.replace('tab-', '');
         if (!activeTabId) return;
-        document.querySelectorAll('.nav-item').forEach(item => {
+        document.querySelectorAll('.sidebar-tab').forEach(item => {
             if (item.dataset.tab === activeTabId) item.classList.add('active');
             else item.classList.remove('active');
         });
     }
 
     addEventDelegation() {
-        const container = document.getElementById('sidebar-nav-container');
+        const container = document.getElementById('sidebar-tabs-container');
         if (!container) return;
         container.addEventListener('click', (e) => {
-            const item = e.target.closest('.nav-item');
-            if (item && item.dataset.tab) {
+            const tab = e.target.closest('.sidebar-tab');
+            if (tab && tab.dataset.tab) {
                 e.preventDefault();
-                window.switchTab(item.dataset.tab);
+                window.switchTab(tab.dataset.tab);
             }
         });
     }
 
-    // Called from Settings tab to render the customizer UI
     getSelectionUI() {
         let html = `
             <div class="sidebar-customizer">
                 <h3>Customize Your Sidebar (User Mode)</h3>
-                <p>Select up to ${this.maxUserTabs} tabs to appear in the sidebar when in User Mode.</p>
+                <p>Select exactly ${this.maxUserTabs} tabs to appear in the sidebar when in User Mode.</p>
                 <div class="tab-selection-list" id="user-tab-selection-list">
         `;
         for (const tab of this.userAvailableTabs) {
@@ -214,7 +238,6 @@ class SidebarManager {
             this.saveUserSelection();
             this.renderSidebar();
             toast.success('Sidebar updated');
-            // Re-render customizer to update disabled states
             if (window.settings && window.settings.renderSidebarCustomizer) {
                 window.settings.renderSidebarCustomizer();
             }

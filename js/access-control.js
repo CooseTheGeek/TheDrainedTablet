@@ -1,4 +1,4 @@
-// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (Master bypass)
+// access-control.js – DRAINED TABLET ULTIMATE v7.0.0
 
 class AccessControl {
     constructor() {
@@ -29,10 +29,7 @@ class AccessControl {
                 }
             } catch(e) { console.warn(e); }
         }
-        // CooseTheGeek is always master regardless of stored permissions
-        if (this.isMasterUser()) {
-            this.userPermissions = { '*': true };
-        }
+        if (this.isMasterUser()) this.userPermissions = { '*': true };
     }
 
     isMasterUser() {
@@ -54,9 +51,7 @@ class AccessControl {
         return false;
     }
 
-    getUIMode() {
-        return this.uiMode;
-    }
+    getUIMode() { return this.uiMode; }
 
     setUIMode(mode) {
         if (!this.isMasterUser()) return;
@@ -70,13 +65,10 @@ class AccessControl {
     }
 
     applyUIPermissions() {
-        // Hide admin-only elements based on mode
         document.querySelectorAll('.admin-only').forEach(el => {
             el.style.display = this.isMasterUser() && this.uiMode === 'master' ? '' : 'none';
         });
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    window.accessControl = new AccessControl();
-});
+document.addEventListener('DOMContentLoaded', () => { window.accessControl = new AccessControl(); });
