@@ -1,9 +1,8 @@
-// profile.js – DRAINED TABLET v7.0.0 (Merged Profile & ID Card, social style)
+// profile.js – DRAINED TABLET v7.0.0 (Full merged Profile & ID Card with working image uploads)
 
 class Profile {
     constructor() {
         this.tablet = window.drainedTablet;
-        this.db = window.database;
         this.cropper = null;
         this.avatarPresets = this.generateAvatarPresets();
         this.profileData = this.loadProfileData();
@@ -12,7 +11,6 @@ class Profile {
 
     generateAvatarPresets() {
         const presets = [];
-        // Generate 100 unique avatar placeholders (emoji-based for simplicity)
         const emojis = ['😀','😎','🦊','🐺','🐻','🐼','🐨','🦁','🐸','🐙','🦅','🐉','🧙','🧝','🧟','🧛','🤖','👽','💀','🎃','🔥','⚡','🌲','🪓','🔫','🛡️','🏹','⚔️','🔧','🏗️','🚗','🚁','🚤','🏍️','🏠','🏕️','🏪','💰','📦','👑','🎮','📊','🗺️','📚','⚙️','🔒','🔓','💡','🔋','🧪','🧬','🩸','🧲','🔩','🪚','🪛','🪢','🪤','🪣','🪥','🪦','🪧','🪨','🪵','🪶','🪷','🪸','🪹','🪺','🪻','🪼','🪽','🪿','🫀','🫁','🫂','🫃','🫄','🫅','🫎','🫏','🫐','🫑','🫒','🫓','🫔','🫕','🫖','🫗','🫘','🫙','🫚','🫛','🫜','🫝','🫞','🫟'];
         for (let i = 0; i < 100; i++) {
             presets.push({
@@ -35,8 +33,8 @@ class Profile {
             platform: localStorage.getItem('tdl_platform') || 'ps5',
             platformId: localStorage.getItem('tdl_platform_id') || '',
             bio: 'Rust survivor. Builder. Raider.',
-            serverName: 'The Drained Land\'s 2X',
             tagline: '⚡ 3UNKS ⚡',
+            serverName: 'The Drained Land\'s 2X',
             joined: new Date().toLocaleDateString(),
             discordLinked: false,
             selectedAvatarPreset: 0
@@ -56,6 +54,7 @@ class Profile {
     async init() {
         this.createHTML();
         this.attachEvents();
+        await this.updateStats();
         window.addEventListener('tab-changed', (e) => {
             if (e.detail.tab === 'profile') this.refresh();
         });
@@ -67,13 +66,11 @@ class Profile {
 
         tab.innerHTML = `
             <div class="profile-modern">
-                <!-- Cover Photo -->
                 <div class="profile-cover">
                     <img id="profile-cover-img" src="${this.profileData.cover || 'https://via.placeholder.com/1200x300?text=Cover+Image'}" alt="Cover">
                     <button id="change-cover-btn" class="edit-cover-btn">📷 Change Cover</button>
                 </div>
 
-                <!-- Avatar & Basic Info -->
                 <div class="profile-avatar-container">
                     <div class="profile-avatar" id="profile-avatar-container">
                         <img id="profile-avatar-img" src="${this.profileData.avatar}" alt="Avatar">
@@ -98,7 +95,6 @@ class Profile {
                     </div>
                 </div>
 
-                <!-- Stats Row -->
                 <div class="profile-stats-row" id="profile-stats-row">
                     <div class="stat-item"><span class="stat-value" id="stat-kills">0</span><span class="stat-label">Kills</span></div>
                     <div class="stat-item"><span class="stat-value" id="stat-deaths">0</span><span class="stat-label">Deaths</span></div>
@@ -106,9 +102,7 @@ class Profile {
                     <div class="stat-item"><span class="stat-value" id="stat-bases">0</span><span class="stat-label">Bases</span></div>
                 </div>
 
-                <!-- Two Column Layout -->
                 <div class="profile-two-col">
-                    <!-- Left Column: About & Links -->
                     <div class="profile-left">
                         <div class="profile-card">
                             <h3>📋 About</h3>
@@ -130,7 +124,6 @@ class Profile {
                         </div>
                     </div>
 
-                    <!-- Right Column: Settings & Actions -->
                     <div class="profile-right">
                         <div class="profile-card">
                             <h3>⚙️ Account Settings</h3>
@@ -184,7 +177,6 @@ class Profile {
         `;
 
         this.renderAvatarGallery();
-        this.updateStats();
     }
 
     renderAvatarGallery() {
@@ -242,14 +234,15 @@ class Profile {
         input.accept = 'image/*';
         input.onchange = (e) => {
             const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                this.profileData.cover = ev.target.result;
-                document.getElementById('profile-cover-img').src = ev.target.result;
+            if (!file) return;
+            // Resize large images
+            this.resizeImage(file, 1200, 400, (resizedDataUrl) => {
+                this.profileData.cover = resizedDataUrl;
+                document.getElementById('profile-cover-img').src = resizedDataUrl;
+                localStorage.setItem('tdl_cover_photo', resizedDataUrl);
                 this.saveProfileData();
                 toast.success('Cover photo updated');
-            };
-            reader.readAsDataURL(file);
+            });
         };
         input.click();
     }
@@ -260,17 +253,43 @@ class Profile {
         input.accept = 'image/*';
         input.onchange = (e) => {
             const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                this.showCropModal(ev.target.result);
-            };
-            reader.readAsDataURL(file);
+            if (!file) return;
+            this.resizeImage(file, 300, 300, (resizedDataUrl) => {
+                this.showCropModal(resizedDataUrl);
+            });
         };
         input.click();
     }
 
     uploadCustomAvatar() {
         this.uploadAvatar();
+    }
+
+    resizeImage(file, maxWidth, maxHeight, callback) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+                if (height > maxHeight) {
+                    width = (width * maxHeight) / height;
+                    height = maxHeight;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                callback(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
     }
 
     showCropModal(imageSrc) {
@@ -352,8 +371,8 @@ class Profile {
     }
 
     linkDiscord() { window.location.href = 'https://drained-bridge.onrender.com/api/discord/login'; }
-    changePassword() { toast.info('Password change not implemented in demo'); }
-    deleteAccount() { if(confirm('Permanently delete your account?')){ localStorage.clear(); location.reload(); } }
+    changePassword() { toast.info('Password change via API not implemented in demo'); }
+    deleteAccount() { if(confirm('Permanently delete your account? All data will be lost.')){ localStorage.clear(); location.reload(); } }
 
     refresh() {
         this.profileData = this.loadProfileData();

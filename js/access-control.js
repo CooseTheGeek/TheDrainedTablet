@@ -1,10 +1,11 @@
-// access-control.js – DRAINED TABLET ULTIMATE v7.0.0
+// access-control.js – DRAINED TABLET v7.0.0 (Master bypass, mode switch requires re-auth)
 
 class AccessControl {
     constructor() {
         this.roleHierarchy = { user: 1, owner: 2, master: 3 };
         this.userPermissions = {};
         this.uiMode = localStorage.getItem('tdl_ui_mode') || 'user';
+        this.pendingMode = null;
         this.init();
     }
 
@@ -53,14 +54,25 @@ class AccessControl {
 
     getUIMode() { return this.uiMode; }
 
-    setUIMode(mode) {
+    async setUIMode(mode) {
         if (!this.isMasterUser()) return;
         if (mode !== 'user' && mode !== 'master') return;
+        // When switching to master mode, require re-authentication
+        if (mode === 'master' && this.uiMode === 'user') {
+            const password = prompt('Enter master password to switch to Master Mode:');
+            if (password !== '0827') {
+                toast.error('Incorrect password. Mode unchanged.');
+                return;
+            }
+        }
         this.uiMode = mode;
         localStorage.setItem('tdl_ui_mode', mode);
         if (window.sidebarManager) window.sidebarManager.renderSidebar();
         if (window.settings && window.settings.renderSidebarCustomizer) window.settings.renderSidebarCustomizer();
         window.dispatchEvent(new CustomEvent('mode-changed', { detail: { mode } }));
+        // Update header role display
+        const roleBadge = document.getElementById('role-badge');
+        if (roleBadge) roleBadge.innerText = mode === 'master' ? 'MASTER' : (AppState.user?.role || 'USER').toUpperCase();
         toast.success(`${mode === 'master' ? 'Admin Mode' : 'User Mode'} active`);
     }
 

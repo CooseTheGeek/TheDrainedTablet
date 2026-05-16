@@ -1,4 +1,4 @@
-// garage.js – DRAINED TABLET v7.0.0 (Full motorpool with admin editing)
+// garage.js – DRAINED TABLET v7.0.0 (Full motorpool with grid layout, working images)
 
 class Garage {
     constructor() {
@@ -42,10 +42,10 @@ class Garage {
         if(!tab) return;
         const isAdmin = this.access.isMasterUser();
         tab.innerHTML = `
-            <div class="garage-container" style="padding:1rem;">
+            <div class="garage-container">
                 <div class="garage-header"><h2>🏍️ 3UNKS MOTORPOOL</h2><div class="garage-balance">💰 Your Scrap: <strong id="garage-balance">--</strong></div>${isAdmin?'<button id="garage-add-vehicle" class="garage-btn primary">+ ADD VEHICLE</button>':''}</div>
-                <div><input type="text" id="garage-search" placeholder="Search..."><select id="garage-category-filter"><option value="all">All</option><option value="air">Air</option><option value="land">Land</option><option value="water">Water</option></select></div>
-                <div id="garage-vehicles" class="vehicles-grid"></div>
+                <div class="garage-controls"><input type="text" id="garage-search" placeholder="Search..."><select id="garage-category-filter"><option value="all">All</option><option value="air">Air</option><option value="land">Land</option><option value="water">Water</option></select></div>
+                <div class="vehicles-grid" id="garage-vehicles"></div>
                 <div id="garage-modal" class="modal hidden"><div class="modal-content"><h3 id="garage-modal-title">Add/Edit Vehicle</h3>
                 <div><label>Name</label><input type="text" id="vehicle-name"></div>
                 <div><label>Shortname</label><input type="text" id="vehicle-shortname"></div>
@@ -90,15 +90,18 @@ class Garage {
         let filtered=this.vehicles.filter(v=>v.enabled && v.name.toLowerCase().includes(search));
         if(category!=='all') filtered=filtered.filter(v=>v.category===category);
         const isAdmin=this.access.isMasterUser();
-        if(filtered.length===0){ container.innerHTML='<div style="text-align:center; padding:2rem;">No vehicles available</div>'; return; }
+        if(filtered.length===0){ container.innerHTML='<div class="no-vehicles">No vehicles available</div>'; return; }
         const defaultImg="https://www.corrosionhour.com/img/items/wood.png";
         container.innerHTML=filtered.map(v=>`
             <div class="vehicle-card">
-                <img src="${v.image||defaultImg}" style="width:100px; height:100px; object-fit:contain;" onerror="this.src='${defaultImg}'">
-                <div style="font-weight:600;">${this.escapeHtml(v.name)}</div>
-                <div>💰 ${v.price} scrap</div>
-                <div>${v.stock===-1?'∞':v.stock}</div>
-                <div><button class="buy-vehicle small-btn" data-id="${v.id}" style="background:var(--accent-primary);">Buy & Spawn</button>${isAdmin?`<button class="edit-vehicle small-btn" data-id="${v.id}">✏️</button><button class="delete-vehicle small-btn" data-id="${v.id}">🗑️</button>`:''}</div>
+                <img src="${v.image||defaultImg}" class="vehicle-img" onerror="this.src='${defaultImg}'">
+                <div class="vehicle-name">${this.escapeHtml(v.name)}</div>
+                <div class="vehicle-price">💰 ${v.price} scrap</div>
+                <div class="vehicle-stock">${v.stock===-1?'∞':v.stock}</div>
+                <div class="vehicle-actions">
+                    <button class="buy-vehicle small-btn" data-id="${v.id}">Buy & Spawn</button>
+                    ${isAdmin?`<button class="edit-vehicle small-btn" data-id="${v.id}">✏️</button><button class="delete-vehicle small-btn" data-id="${v.id}">🗑️</button>`:''}
+                </div>
             </div>
         `).join('');
     }

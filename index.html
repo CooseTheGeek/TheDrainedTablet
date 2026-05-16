@@ -14,6 +14,43 @@
         .door-container .login-form { display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0; }
         .door-container .login-form input { padding: 0.8rem; border-radius: 8px; background: var(--bg-tertiary); border: 1px solid var(--glass-border); color: var(--text-primary); }
         .door-container .divider { text-align: center; color: var(--text-secondary); margin: 1rem 0; }
+        /* Preview popup */
+        .preview-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            height: 600px;
+            background: var(--bg-primary);
+            border: 2px solid var(--accent-primary);
+            border-radius: 12px;
+            z-index: 10000;
+            resize: both;
+            overflow: auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        .preview-header {
+            background: var(--bg-tertiary);
+            padding: 8px;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .preview-content {
+            flex: 1;
+            overflow: auto;
+            padding: 8px;
+        }
+        .preview-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: var(--bg-primary);
+        }
     </style>
 </head>
 <body>
@@ -50,6 +87,7 @@
                 <div class="connection-status" id="connection-status">
                     <span class="dot offline"></span> <span id="conn-status-text">DISCONNECTED</span>
                 </div>
+                <button id="preview-user-btn" class="header-btn" style="display: none;" title="Preview User Dashboard">👁️ Preview</button>
                 <button id="mode-toggle" class="header-btn" style="display: none;">👤 User</button>
                 <div class="profile-badge" id="profile-link">
                     <span id="profile-icon">👤</span>
@@ -65,7 +103,7 @@
                 <!-- Avatar & user info displayed above tabs -->
                 <div class="sidebar-user-info" id="sidebar-user-info">
                     <div class="sidebar-avatar" id="sidebar-avatar">
-                        <img src="data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='25' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3Crect x='30' y='65' width='40' height='30' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3C/svg%3E" alt="Avatar">
+                        <img id="sidebar-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='25' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3Crect x='30' y='65' width='40' height='30' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3C/svg%3E" alt="Avatar">
                     </div>
                     <div class="sidebar-username" id="sidebar-username">Survivor</div>
                     <div class="sidebar-role" id="sidebar-role">user</div>
@@ -73,16 +111,14 @@
                 <div class="sidebar-header">
                     <button id="collapse-sidebar" class="sidebar-collapse">◀</button>
                 </div>
-                <div class="sidebar-tabs-grid" id="sidebar-tabs-container">
-                    <!-- 6 tabs will be injected here as individual boxes -->
-                </div>
+                <div class="sidebar-tabs-grid" id="sidebar-tabs-container"></div>
                 <div class="sidebar-footer">
                     <div class="role-indicator" id="role-indicator"></div>
                 </div>
             </aside>
 
             <main class="main-content" id="main-content">
-                <!-- Tab panes – all kept -->
+                <!-- All tab panes (full list) -->
                 <div id="tab-home" class="tab-pane active"></div>
                 <div id="tab-players" class="tab-pane"></div>
                 <div id="tab-master" class="tab-pane"></div>
@@ -103,13 +139,11 @@
                 <div id="tab-recovery" class="tab-pane"></div>
                 <div id="tab-performance" class="tab-pane"></div>
                 <div id="tab-deepseek" class="tab-pane"></div>
-                <!-- Profile tab (merged with ID card) -->
                 <div id="tab-profile" class="tab-pane"></div>
                 <div id="tab-settings" class="tab-pane"></div>
                 <div id="tab-more" class="tab-pane"></div>
                 <div id="tab-resources" class="tab-pane"></div>
                 <div id="tab-drained-bases" class="tab-pane"></div>
-                <!-- Admin tabs continue... (all original ones) -->
                 <div id="tab-animals" class="tab-pane"></div>
                 <div id="tab-autoMod" class="tab-pane"></div>
                 <div id="tab-defense" class="tab-pane"></div>
@@ -168,7 +202,7 @@
     <div id="error-modal" class="modal hidden"><div class="modal-content"><h3>❌ Error</h3><p id="error-message"></p><div class="modal-actions"><button id="error-close" class="modal-btn">OK</button></div></div></div>
     <div id="confirm-modal" class="modal hidden"><div class="modal-content"><h3>⚠️ Confirm</h3><p id="confirm-message"></p><div class="modal-actions"><button id="confirm-yes" class="modal-btn primary">Yes</button><button id="confirm-no" class="modal-btn">No</button></div></div></div>
 
-    <!-- SCRIPTS -->
+    <!-- SCRIPTS (full list) -->
     <script src="js/core.js"></script>
     <script src="js/database.js"></script>
     <script src="js/access-control.js"></script>
@@ -266,12 +300,13 @@
             }
             window.switchTab = switchTab;
 
-            document.querySelectorAll('.sidebar-tab').forEach(item => {
-                item.addEventListener('click', (e) => {
+            // Handle sidebar clicks via delegation
+            document.addEventListener('click', (e) => {
+                const tab = e.target.closest('.sidebar-tab');
+                if (tab && tab.dataset.tab) {
                     e.preventDefault();
-                    const tab = item.dataset.tab;
-                    if (tab) switchTab(tab);
-                });
+                    switchTab(tab.dataset.tab);
+                }
             });
 
             const profileLink = document.getElementById('profile-link');
@@ -296,6 +331,76 @@
                 collapseBtn.addEventListener('click', () => {
                     document.getElementById('sidebar').classList.toggle('collapsed');
                     collapseBtn.textContent = document.getElementById('sidebar').classList.contains('collapsed') ? '▶' : '◀';
+                });
+            }
+
+            // Preview User Tablet button
+            const previewBtn = document.getElementById('preview-user-btn');
+            if (previewBtn) {
+                let previewWindow = null;
+                previewBtn.addEventListener('click', () => {
+                    if (previewWindow && !previewWindow.closed) {
+                        previewWindow.focus();
+                        return;
+                    }
+                    // Create a resizable popup
+                    const popupDiv = document.createElement('div');
+                    popupDiv.className = 'preview-popup';
+                    popupDiv.innerHTML = `
+                        <div class="preview-header">
+                            <span>👁️ User Dashboard Preview</span>
+                            <button id="close-preview" style="background:none; border:none; color:var(--text-primary); cursor:pointer;">✕</button>
+                        </div>
+                        <div class="preview-content">
+                            <iframe id="preview-iframe" class="preview-iframe" src="about:blank"></iframe>
+                        </div>
+                    `;
+                    document.body.appendChild(popupDiv);
+                    // Make draggable
+                    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                    const header = popupDiv.querySelector('.preview-header');
+                    header.onmousedown = dragMouseDown;
+                    function dragMouseDown(e) {
+                        e.preventDefault();
+                        pos3 = e.clientX;
+                        pos4 = e.clientY;
+                        document.onmouseup = closeDragElement;
+                        document.onmousemove = elementDrag;
+                    }
+                    function elementDrag(e) {
+                        e.preventDefault();
+                        pos1 = pos3 - e.clientX;
+                        pos2 = pos4 - e.clientY;
+                        pos3 = e.clientX;
+                        pos4 = e.clientY;
+                        popupDiv.style.top = (popupDiv.offsetTop - pos2) + "px";
+                        popupDiv.style.left = (popupDiv.offsetLeft - pos1) + "px";
+                    }
+                    function closeDragElement() {
+                        document.onmouseup = null;
+                        document.onmousemove = null;
+                    }
+                    popupDiv.querySelector('#close-preview').onclick = () => popupDiv.remove();
+                    // Load the current page but with user mode forced
+                    const iframe = popupDiv.querySelector('#preview-iframe');
+                    iframe.src = window.location.href + '?preview=user';
+                });
+            }
+
+            // Mode toggle and role updates
+            const modeToggle = document.getElementById('mode-toggle');
+            if (modeToggle) {
+                modeToggle.addEventListener('click', async () => {
+                    if (!window.accessControl.isMasterUser()) {
+                        toast.error('Only master can switch modes');
+                        return;
+                    }
+                    const currentMode = window.accessControl.getUIMode();
+                    const newMode = currentMode === 'user' ? 'master' : 'user';
+                    await window.accessControl.setUIMode(newMode);
+                    const roleBadge = document.getElementById('role-badge');
+                    if (roleBadge) roleBadge.innerText = newMode === 'master' ? 'MASTER' : (AppState.user?.role || 'USER').toUpperCase();
+                    modeToggle.innerText = newMode === 'master' ? '👑 Master' : '👤 User';
                 });
             }
         })();
