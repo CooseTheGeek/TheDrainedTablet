@@ -1,4 +1,4 @@
-// profile.js – DRAINED TABLET v7.0.0 (Full merged Profile & ID Card with working image uploads)
+// profile.js – DRAINED TABLET v7.0.0 (Full merged Profile & ID Card)
 
 class Profile {
     constructor() {
@@ -235,7 +235,6 @@ class Profile {
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            // Resize large images
             this.resizeImage(file, 1200, 400, (resizedDataUrl) => {
                 this.profileData.cover = resizedDataUrl;
                 document.getElementById('profile-cover-img').src = resizedDataUrl;

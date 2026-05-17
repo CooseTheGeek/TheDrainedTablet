@@ -1,4 +1,4 @@
-// garage.js – DRAINED TABLET v7.0.0 (Full motorpool with grid layout, working images)
+// garage.js – DRAINED TABLET v7.0.0 (Full motorpool with admin editing)
 
 class Garage {
     constructor() {

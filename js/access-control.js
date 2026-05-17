@@ -1,4 +1,4 @@
-// access-control.js – DRAINED TABLET v7.0.0 (User/Master mode switching)
+// access-control.js – DRAINED TABLET ULTIMATE v7.0.0 (User/Master mode switching)
 
 class AccessControl {
     constructor() {
@@ -13,6 +13,15 @@ class AccessControl {
 
     async loadPermissions() {
         // No complex permissions – role only
+        const sessionStr = localStorage.getItem('tdl_session');
+        if (sessionStr) {
+            try {
+                const session = JSON.parse(sessionStr);
+                if (session.token && session.username === 'CooseTheGeek') {
+                    // Master has all permissions
+                }
+            } catch(e) {}
+        }
     }
 
     isMasterUser() {
@@ -22,6 +31,7 @@ class AccessControl {
 
     hasRole(requiredRole) {
         if (this.isMasterUser()) return true;
+        // Only 'user' is the other role
         return requiredRole === 'user';
     }
 

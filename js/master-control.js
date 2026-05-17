@@ -1,4 +1,4 @@
-// master-control.js – DRAINED TABLET v7.0.0 (Full – all original sections + user management)
+// master-control.js – DRAINED TABLET ULTIMATE v7.0.0 (Full – all original sections + user management)
 
 class MasterControl {
     constructor() {

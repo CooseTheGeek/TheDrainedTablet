@@ -1,4 +1,4 @@
-// sidebar-config.js – DRAINED TABLET v7.0.0 (Avatar above, 6‑pack tabs)
+// sidebar-config.js – DRAINED TABLET v7.0.0 (User/Mode sidebar with 6‑pack tabs and avatar above)
 
 class SidebarManager {
     constructor() {
@@ -159,7 +159,7 @@ class SidebarManager {
     }
 
     updateSidebarUserInfo() {
-        const avatarImg = document.getElementById('sidebar-avatar')?.querySelector('img');
+        const avatarImg = document.getElementById('sidebar-avatar-img');
         const usernameSpan = document.getElementById('sidebar-username');
         const roleSpan = document.getElementById('sidebar-role');
         if (avatarImg) {
@@ -167,7 +167,7 @@ class SidebarManager {
             if (storedAvatar && storedAvatar !== 'null') {
                 avatarImg.src = storedAvatar;
             } else {
-                avatarImg.src = window.DEFAULT_AVATAR || "data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='25' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3Crect x='30' y='65' width='40' height='30' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3C/svg%3E";
+                avatarImg.src = window.DEFAULT_AVATAR || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='25' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3Crect x='30' y='65' width='40' height='30' fill='%23333' stroke='%23D4AF37' stroke-width='3'/%3E%3C/svg%3E";
             }
         }
         if (usernameSpan) {

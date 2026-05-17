@@ -1,6 +1,4 @@
-// branding.js – DRAINED TABLET ULTIMATE v7.0.0
-// Server branding: name, logo, colors, per‑user customization.
-// All original features preserved, now with bridge integration and enhanced UI.
+// branding.js – DRAINED TABLET v7.0.0 (Server branding with live preview and image upload)
 
 class Branding {
     constructor() {
@@ -279,7 +277,6 @@ class Branding {
     }
 }
 
-// Initialize when tablet is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.branding = new Branding();
 });

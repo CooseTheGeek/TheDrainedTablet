@@ -1,4 +1,4 @@
-// settings.js – DRAINED TABLET ULTIMATE v7.0.0 (Modern settings with sidebar customizer)
+// settings.js – DRAINED TABLET v7.0.0 (Modern settings with sidebar customizer, background upload, theme)
 
 class Settings {
     constructor() {
@@ -325,6 +325,7 @@ class Settings {
                     this.settings.customBackground = ev.target.result;
                     this.applySettings();
                     localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
+                    toast.success('Background image updated');
                 };
                 reader.readAsDataURL(file);
             });
@@ -334,6 +335,7 @@ class Settings {
                 this.settings.customBackground = null;
                 this.applySettings();
                 localStorage.setItem('tdl_dashboard_settings', JSON.stringify(this.settings));
+                toast.info('Background cleared');
             });
         }
     }
